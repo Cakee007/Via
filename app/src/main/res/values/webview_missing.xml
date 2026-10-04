@@ -1,0 +1,5 @@
+<resources>
+    <!-- x8.h.s / x8.h.t: original dimens a8 and a9. -->
+    <dimen name="webview_missing_body_size">16sp</dimen>
+    <dimen name="webview_missing_title_size">22sp</dimen>
+</resources>

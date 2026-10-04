@@ -1,0 +1,1 @@
+(function(){var n="via-fake-print";if(!window[n])try{window[n]=!0;var i=window.print;"function"==typeof i&&/\{\s*\[native code\]\s*\}/.test(Function.prototype.toString.call(i))&&(window.print=function(){window.via.cmd(516)})}catch(n){}})();

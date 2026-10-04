@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original layout a0: qa.j0 sets only icon and label widths at runtime. -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="@drawable/rounded_rect_ripple" android:layout_width="match_parent" android:layout_height="wrap_content">
+    <TextView android:id="@+id/favorite_tile" android:textSize="15dp" android:textColor="@android:color/white"
+        android:gravity="center" android:layout_width="match_parent" android:layout_height="36dp"
+        android:layout_marginLeft="9dp" android:layout_marginRight="9dp" android:layout_marginTop="4dp"
+        android:layout_centerHorizontal="true" android:contentDescription="@string/desc_favorite_icon" />
+    <ImageView android:id="@+id/favorite_delete" android:padding="5dp" android:layout_width="28dp" android:layout_height="28dp"
+        android:layout_marginTop="-8dp" android:layout_marginEnd="-8dp" android:src="@drawable/favorite_delete_badge"
+        android:tint="#55ffffff" android:alpha="0.8" android:layout_alignTop="@id/favorite_tile"
+        android:layout_alignEnd="@id/favorite_tile" android:contentDescription="@string/action_delete" />
+    <TextView android:id="@+id/favorite_label" android:textSize="10dp" android:textColor="?attr/viaPrimaryTextColor"
+        android:lineSpacingExtra="4dp" android:gravity="center" android:layout_width="match_parent" android:layout_height="20dp"
+        android:layout_marginTop="2dp" android:layout_marginBottom="4dp" android:maxLines="1"
+        android:layout_below="@id/favorite_tile" android:layout_centerHorizontal="true" />
+</RelativeLayout>

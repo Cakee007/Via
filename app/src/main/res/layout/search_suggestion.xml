@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original a1.xml dimensions, order, typography and separate fill action. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:gravity="center_vertical" android:orientation="horizontal" android:background="@drawable/flat_ripple" android:paddingTop="4dp" android:paddingBottom="4dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+    <ImageView android:id="@+id/suggestion_icon" android:padding="13dp" android:layout_width="48dp" android:layout_height="48dp" android:tint="?attr/viaSubtleColor" android:contentDescription="@string/desc_suggestion" />
+    <LinearLayout android:orientation="vertical" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1">
+        <TextView android:id="@+id/suggestion_title" android:textSize="14sp" android:textColor="?attr/viaPrimaryTextColor" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" />
+        <TextView android:id="@+id/suggestion_url" android:textSize="11sp" android:textColor="?attr/viaSecondaryTextColor" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" />
+    </LinearLayout>
+    <ImageView android:id="@+id/suggestion_fill" android:background="@drawable/circle_ripple" android:padding="13dp" android:layout_width="48dp" android:layout_height="48dp" android:src="@drawable/search_fill" android:tint="?attr/viaSubtleColor" android:contentDescription="@string/desc_fill_in_text" />
+</LinearLayout>

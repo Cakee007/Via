@@ -1,0 +1,1 @@
+(function(){if(!window["via-fake-vibrate"])try{window["via-fake-vibrate"]=!0;var b=function(a){return!0}.bind(window);window.navigator.vibrate=b}catch(a){}})();

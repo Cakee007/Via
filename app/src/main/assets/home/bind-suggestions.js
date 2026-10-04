@@ -1,0 +1,1 @@
+function show(str){var searchbox = document.getElementById("search_input"); searchbox.value = str; searchbox.blur(); search();}var params = {"formActiveClassName":'search_bar_active' }; OpenSuggestion.bind("search_input",params,show); 

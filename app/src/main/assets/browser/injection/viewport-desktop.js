@@ -1,0 +1,2 @@
+(function(){function e(){var b=document.getElementsByTagName("head")[0];if(null!=b){var f=__WIDTH__,a=document.createElement("meta");a.setAttribute("name","viewport");document.querySelectorAll('meta[name="viewport"]').forEach(function(c){c.hasAttribute("data-width")?a=c:c.remove()});var d=window.innerWidth;a.hasAttribute("data-width")&&(d=a.getAttribute("data-width"));a.setAttribute("content","width="+Math.max(f,d)+", user-scalable=1");a.setAttribute("data-width",d);b.appendChild(a)}}e();window.addEventListener("load",
+function(b){e()})})();

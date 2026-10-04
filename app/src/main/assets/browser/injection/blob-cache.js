@@ -1,0 +1,1 @@
+(function(){if(!window["via-blob-test"]){window["via-blob-test"]={};var c=URL.createObjectURL;URL.createObjectURL=function(a){var b=c(a);a instanceof MediaSource||(window["via-blob-test"][b]=a);return b}}})();

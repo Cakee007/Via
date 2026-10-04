@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original layout/t.xml (f8.w0), with the resource identifiers restored. -->
+<RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditText android:id="@+id/translation_source" android:textSize="@dimen/settings_row_title_size"
+        android:textColor="?attr/viaPrimaryTextColor" android:gravity="top"
+        android:background="@android:color/transparent" android:padding="12dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:hint="@string/text"
+        android:layout_toStartOf="@id/translation_clear" android:inputType="textMultiLine|textNoSuggestions" />
+    <ImageView android:id="@+id/translation_clear" android:background="@drawable/circle_ripple"
+        android:padding="12dp" android:layout_width="48dp" android:layout_height="48dp"
+        android:src="@drawable/translation_paste" android:tint="?attr/viaSubtleColor"
+        android:layout_alignTop="@id/translation_source"
+        android:layout_alignParentEnd="true" android:contentDescription="@string/desc_paste_text" />
+    <View android:background="?attr/viaOverlayColor" android:layout_width="match_parent"
+        android:layout_height="2dp" android:layout_below="@id/translation_source" />
+    <ProgressBar android:id="@+id/translation_progress" android:background="@android:color/transparent"
+        android:layout_width="match_parent" android:layout_height="2dp" android:max="100"
+        android:progress="50" android:indeterminate="false" android:indeterminateOnly="false"
+        android:layout_below="@id/translation_source" />
+    <TextView android:id="@+id/translation_result" android:textSize="@dimen/settings_row_title_size"
+        android:textColor="?attr/viaPrimaryTextColor" android:gravity="top" android:padding="12dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_toStartOf="@id/translation_copy"
+        android:layout_below="@id/translation_source" android:textIsSelectable="true" />
+    <ImageView android:id="@+id/translation_copy" android:background="@drawable/circle_ripple"
+        android:padding="12dp" android:layout_width="48dp" android:layout_height="48dp"
+        android:src="@drawable/translation_copy" android:tint="?attr/viaSubtleColor"
+        android:layout_alignTop="@id/translation_result"
+        android:layout_alignParentEnd="true" android:contentDescription="@string/action_copy_text" />
+    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent"
+        android:layout_height="48dp" android:layout_below="@id/translation_result">
+        <TextView android:id="@+id/translation_source_language" android:textSize="@dimen/settings_row_summary_size"
+            android:textColor="?attr/viaPrimaryTextColor" android:gravity="center"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
+        <ImageView android:id="@+id/translation_swap" android:background="@drawable/circle_ripple"
+            android:padding="14dp" android:layout_width="48dp" android:layout_height="match_parent"
+            android:src="@drawable/translation_swap" android:tint="?attr/viaSubtleColor"
+            android:contentDescription="@string/desc_swap_language" />
+        <TextView android:id="@+id/translation_target_language" android:textSize="@dimen/settings_row_summary_size"
+            android:textColor="?attr/viaPrimaryTextColor" android:gravity="center"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
+        <ImageView android:id="@+id/translation_start" android:layout_gravity="center_vertical"
+            android:padding="9dp" android:layout_width="40dp" android:layout_height="40dp"
+            android:layout_margin="4dp" android:src="@drawable/translation_start"
+            android:tint="@android:color/white" android:contentDescription="@string/action_translate" />
+    </LinearLayout>
+</RelativeLayout>

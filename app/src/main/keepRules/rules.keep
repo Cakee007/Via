@@ -1,0 +1,10 @@
+-keepattributes RuntimeVisibleAnnotations
+
+-keepclassmembers,allowoptimization class dev.ujhhgtg.via.browser.ViaBridge {
+    @android.webkit.JavascriptInterface <methods>;
+}
+-keepclassmembers,allowoptimization class dev.ujhhgtg.via.browser.script.ScriptBridge {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+-dontwarn com.google.errorprone.annotations.DoNotMock

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- original/res/layout/m.xml, hb.a8 -->
+<RelativeLayout android:paddingTop="12dp" android:layout_width="match_parent" android:layout_height="match_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView android:id="@+id/cloud_login_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/user" style="@style/Via.Dialog.Title" />
+    <EditText android:id="@+id/cloud_username" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/login_username" android:selectAllOnFocus="true" android:layout_below="@+id/cloud_login_title" android:inputType="textNoSuggestions" android:imeOptions="actionNext" style="@style/Sync.Dialog.Input" />
+    <EditText android:id="@+id/cloud_password" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/hint_password" android:selectAllOnFocus="true" android:layout_below="@+id/cloud_username" android:inputType="textPassword|textNoSuggestions" android:imeOptions="actionDone" style="@style/Sync.Dialog.Input" />
+    <CheckBox android:id="@+id/cloud_agree" android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="12dp" android:button="?attr/viaChoiceIndicator" android:layout_below="@+id/cloud_password" android:layout_marginStart="16dp" android:layout_marginEnd="8dp" style="@style/Via.Dialog.SecondaryText" />
+    <TextView android:gravity="center_vertical" android:id="@+id/cloud_agreement" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@+id/cloud_password" android:layout_alignTop="@+id/cloud_agree" android:layout_alignBottom="@+id/cloud_agree" android:layout_toEndOf="@+id/cloud_agree" style="@style/Via.Dialog.SecondaryText" />
+    <TextView android:id="@+id/cloud_login_ok" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@android:string/ok" android:layout_below="@+id/cloud_agree" android:layout_alignParentEnd="true" style="@style/Via.Dialog.Button" />
+    <TextView android:id="@+id/cloud_login_cancel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@android:string/cancel" android:layout_below="@+id/cloud_agree" android:layout_toStartOf="@+id/cloud_login_ok" style="@style/Via.Dialog.Button" />
+</RelativeLayout>

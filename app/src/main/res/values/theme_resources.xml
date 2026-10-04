@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="viaActionIconTint" format="color|reference" />
+    <attr name="viaOverlayColor" format="color|reference" />
+    <attr name="viaChoiceIndicator" format="color|reference" />
+    <attr name="viaAccentColor" format="color|reference" />
+    <attr name="viaDarkAccentColor" format="color|reference" />
+    <attr name="viaAccentTextColor" format="color|reference" />
+    <attr name="viaProgressSpinner" format="color|reference" />
+    <attr name="viaControlTint" format="color|reference" />
+    <attr name="viaSelectionTint" format="color|reference" />
+    <attr name="viaTabTint" format="color|reference" />
+    <attr name="viaBackgroundColor" format="color|reference" />
+    <attr name="viaSurfaceColor" format="color|reference" />
+    <attr name="viaDialogBackground" format="color|reference" />
+    <attr name="viaDialogColor" format="color|reference" />
+    <attr name="viaSubtleColor" format="color|reference" />
+    <attr name="viaDisabledTextColor" format="color|reference" />
+    <attr name="viaPrimaryTextColor" format="color|reference" />
+    <attr name="viaSecondaryTextColor" format="color|reference" />
+    <attr name="viaOverlayTextColor" format="color|reference" />
+    <color name="via_overlay_light">#30eeeeee</color>
+    <color name="via_overlay_dark">#30111111</color>
+    <color name="via_warning">#d64146</color>
+    <color name="via_background_light">@android:color/white</color>
+    <color name="via_background_dark">@android:color/black</color>
+    <color name="via_surface_dark">#cc000000</color>
+    <color name="via_surface_light">#ebffffff</color>
+    <color name="via_dialog_light">#ffffff</color>
+    <color name="via_dialog_dark">#1c1b1d</color>
+    <color name="via_control_stroke">#30808080</color>
+    <color name="via_accent_light">#6f8de1</color>
+    <color name="via_accent_dark">#617ac1</color>
+    <color name="via_accent_pressed_dark">#48598b</color>
+    <color name="via_accent_pressed_light">#5b73b5</color>
+    <color name="via_subtle_light">#232323</color>
+    <color name="via_subtle_dark">#9f9f9f</color>
+    <color name="via_accent_text_light">@android:color/white</color>
+    <color name="via_accent_text_dark">@android:color/white</color>
+    <color name="via_disabled_text_light">#61000000</color>
+    <color name="via_disabled_text_dark">#60ffffff</color>
+    <color name="via_primary_text_light">#de000000</color>
+    <color name="via_primary_text_dark">#beffffff</color>
+    <color name="via_secondary_text_light">#8a000000</color>
+    <color name="via_secondary_text_dark">#99ffffff</color>
+    <color name="via_overlay_text_light">#ffffff</color>
+    <color name="via_overlay_text_dark">#deffffff</color>
+    <dimen name="via_corner_radius">18dp</dimen>
+</resources>

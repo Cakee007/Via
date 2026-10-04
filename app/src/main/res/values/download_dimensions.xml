@@ -1,0 +1,5 @@
+<resources>
+    <!-- x7.n.k=original dimen/a9; x7.n.n=original dimen/ab. -->
+    <dimen name="download_empty_size">22sp</dimen>
+    <dimen name="download_small_size">11sp</dimen>
+</resources>

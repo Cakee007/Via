@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Original style z/a1, used by layouts m/n/o. -->
+    <style name="Sync.Dialog.InputBase" parent="" />
+    <style name="Sync.Dialog.Input" parent="@style/Sync.Dialog.InputBase">
+        <item name="android:textSize">@dimen/settings_row_title_size</item>
+        <item name="android:textColor">?attr/viaPrimaryTextColor</item>
+        <item name="android:textColorHint">?attr/viaSecondaryTextColor</item>
+        <item name="android:background">@drawable/via_dialog_input</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:lines">1</item>
+        <item name="android:layout_marginLeft">16dp</item>
+        <item name="android:layout_marginRight">16dp</item>
+        <item name="android:layout_marginBottom">12dp</item>
+    </style>
+</resources>

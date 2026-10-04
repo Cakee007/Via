@@ -1,0 +1,4 @@
+<resources>
+    <string name="reader_font_decrease" translatable="false">A-</string>
+    <string name="reader_font_increase" translatable="false">A+</string>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- x7.q.a / integer a: c8.s6.Q7's toolbar color transition. -->
+    <integer name="toolbar_color_animation_duration">240</integer>
+</resources>

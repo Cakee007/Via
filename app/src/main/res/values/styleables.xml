@@ -1,0 +1,11 @@
+<resources>
+    <!-- Attribute sets read together with obtainStyledAttributes; the original passes raw attr-id arrays. -->
+    <declare-styleable name="ViaEditorColors">
+        <attr name="viaPrimaryTextColor" />
+        <attr name="viaSecondaryTextColor" />
+    </declare-styleable>
+    <declare-styleable name="ViaAccentColors">
+        <attr name="viaAccentColor" />
+        <attr name="viaDarkAccentColor" />
+    </declare-styleable>
+</resources>

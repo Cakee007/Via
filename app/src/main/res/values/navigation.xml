@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="fragment_container" type="id" />
+    <item name="browser_overlay_container" type="id" />
+    <!-- f8.l0: the sheet's RecyclerView (mark.via:id/dn) and new-tab button (mark.via:id/ab). -->
+    <item name="tab_sheet_list" type="id" />
+    <item name="tab_sheet_new_tab" type="id" />
+    <item name="fullscreen_state" type="id" />
+    <integer name="fragment_animation_duration">220</integer>
+    <fraction name="fragment_slide_edge">100%</fraction>
+    <fraction name="fragment_slide_under">-29.999996%</fraction>
+</resources>

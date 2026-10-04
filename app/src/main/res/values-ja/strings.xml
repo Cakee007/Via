@@ -1,0 +1,781 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources tools:ignore="MissingTranslation" xmlns:tools="http://schemas.android.com/tools">
+
+    <string name="app_name">Via</string>
+    <string name="search_in_via">Viaで検索する</string>
+    <string name="paste_and_go">貼り付けて開く</string>
+    <string name="action_new_tab">新しいタブ</string>
+    <string name="action_open_in_new">新しいタブで開く</string>
+    <string name="action_open_in_background">バックグラウンドタブで開く</string>
+    <string name="action_download_image">画像をダウンロード</string>
+    <string name="action_save_img">画像を保存</string>
+    <string name="image_saved_to_gallery">画像をギャラリーに保存しました</string>
+    <string name="action_copy">アドレスをコピー</string>
+    <string name="action_copy_text">テキストをコピー</string>
+    <string name="action_copy_link_text">テキストをコピー</string>
+    <string name="settings">設定</string>
+    <string name="donate">Via を支援</string>
+
+    <!-- 共通項目 -->    
+    <string name="on">オン</string>
+    <string name="off">オフ</string>
+    <string name="ask_first">確認時にポップアップを表示する</string>
+    <string name="ignore_site_message_for_a_minute">このサイトからのメッセージをしばらく表示しない</string>
+    <string name="default_description">%1$s （デフォルト）</string>
+    
+    <!-- トップ | 証明書 -->    
+    <string name="view_certificate">サーバ証明書を見る</string>
+    <string name="certificate_info">サーバ証明書情報</string>
+    <string name="certificate_detail"><![CDATA[
+        <b>発行元</b><br />
+        <b>コモンネーム (CN)</b><br />
+        %1$s
+        <br /><b>組織名 (O)</b><br />
+        %2$s
+        <br /><b>部門名 (OU)</b><br />
+        %3$s
+        <br /><br /><b>発行者</b><br />
+        <b>コモンネーム (CN)</b><br />
+        %4$s
+        <br /><b>組織名 (O)</b><br />
+        %5$s
+        <br /><br /><b>有効期間</b><br />
+        <b>発行日</b><br />
+        %6$s
+        <br /><b>有効期限</b><br />
+        %7$s
+        <br />
+    ]]></string>
+    <string name="no_certificate">このウェブサイトにはサーバ証明書が有りません</string>
+    <string name="site_conf_enabled">Site configuration (Enabled)</string>
+    
+    <!-- トップ | Cookie -->  
+    <string name="action_view_cookies">Cookieを見る</string>
+    <string name="title_cookies_for_site">%1$s のCookie</string>
+    <string name="message_no_cookies">Cookieがありません</string>
+
+    <!-- トップ | リーダービューモード -->  
+    <string name="show_reader">リーダービューモードで見る</string>
+    <string name="hide_reader">リーダービューモードを終了する</string>
+    <string name="reader_is_shown">リーダービューモードを有効にしました</string>
+    <string name="reader_is_hidden">リーダービューモードを終了しました</string>
+    <string name="more_options">その他のオプション</string>
+    
+    <!-- トップ | QRコード -->    
+    <string name="scan_qr_code">QRコード（二次元バーコード）をスキャン</string>
+    <string name="scan_qr_code_from_image">画像からQRコードをスキャンします</string>
+    <string name="switch_flash">フラッシュ</string>
+    <string name="qr_code_scan_result">QRコードのスキャン結果</string>
+    <string name="qr_code_not_detected">QRコードが見つかりませんでした</string>
+    <string name="save_qr_code_successfully">QRコードのデータをギャラリーに保存しました</string>
+    
+    <!-- 設定｜一般｜同期設定 -->
+    <string name="sync">同期設定</string>
+    <string name="sync_webdav">WebDAV</string>
+    <string name="sync_webdav_user">%1$s (WebDAV)</string>
+    <string name="webdav_configuration">WebDAVの設定</string>
+    <string name="webdav_digest_access_authentication">Digest認証を使用する</string>
+    <string name="no_configuration">設定が行われていません</string>
+    <string name="has_never_been_synced">同期が行われていません</string>
+    <string name="synced_">%1$s件 同期済み</string>
+    <string name="auto_sync">自動同期</string>
+    <string name="sync_data">同期したデータ</string>
+    <string name="sync_data_none">なし</string>
+    <string name="sync_data_bookmarks">ブックマーク</string>
+    <string name="sync_data_favorites">スピードダイヤル</string>
+    <string name="sync_data_settings">設定</string>
+    <string name="delimiter">, </string>
+    <string name="sync_done">同期完了</string>
+    <string name="sync_failed">同期失敗</string>
+    <string name="sync_manually">手動で同期する</string>
+    <string name="sync_push_description">Overwrite remote data with local data</string>
+    <string name="sync_push_confirm">Are you sure you want to override remote data with local data?</string>
+    <string name="sync_pull_description">Overwrite local data with remote data</string>
+    <string name="sync_pull_confirm">Are you sure you want to override local data with remote data?</string>
+    <string name="sync_merge_description">Merge local data with remote data</string>
+    <string name="user_syns">ユーザーデータの同期</string>
+    <string name="settings_cloud">アカウント</string>
+    <string name="user">ログイン及び登録</string>
+    <string name="login_username">ユーザー名（登録していない場合は先に登録してください）</string>
+    <string name="read_and_agree">%1$s と %2$sを事前に確認してください</string>
+    <string name="user_update">サーバーにアップロード</string>
+    <string name="wrong_psw">パスワードが間違っています</string>
+    <string name="sign_up_success">登録しました</string>
+    <string name="code_500">サーバーエラー</string>
+    <string name="syns_success">同期成功</string>
+    <string name="upload_success">アップロード成功</string>
+    <string name="log_out">ログアウトしますか？</string>
+    <string name="cloud_data_server">クラウドデータサーバー</string>
+    <string name="chinese_server">中国</string>
+    <string name="global_server">グローバル</string>
+    <string name="server_message">このサーバーではデータの同期はされていません。再度ログインする必要があります。</string>
+    <string name="action_new">新規作成</string>
+    <string name="hint_username">ユーザー名</string>
+    <string name="hint_password">パスワード</string>
+    <string name="delete_account">アカウントを削除する</string>
+    <string name="delete_account_request_submitted">アカウント削除のリクエストが送信されました</string>
+    <string name="delete_account_hint">サーバからアカウントを削除する</string>
+    <string name="delete_account_message">削除リクエストを送信すると、アカウントはログアウトされて15日間の猶予期間に入ります。その間に再度ログインすると削除リクエストはキャンセルされますが、ログインしない場合は猶予期間後にデータが削除されます。\nリクエストを送信するにはパスワードを入力してください。</string>
+    <string name="confirm_to_delete">削除の確認</string>
+
+    <!-- 設定｜一般｜ユーザーエージェント -->
+    <string name="agent">ユーザーエージェント</string>
+    <string name="default_set">デフォルト</string>
+    <string name="agent_android_phone">Android (スマートフォン)</string>
+    <string name="agent_android_tablet">Android (タブレット)</string>
+    <string name="agent_windows_chrome">Windows (Google Chrome)</string>
+    <string name="agent_windows_ie11">Windows (Internet Explorer 11)</string>
+    <string name="agent_iphone">iPhone</string>
+    <string name="agent_ipad">iPad</string>
+    <string name="agent_osx">macOS</string>
+    <string name="agent_symbian">Symbian</string>
+    <string name="agent_custom">カスタム設定</string>
+    <string name="user_agent_in_desktop_mode">デスクトップモードでのユーザーエージェント</string>
+    <string name="user_agent_reduction">ユーザーエージェントの簡略化</string>
+    <string name="user_agent_reduction_description">ユーザーエージェントからデバイス情報およびマイナーバージョン情報を削除します</string>
+    
+    <!-- 設定｜一般｜プライベートデータの消去 -->
+    <string name="clear_data">プライベートデータの消去</string>
+    <string name="data_cache">キャッシュ</string>
+    <string name="data_form_data">フォームへの入力履歴</string>
+    <string name="data_history">履歴</string>
+    <string name="data_storage">ストレージ</string>
+    <string name="data_cookies">Cookie</string>
+    <string name="data_app_cache">アプリのキャッシュデータ</string>
+    <string name="data_cleared">消去しました</string>
+    
+    <!-- 設定｜一般｜広告ブロック -->
+    <string name="block_ads">広告ブロック</string>
+    <string name="simple_guide_of_writing_rule">ViaはほとんどのAdblock Plusフィルターに対応しています。
+        \n次のように設定することで、「example.com」をブロックする任意のフィルターを作成することができます。
+        \n||example.com^ (もしくはシンプルにexample.com)
+        \n\nワイルドカードは次のように使用できます。:
+        \n||example.com/js/ads_*.js
+        \n\nホワイトリストに登録したい場合は次のように設定を行います。:
+        \n@@||example.com^
+        \n\n次のようなWEBページ上の要素の場合:
+        \nexample.com###ad</string>
+    <string name="adblock_add_site_exception_on">特定のサイトで広告ブロックを有効にする</string>
+    <string name="adblock_add_site_exception_off">特定のサイトで広告ブロックを無効にする</string>
+    <string name="help">ヘルプ</string>
+    <string name="learn_more">さらに詳しく（英語サイト）</string>
+    <plurals name="filters">
+        <item quantity="other">%d フィルター</item>
+    </plurals>
+    <string name="updated_">%1$s をアップデートしました</string>
+    <string name="filter_subscription_info">%1$s, %2$s</string>
+    <string name="enable_built_in_filters">デフォルトのブロックフィルターを適用する</string>
+    <string name="enable_built_in_filters_description">デフォルトのフィルターは一般的な広告のみをブロックします。</string>
+    <string name="update">アップデート</string>
+    <string name="filter_subscriptions">購読フィルターリスト</string>
+    <string name="filter_subscriptions_description">登録されているAdblock Plusフィルターのリストです</string>
+    <string name="filter_subscription_exist">このフィルターは既に登録されています</string>
+    <string name="custom_filters">カスタムフィルター</string>
+    <string name="custom_filters_description">マークされた広告を含むフィルター</string>
+    <string name="add_filter_subscription">購読するフィルターを登録します</string>
+    <string name="edit_filter_subscription">購読中のフィルターを編集します</string>
+    <string name="update_filter_subscriptions_completed">購読中のフィルターの更新が完了しました</string>
+    <string name="has_not_been_updated">更新されていません</string>
+    <string name="just_now">たった今</string>
+    
+    <!-- 設定｜一般｜サイト別設定 -->
+    <string name="site_conf">サイト別設定</string>
+    <string name="all_sites">全てのサイト</string>
+    <!-- 設定｜一般｜サイト別設定｜コンテンツ -->
+    <string name="category_content">コンテンツ</string>
+    <string name="size">フォントサイズ</string>
+    <string name="text_size_site_exception_add">特定のサイトのフォントサイズを設定する</string>
+    <string name="category_basics">基本設定</string>
+    <string name="category_permissions">権限設定</string>
+    <string name="add_site_exception">例外設定を追加します</string>
+    <string name="blocked">ブロック</string>
+    <string name="allowed">許可</string>
+    <string name="exception">例外</string>
+    <string name="block">ブロック</string>
+    <string name="allow">許可</string>
+    <string name="agent_add_site_exception">指定したUser Agentでページを開きます</string>
+    <string name="desktop_mode_add_site_exception_on">特定のサイトでデスクトップモードを有効にする</string>
+    <string name="desktop_mode_add_site_exception_off">特定のサイトでデスクトップモードを無効にする</string>
+    <string name="images">画像</string>
+    <string name="images_allowed_description">サイト上で画像を表示します</string>
+    <string name="images_allowed_via_wifi_description">Wi-Fi接続時のみサイト上で画像を表示します</string>
+    <string name="images_allowed_via_wifi_description_short">Wi-Fi接続時のみ表示</string>
+    <string name="images_add_site_exception_allow">画像を表示するサイトを追加します</string>
+    <string name="images_add_site_exception_block">画像をブロックするサイトを追加します</string>
+    <string name="javascript">JavaScript</string>
+    <string name="javascript_allowed_description">JavaScriptをサイト上で許可します</string>
+    <string name="javascript_add_site_exception_allow">JavaScriptを許可するサイトを追加します</string>
+    <string name="javascript_add_site_exception_block">JavaScriptをブロックするサイトを追加します</string>
+    <string name="cookies">Cookies</string>
+    <string name="cookies_allowed_description">サイトにCookieの保存と読み取りを許可する</string>
+    <string name="cookies_allowed_except_third_party_description_short">サードパーティーCookie以外を許可する</string>
+    <string name="popups">ポップアップ</string>
+    <string name="popups_ask_first_description">初回表示時にポップアップの許可を確認する</string>
+    <string name="clipboard">クリップボード</string>
+    <string name="clipboard_ask_first_description">初回表示時にクリップボードの利用の許可を確認する</string>
+    <string name="clipboard_allowed_description">サイトにクリップボードの利用を許可します</string>
+    <string name="clipboard_blocked_description">サイトのクリップボードの利用をブロックします</string>
+    <string name="clipboard_add_site_exception_allow">クリップボードの利用を許可するサイトを追加します</string>
+    <string name="clipboard_add_site_exception_block">クリップボードの利用をブロックするサイトを追加します</string>
+    <string name="open_app">他のアプリを開く</string>
+    <string name="open_app_ask_first_description">サイトが他のアプリを開く前に確認する</string>
+    <string name="open_app_allowed_description">サイトが他のアプリを開くことを許可する</string>
+    <string name="open_app_blocked_description">サイトが他のアプリを開くことをブロックする</string>
+    <string name="open_app_add_site_exception_allow">他のアプリを開くことを許可するサイトを追加します</string>
+    <string name="open_app_add_site_exception_block">他のアプリを開くことをブロックするサイトを追加します</string>
+    <string name="location1">位置情報</string>
+    <string name="location_ask_first_description">初回表示時に位置情報の取得の許可を確認する</string>
+    <string name="location_add_site_exception_allow">特定のサイトで位置情報の取得を許可する</string>
+    <string name="location_add_site_exception_block">特定のサイトで位置情報の取得をブロックする</string>
+    <string name="camera">カメラ</string>
+    <string name="camera_ask_first_description">初回表示時にカメラの使用の許可を確認する</string>
+    <string name="camera_add_site_exception_allow">特定のサイトでカメラの使用を許可する</string>
+    <string name="camera_add_site_exception_block">特定のサイトでカメラの使用を拒否する</string>
+    <string name="microphone">マイク</string>
+    <string name="microphone_ask_first_description">初回表示時にマイクの使用の許可を確認する</string>
+    <string name="microphone_add_site_exception_allow">特定のサイトでマイクの使用を許可する</string>
+    <string name="microphone_add_site_exception_block">特定のサイトでマイクの使用をブロックする</string>
+    <string name="page_redirection">ページのリダイレクト</string>
+    <string name="page_redirection_allowed_description">任意のURLへのリダイレクトを許可する</string>
+    <string name="page_redirection_ask_first_description">別のドメインへのリダイレクト前に確認する</string>
+    <string name="page_redirection_ask_first_description_short">別のドメインへのリダイレクト前に確認する</string>
+    <string name="page_redirection_add_site_exception_allow">特定のサイトで任意のURLへのリダイレクトを許可します</string>
+    <string name="page_redirection_add_site_exception_ask_first">特定のサイトで別のドメインへのリダイレクト前に確認します</string>
+    <string name="allow_page_redirection_to_msg">%1$s へのリダイレクトを許可しますか？</string>
+    <string name="allow_page_redirection_msg">リダイレクトを許可しますか？</string>
+    <string name="vibrate">バイブレーション</string>
+    <string name="vibrate_allowed_description">サイトによるバイブレーションを許可する</string>
+    <string name="enable_site_conf">\"%1$s\"のサイト別設定を有効にする</string>
+    <!-- 設定｜一般｜サイト別設定｜高度な設定 -->
+    <string name="quick_back">戻る時に再読み込みをしない</string>
+    <string name="quick_back_add_site_exception_on">特定のサイトで「戻る」時に再読み込みをする</string>
+    <string name="quick_back_add_site_exception_off">特定のサイトで「戻る」時に再読み込みをしない</string>
+
+    <!-- 設定｜一般｜パスワードマネージャー -->
+    <string name="password_manager">パスワードマネージャー</string>
+    <string name="offer_to_save_passwords">パスワード保存を有効にする</string>
+    <string name="passwords">パスワード</string>
+    <string name="sites_that_never_save_passwords">パスワードを保存しないサイト</string>
+    <string name="save_password">パスワードを保存</string>
+    <string name="save_password_message">%1$s? にパスワードを保存しますか？</string>
+    <string name="password_saved">パスワードを保存しました</string>
+    <string name="update_password">パスワードを更新</string>
+    <string name="update_password_message">%1$s のパスワードを更新しますか？</string>
+    <string name="password_updated">パスワードを更新しました</string>
+    <string name="note">メモ</string>
+    <string name="password_exists">パスワードは既に存在します</string>
+    <string name="password_exists_message">%1$s にこのユーザー名とパスワードは保存されています。表示しますか？</string>
+    <string name="view_password">パスワードを表示</string>
+    <string name="unlock_device_to_view_password">パスワードを表示するには端末のロックを解除してください</string>
+    <string name="fill_password">パスワードを入力</string>
+    <string name="unlock_device_to_fill_password">パスワードを入力するには端末のロックを解除してください</string>
+    <string name="import_passwords">パスワードをインポート</string>
+    <string name="import_passwords_description">CSVファイルからパスワードをインポート</string>
+    <string name="failed_to_import_passwords">パスワードのインポートに失敗しました</string>
+    <string name="passwords_import">%1$d 件のパスワードをインポートしました</string>
+    <string name="export_passwords">パスワードをエクスポート</string>
+    <string name="export_passwords_description">エクスポートしたパスワードデータに関しては、データ漏洩を防ぐために使用後に削除してください</string>
+    <string name="unlock_device_to_export_passwords">パスワードをエクスポートするには端末のロックを解除してください</string>
+    <string name="never_for_this_site">このサイトでは保存しない</string>
+    <string name="unlock_device_to_export_data">データをエクスポートするには端末のロックを解除してください</string>
+    <string name="enter_password">パスワードを入力</string>
+    <string name="enter_password_for_exporting_data">ログイン情報をエクスポート中です。暗号化のためのキーを入力してください。暗号化キーは紛失するとインポートができなくなるためご注意ください</string>
+    <string name="password_required">暗号化キーが必要です</string>
+    <string name="password_required_for_importing_data">ログイン情報をインポート中です。データを復号してインポートするには暗号化キーを入力してください。暗号化キーが間違っている場合は、暗号化されていないデータのみがインポートされます</string>
+    <string name="copy_username">ユーザー名をコピー</string>
+    <string name="copy_password">パスワードをコピー</string>
+    <string name="unlock_device_to_copy_password">パスワードをコピーするには端末のロックを解除してください</string>
+    <string name="no_passwords">パスワードがありません</string>
+    
+    <!-- 設定｜一般｜ナイトモード -->
+    <string name="night_filter_for_web_contents">ウェブページへのフィルター</string>
+    <string name="force_dark_mode_for_web_contents">ウェブページのナイトモードを強制する</string>
+    <string name="force_dark_mode_for_web_contents_description">強制的にウェブページにナイトモードを適用します。一部のウェブページで不具合が発生する可能性が有ります。</string>
+
+    <!-- 設定｜一般｜リーダービューモード -->
+    <string name="reader_mode">リーダービューモード</string>
+    <string name="require_confirmation_to_enable_reader_mode">リーダービューモードを開く前にメニューを表示する</string>
+    <string name="require_confirmation_to_enable_reader_mode_description_enabled">アドレスバーのアイコンをタップしたときに、リーダービューモードを起動します。</string>
+    <string name="require_confirmation_to_enable_reader_mode_description_disabled">アドレスバーのアイコンをタップしたときに、メニューを表示します。</string>
+    <string name="appearance">スタイル設定</string>
+    <string name="custom_reader_css">カスタムCSS設定</string>
+    
+    <!-- 設定｜一般｜ツールバーの設定 -->
+    <string name="toolbars_settings">ツールバーの設定</string>
+        <!-- 設定｜一般｜ツールバーの設定｜ナビゲーションバーのレイアウト -->
+            <string name="ui_mode">ナビゲーションバーのレイアウト</string>
+            <string name="ui_traditional">デフォルト</string>
+            <string name="ui_simple_top">上部に配置</string>
+            <string name="ui_simple_bottom">下部に配置</string>
+            <string name="two_row_toolbar">2段で表示する</string>
+        <!-- 設定｜一般｜ツールバーの設定｜ナビゲーションバーの非表示 -->
+            <string name="fullscreen">ナビゲーションバーの非表示</string>
+            <string name="disable">無効</string>
+            <string name="fullscreen_0">常に表示</string>
+            <string name="fullscreen_1">スクロール</string>
+            <string name="fullscreen_2">タップ</string>
+            <string name="enable_tab_bar">タブバーを有効にする</string>
+        <!-- 設定｜一般｜ツールバーの設定｜アドレスバーの内容 -->
+            <string name="url_box">アドレスバーの内容</string>
+            <string name="hint_title">タイトル</string>
+            <string name="hint_url">アドレス</string>
+            <string name="url_box_domain">ドメイン</string>
+        <!-- 設定｜一般｜ツールバーの設定｜カラーモード -->
+            <string name="color_mode">カラーモード</string>
+            <string name="color_mode_hint">自動的にナビゲーションバーの色を変更する</string>
+
+    <!-- 設定｜一般｜メニューのカスタマイズ -->
+    <string name="customize_menu">メニューのカスタマイズ</string>
+    <string name="hold_and_drag_to_rearrange_items">長押し＆ドラッグで項目の並び替えができます。</string>
+    <string name="hold_and_drag_or_tap_to_add_item">長押し＆ドラッグ、またはタップで項目の追加が可能です。</string>
+    <string name="action_reset">リセット</string>
+    
+    <!-- 設定｜一般｜コンテキストメニューのカスタマイズ -->
+    <string name="customize_context_menu">コンテキストメニューのカスタマイズ</string>
+    
+    <!-- 設定｜一般｜言語設定 -->
+    <string name="language">言語設定</string>
+    
+    <!-- 設定｜一般｜ホームページの設定 -->
+    <string name="home">ホームページ</string>
+    <string name="action_blank">空白のページ</string>    
+    <string name="action_bookmarks">ブックマーク</string>
+    <string name="action_webpage">特定のページ</string>
+
+    <!-- 設定｜一般｜検索設定 -->
+    <string name="search_settings">検索設定</string>
+
+    <!-- 設定｜一般｜AI利用設定 -->
+    <string name="message">メッセージ</string>
+    <string name="permission_microphone_description">ウェブサイトでの音声入力または録音に使用されます</string>
+    <string name="permission_camera_description">ウェブサイトでの写真撮影またはビデオ録画に使用されます</string>
+    <string name="permission_summary">%1$s: %2$s</string>
+    <string name="action_add_favorite">お気に入りに追加</string>
+    <string name="favorite_added">お気に入りに追加しました</string>
+    
+    <!-- 設定｜一般｜検索設定｜検索エンジン -->
+    <string name="search">検索エンジン</string>
+    <string name="custom_url">カスタム</string>
+    <string name="baidu_url">百度</string>
+    <string name="google_url">Google</string>
+    <string name="bing_url">Bing</string>
+    <string name="yahoo_url">Yahoo!（英語）</string>
+    <string name="startpage_url">StartPage (Ixquick)</string>
+    <string name="duckduckgo_url">DuckDuckGo</string>
+
+    <!-- 設定｜一般｜検索設定｜検索サジェスト -->    
+    <string name="title_search_suggestions">検索サジェスト</string>
+    <string name="message_search_suggestions">アドレスバーに表示する項目を選択します</string>
+    <string name="title_open_tabs">開いているタブ</string>
+
+    <!-- 設定｜一般｜検索設定｜検索ツールバー -->    
+    <string name="search_toolbar">検索ツールバー</string>
+    <string name="enable_search_toobar">検索ツールバーを有効にする</string>
+    <string name="disabled">無効</string>
+
+    <!-- 設定｜一般｜画面の向き -->
+    <string name="orientation">画面の向き</string>
+    <string name="follow_system">システム設定</string>
+    <string name="orientation_auto">自動回転</string>
+    <string name="orientation_portrait">縦向き</string>
+    <string name="orientation_landscape">横向き</string>
+
+    <!-- 設定｜一般｜ダウンロード先 -->
+    <string name="download">ダウンロード先</string>    
+    
+    <!-- 設定｜一般｜ダウンロード設定 -->
+    <string name="addon_download">ダウンロード設定</string>
+    <string name="built_in_download_manager">Viaでダウンロードする</string>
+    <string name="system_download_manager">OSのダウンロードマネージャーを使用する</string>
+
+    <!-- 設定｜一般｜動画プレイヤー -->
+    <string name="external_video_player">動画プレイヤー</string>
+    <string name="external_video_player_description">動画の再生時に使用するアプリを選択</string>
+    <string name="player_system_sharing">アプリ一覧を表示</string>
+    
+    <!-- 設定｜一般｜終了時にプライベートデータを消去 -->    
+    <string name="clear_data_on_exit">終了時にプライベートデータを消去</string>
+
+    <!-- 設定｜一般｜フォント設定 -->    
+    <string name="font">フォント設定</string>
+    <string name="unable_to_add_font">フォントを追加できませんでした。エラーコード: %1$d</string>
+    
+    <!-- 設定｜一般｜ジェスチャー -->
+    <string name="settings_operation">ジェスチャー</string>
+    <string name="operation_hint">ジェスチャーの設定を行えます</string>    
+    <string name="back_forward_gesture">ページ間をスワイプ</string>    
+    <string name="volume">音量キーでスクロール</string>
+    <string name="enable_video_player_gestures">ビデオプレイヤーのジェスチャーを有効にする</string>
+    <string name="enable_video_player_gestures_description">ビデオの全画面表示の際、スワイプで早戻しや早送り、明るさやボリュームの調整が可能です（サイトが対応している場合）。</string>
+    <string name="keyboard_shortcuts">キーボードショートカット</string>
+    <string name="toolbar_settings_hint">下の各アイコンをタップするとジェスチャーを設定できます。長押しすると設定中のジェスチャーが表示されます。</string>
+    
+    <!-- 設定｜一般｜ブックマークをインポート/エクスポート -->
+    <string name="import_or_export_bookmarks">ブックマークをインポート/エクスポート</string>
+    <string name="export_bookmarks">ブックマークをエクスポート</string>
+    <string name="export_bookmarks_to">ブックマークの書き出し先: %1$s</string>
+    <string name="import_bookmarks">ブックマークをインポート</string>
+    <string name="import_bookmark_error">読み込めませんでした</string>
+    <string name="message_add_bookmark">追加しました</string>
+    <string name="bookmarks_imported">%1d つのブックマークを読み込みました</string>
+    <string name="bookmarks_exported_successfully">ブックマークのエクスポートが完了しました</string>
+    
+    <!-- 設定｜一般｜設定のインポート -->    
+    <string name="import_data">設定のインポート</string>
+    <string name="import_data_failed">設定のインポートに失敗しました！</string>
+    <string name="import_data_succeed">設定のインポートに成功しました！</string>
+    
+    <!-- 設定｜一般｜設定のエクスポート -->        
+    <string name="export_data">設定のエクスポート</string>
+    <string name="export_data_description">ブックマーク、設定、スクリプト及び広告ブロックフィルターをエクスポートします</string>
+    <string name="export_data_to">エクスポート先: %1$s</string>
+    <string name="data_file">データエクスポート</string>
+    <string name="data_exported_successfully">データのエクスポートが完了しました</string>
+    
+    <!-- 設定｜一般｜前回開いていたページを開く -->
+    <string name="restore_tabs">前回開いていたページを開く</string>
+    <string name="disable_restore">タブを復元しない</string>
+    <string name="always_restore">常にタブを復元する</string>
+
+    <!-- 設定｜一般｜デフォルトのブラウザにする -->
+    <string name="setting_default">デフォルトのブラウザにする</string>
+    
+    <!-- 設定｜カスタマイズ -->
+    <string name="settings_skin">カスタマイズ</string>
+    <string name="skin_search_bar">検索バー</string>
+    <string name="width">幅</string>
+    <string name="height">高さ</string>
+    <string name="corner_radius">丸み</string>
+    <string name="adaptive">画面に合わせる</string>
+    <string name="action_favorites">スピードダイヤル</string>
+    <string name="stroke_width">枠線の幅</string>
+    <string name="stroke_opacity">枠線の不透明度</string>
+    <string name="opacity">不透明度</string>
+    <string name="clear_website_icon_cache">ウェブサイトのアイコンキャッシュを消去する</string>
+    <string name="clear_website_icon_cache_message">この操作を行うと、ホームページ上のお気に入りのアイコンがすべて消去されますのでご注意ください。各アイコンは、次回、対応するウェブサイトにアクセスしたときにダウンロードされます。</string>
+    <string name="reset_to_default_settings">設定を初期化する</string>
+    <string name="search_bar_style">バースタイル</string>
+    <string name="search_bar_style_line">線</string>
+    <string name="search_bar_style_rectangle">長方形</string>
+    
+    <!-- 設定｜カスタマイズ｜ロゴ -->
+    <string name="skin_logo">ロゴ</string>
+    <string name="picture">画像</string>
+    <string name="text">テキスト</string>
+    <string name="html_code">HTML コード</string>
+    <string name="none">なし</string>
+ 
+    <!-- 設定｜カスタマイズ｜背景 -->
+    <string name="skin_bg">背景</string>
+
+    <!-- 設定｜カスタマイズ｜ブックマーク -->
+    <string name="favorites_icon_style">アイコン</string>
+    <string name="favorites_icon_style_text">テキスト</string>
+    <string name="favorites_icon_style_icon_first">サイトアイコン</string>
+    <string name="favorites_icon_color">アイコン色</string>
+    <string name="favorites_icon_color_colorful">カラー</string>
+    <string name="favorites_icon_color_transparent">透明</string>
+    
+    <!-- 設定｜カスタマイズ｜高度な設定 -->
+    <string name="search_bar_effect">バーのエフェクト</string>
+    <string name="search_bar_effect_blur">ぼかし</string>
+    <string name="search_bar_effect_transparent">透明</string>
+    <string name="search_part">サーチボックス</string>
+    <string name="search_part_hide">非表示</string>
+    <string name="search_part_show">表示</string>
+    <string name="custom_css_special">カスタムCSSを追加</string>
+    <string name="favorites_clear_icons">アイコンをリセット</string>
+    <string name="customization_reset">リセット</string>
+
+    <!-- 設定｜プライバシー -->
+    <string name="settings_privacy">プライバシー</string>    
+    <string name="location">位置情報へのアクセスを許可する</string>
+    <string name="do_not_track">Do Not Track（トラッキング拒否）</string>
+    <string name="disable_webrtc">WebRTCを無効にする</string>
+    <string name="block_3rd_party_cookies">サードパーティーCookieをブロック</string>
+    <string name="do_not_sell_or_share">個人のデータを販売及び共有することを拒否する</string>
+    <string name="do_not_sell_or_share_description">プライバシー保護のため、個人のデータを販売したり共有したりしないようにウェブサイトに要求する（試験中）</string>
+    
+    <!-- 設定｜高度な設定 -->
+    <string name="settings_advanced">高度な設定</string>
+    <string name="save_data">データセーブ</string>
+    <string name="save_data_description">対応するウェブサイトでデータセーブモードを有効にする</string>
+    <string name="show_sniffer_btn_automatically">スニファーボタンを自動的に表示する</string>
+    <string name="web_page_debug">ウェブページのデバッグを有効にする</string>
+    <string name="web_page_debug_info">開発者オプションにてUSBデバッグを有効にした状態でPCに接続し、PCのChromeで\"chrome://inspect\"を開いてください。</string>
+    <string name="disable_custom_tabs">カスタムタブを無効にする</string>
+    <string name="disable_custom_tabs_description">他のアプリからカスタムタブを開いた時、リダイレクトページをスキップします</string>
+    <string name="title_disable_safe_browsing">セーフブラウジングを無効にします</string>
+    <string name="title_disable_safe_browsing_description">セーフブラウジングにより、リンク先のマルウェアやフィッシング攻撃から保護できます。</string>
+    <string name="title_ignore_ssl_warnings">SSL証明書の警告を無視します</string>
+    <string name="title_ignore_ssl_warnings_description">SSL証明書の警告を無視すると、ウェブサイトへの接続が安全でなくなる可能性があるので注意してください。</string>
+    <string name="message_ignore_ssl_warnings">SSL証明書は、ブラウザとウェブサーバ間の通信を暗号化するために使用される電子証明書です。警告を無視するとパスワードなどを盗まれる可能性があるほか、詐欺サイトやなりすましなどの被害にあう可能性があります。</string>
+    <string name="title_ignore_ssl_warnings_confirmation">SSL証明書の警告を無視することによるリスクを理解しました。</string>
+    
+    <!-- 設定｜スクリプト -->
+    <string name="settings_script">スクリプト</string>
+    <string name="add_script">スクリプトの追加</string>
+    <string name="import_script_from_url">URLからスクリプトをインポートする</string>
+    <string name="import_script_from_file">ファイルからスクリプトをインポートする</string>
+    <string name="script_invalid">スクリプトが無効です</string>
+    <string name="script_code">コード (JavaScript)</string>
+    <string name="action_save">保存</string>
+    
+    <!-- 設定｜Via について -->
+    <string name="settings_about">Via について</string>
+    <string name="join_telegram_group">Telegramグループに参加する</string>
+    <string name="email_me">メールを送る</string>
+    <string name="debugging_info">デバッグ情報</string>
+    <string name="join_qq_group">QQグループに参加する</string>
+    <string name="help_us_translate">翻訳に協力する・不具合報告 (GitHub)</string>
+    <string name="terms_of_use">利用規約（英語）</string>
+    <string name="privacy_policy">プライバシーポリシー（英語）</string>
+    <string name="open_source_licenses">オープンソースライセンス</string>
+
+    <!-- ブックマーク -->
+    <string name="action_add_bookmark">ブックマークに追加</string>
+    <string name="bookmark_added">ブックマーク追加済み</string>
+    <string name="root_folder">ルートフォルダー</string>
+    <string name="sort_order">並び替え</string>
+    <string name="show_details">詳細を表示</string>
+    <string name="hide_details">詳細を非表示</string>
+    <string name="new_folder">新しいフォルダ</string>
+    <string name="sort_by_oldest_first">登録が古い順</string>
+    <string name="sort_by_newest_first">登録が新しい順</string>
+    <string name="sort_by_alphabetical_order">アルファベット順</string>
+    <string name="move">移動</string>
+    <string name="open">開く</string>
+    <string name="sort">並び替え</string>
+    <string name="done">完了</string>
+    <string name="more">その他</string>
+    <string name="action_manage_favorites">スピードダイヤル マネージャー</string>
+    <string name="delete_item_message">%1$s を削除してもよろしいですか？</string>
+    <string name="item_has_been_deleted">\"%1$s\" は削除されました</string>
+    <string name="undo">元に戻す</string>
+    <string name="added_favorite_hint">スピードダイヤルに追加しました。</string>
+    <string name="title_edit_favorite">スピードダイヤルを編集</string>
+    <string name="add_shortcut">ショートカットを追加</string>
+    <string name="delete_hint">削除(%1$d)</string>
+
+    <!-- 履歴 -->
+    <string name="today">今日</string>
+    <string name="yesterday">昨日</string>
+    <!--  日付の書き方は右のサイトを参照してください: https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html  -->
+    <string name="same_year_date_format">MM月 dd日 EEE曜日</string>
+    <string name="default_date_format">yyyy年 MM月 dd日 EEE曜日</string>
+    <string name="delete_history_from">いつからの履歴を削除しますか？</string>
+    <string name="last_hour">過去一時間</string>
+    <string name="today_and_yesterday">今日及び昨日</string>
+    <string name="last_seven_days">過去7日間</string>
+    <string name="all_time">すべての履歴</string>
+
+    <!-- 保存済みページ -->
+    <string name="export">エクスポート</string>
+    
+    <!-- ダウンロード --> 
+    <string name="action_re_download">再度ダウンロード</string>
+    <string name="action_copy_download_link">アドレスをコピー</string>
+    <string name="download_failed">ダウンロードに失敗しました</string>
+    <string name="view_downloads">開く</string>
+    <string name="message_delete_downloading_task">ファイルも含めて削除されます。復元は出来ないので注意してください。</string>
+    <string name="message_delete_downloaded_task">このアイテムを削除しますか？</string>
+    <string name="select_all">すべて選択</string>
+    <string name="message_delete_downloaded_file">ダウンロードしたファイルも削除する</string>
+    <string name="file_name">ファイル名</string>
+    <string name="action_download_file">ダウンロード</string>
+    <string name="rename">リネーム</string>
+    <string name="message_re_download">ダウンロード済みの %1$s を削除して再ダウンロードしますか？</string>
+    <string name="app_downloading_files">Viaがファイルをダウンロード中です</string>
+    <string name="app_downloading_files_subtitle">タップしてダウンロードを表示</string>
+    <string name="download_status_waiting_for_network">ネットワークの待機中です</string>
+    <string name="download_status_paused">一時停止中</string>
+    <string name="download_failed_with_message">%1$s によりダウンロードが失敗しました</string>
+    <string name="download_filter_all">全て</string>
+    <string name="download_filter_others">その他</string>
+    <string name="download_filter_documents">ドキュメント</string>
+    <string name="download_filter_images">画像</string>
+    <string name="download_filter_video">動画</string>
+    <string name="download_filter_apk">APK</string>
+    <string name="download_filter_audio">音声</string>
+    <string name="download_filter_archives">圧縮ファイル</string>
+    <string name="download_action_pause">一時停止</string>
+    <string name="file_download_completed">%1$s のダウンロードが完了しました</string>
+    <string name="file_download_failed">%1$s のダウンロードが失敗しました</string>
+
+    <!-- ポップアップ -->     
+    <string name="allow_website_to_open_app_message">ウェブサイトを %1$s で開きますか？</string>
+    <string name="no_resource">このページにはメディアがありません。</string>
+    <string name="resource_sniffer_hint">\nPS: 見つからない場合は、動画や音声を再生してみてください。</string>
+    <string name="no_network_log">このページにはネットワークログはありません。</string>
+    <string name="block_popup_message">ポップアップをブロックしました</string>
+    <string name="allow_popup">今回のみ許可</string>
+    <string name="dialog_download">ダウンロードしますか？</string>
+    <string name="title_warning">警告</string>
+    <string name="title_form_resubmission">フォームの再送</string>
+    <string name="message_form_resubmission">再送信しますか？</string>
+    <string name="action_dont_allow">いいえ</string>
+    <string name="bookmarks_data_to_long">ブックマークデータのサイズが大きすぎるため、アップロードできません。その他のデータはアップロードされます。続けますか？</string>
+    <string name="restore_tabs_hint_settings">シークレットモードになったため、タブは復元されません。</string>
+    <string name="incognito_on">シークレットモードを使用中です</string>
+    <string name="incognito_off">シークレットモードを解除しました</string>
+    <string name="title_close_all_tabs">すべてのタブを閉じる</string>
+    <string name="message_close_all_tabs_before_disabling_incognito_mode">シークレットモードを解除する際に、すべてのタブを閉じますか？</string>
+    <string name="action_close">閉じる</string>
+    <string name="action_keep">保持する</string>
+    
+    <!-- メニュー -->
+    <string name="action_incognito">シークレットモード</string>
+    <string name="exit_message_if_incognito_mode_is_on">開いているタブは全て閉じられます。復元できませんがよろしいですか？</string>
+    <string name="exit">終了</string>
+    <string name="dont_remind_me_again">再度表示しない</string>
+    <string name="action_find">ページ内検索</string>
+    <string name="action_translate">翻訳</string>
+    <string name="network_log">ネットワークログ</string>
+    <string name="resource_sniffer">メディア検知</string>
+    <string name="action_pcview">デスクトップモード</string>
+    <string name="action_source">ソース表示</string>
+    <string name="action_share">共有</string>
+    <string name="open_app_failed">リンクを開くためのアプリが見つかりません</string>
+    <string name="action_history">履歴</string>
+    <string name="action_night">ナイトモード</string>
+    <string name="image_auto">Wi-Fi接続時のみ</string>
+    <string name="image_off">画像を非表示</string>
+    <string name="image_on">画像を表示</string>
+    <string name="action_tools">ツール</string>
+    <string name="action_fullscreen">全画面表示</string>
+    <string name="action_add_to_homepage">ショートカットを追加</string>
+    <string name="read_aloud">テキストの読み上げ</string>
+    <string name="print_or_pdf">印刷/PDF</string>
+    
+    <!-- ツール｜ネットワークログ -->
+    <string name="log_page_hint">アドレスもしくはドメインをコピーし %1$s に貼り付けて広告ブロックリストを作成できます。</string>
+    <string name="action_block_domain">ドメインをブロック</string>
+    <string name="action_unblock_domain">ドメインのブロックを解除</string>
+    <string name="action_block_url">リンクをブロック</string>
+    <string name="action_unblock_url">リンクのブロックを解除</string>
+    <string name="block_hint">ブロック済み: %1$s\n再読み込みして有効化します。</string>
+    <string name="unblock_hint">ブロック解除済み: %1$s\n再読み込みして有効化します。</string>
+
+    <!-- 設定｜タブ設定 -->
+    <string name="tabs">タブ</string>
+    <string name="recently_closed_tabs">最近閉じたタブ</string>
+    <string name="tab_settings">タブ設定</string>
+    <string name="show_toast_to_undo_closing_tab">タブを閉じたときに取り消すポップアップを表示する</string>
+    <string name="show_toast_to_undo_closing_tab_description">シークレットモード時には表示されません</string>
+    <string name="action_close_all_tabs">全てのタブを閉じる</string>
+    <string name="action_close_other_tabs">他のタブを閉じる</string>
+    <string name="action_close_tabs_to_the_bottom">下のタブを閉じる</string>
+    <string name="action_close_tabs_to_the_top">上のタブを閉じる</string>
+    <string name="duplicate_tab">タブを複製する</string>
+    <string name="operation_lasttab">前のタブ</string>
+    <string name="operation_nexttab">次のタブ</string>
+    <string name="closed_tab">%1$s を閉じました</string>
+
+    <string name="is_on">%s を有効化しました</string>
+    <string name="is_off">%s を無効化しました</string>
+    <string name="is_set">%s をセットしました</string>
+    <string name="is_required">%s が必要です</string>
+    <string name="search_hint">検索</string>
+    <string name="action_delete">削除</string>
+    <string name="action_delete_all">全て削除</string>
+    <string name="title_custom_homepage">ページを設定</string>
+    <string name="hint_folder">フォルダー</string>
+    <string name="title_edit_bookmark">編集</string>
+    <string name="action_edit">編集</string>
+    <string name="download_pending">ダウンロード中…</string>
+    <string name="cannot_download">\"http\"または\"https\"を使用したサイトからのみファイルをダウンロードできます。</string>
+    <string name="title_sign_in">サインイン</string>
+    <string name="untitled">空白のページ</string>
+    <string name="title_file_chooser">ファイルを開く</string>
+    <string name="message_exit">もう一度押すとアプリを終了します</string>
+    <string name="dialog_message">メッセージ</string>
+    <string name="wait_a_moment">しばらくお待ちください&#8230;</string>
+    <string name="toast_operation_failed">失敗しました</string>
+    <string name="toast_copy_url_successful">アドレスをコピーしました</string>
+    <string name="toast_copy_text_successful">テキストをコピーしました</string>
+    <string name="operation_none">アクションなし</string>
+    <string name="operation_reload">再読み込み</string>
+    <string name="add_to_home_screen">ホーム画面に追加</string>
+    <string name="operation_top">トップへ戻る</string>
+    <string name="operation_bottom">ページの一番下に移動</string>
+    <string name="operation_input">URL を入力</string>
+    <string name="operation_openbookmark">ブックマーク</string>
+    <string name="operation_openhistory">履歴</string>
+    <string name="operation_closetab">タブを閉じる</string>
+    <string name="operation_goback">前に戻る</string>
+    <string name="operation_goforward">次に進む</string>
+    <string name="desc_suggestion">提案</string>
+    <string name="desc_home">ホーム</string>
+    <string name="desc_menu">メニュー</string>
+    <string name="title_edit_folder">フォルダーを編集</string>
+    <string name="msg_delete_folder">削除しますか？</string>
+    <string name="msg_intent">外部アプリの起動をしますか？</string>
+    <string name="action_mark">広告をマーク</string>
+    <string name="dialog_confirm_mark">要素をブロックしますか？</string>
+    <string name="dialog_sure">よろしいですか？</string>
+    <string name="crash_restart">再起動</string>
+    <string name="crash_close">終了</string>
+    <string name="open_with">開く</string>
+    <string name="game_mode">ゲームモード</string>
+    <string name="game_mode_is_on">ゲームモードが有効になっています。終了するには「戻る」を2回タップしてください</string>
+    <string name="game_mode_exit">もう一度タップするとゲームモードを終了します</string>
+    <string name="report_abuse">問題を報告</string>
+    <string name="reason_distracting_content">気を散らすコンテンツが多すぎる</string>
+    <string name="reason_dangerous_website">危険なウェブサイトである</string>
+    <string name="reason_display_incorrectly">ページが正しく表示されない</string>
+    <string name="remarks_optional">備考（オプション）</string>
+    <string name="report_submitted">問題の報告が完了しました</string>
+    <string name="download_completed">ダウンロード完了</string>
+    <string name="toast_fullscreen_off">全画面解除</string>
+    <string name="action_view_image">画像を開く</string>
+    <string name="action_save_web_page">ページを保存</string>
+    <string name="save_as_pdf">PDFで保存する</string>
+    <string name="action_saved_pages">保存済みページ</string>
+    <string name="saved_page_successfully">保存しました</string>
+    <string name="deleted_failed">削除できませんでした。ダウンロードファイルのパス: </string>
+    <string name="empty_hint">表示できる項目はありません</string>
+    <string name="conn_timeout">接続がタイムアウトしました</string>
+    <string name="sync_prompt">ブックマークと設定を上書きしますか？</string>
+    <string name="upload_prompt">ブックマークと設定をアップロードしますか？</string>
+    <string name="sougou_url">sougou</string>
+    <string name="restore_tabs_hint">前回閉じたタブを開きますか？</string>
+    <string name="check_permission">権限へのアクセス許可が必要です。</string>
+    <string name="official_website">公式サイト</string>
+    <string name="set_it_as_homepage">ホームページに設定しますか？</string>
+    <string name="stay">とどまる</string>
+    <string name="leave">離れる</string>
+    <string name="install">インストール</string>
+    <string name="crash_hint">申し訳ございません、Viaがクラッシュしました。</string>
+    <string name="contact_us">開発者に連絡</string>
+    <string name="confirm_to_leave">終了を確認</string>
+    <string name="glean">落穂拾い</string>
+    <string name="missing_webview">WebViewが正常にインストールしていません。インストールしますか？</string>
+    <string name="action_pic_mode">画像のみ表示</string>
+    <string name="share_image">画像を共有</string>
+    <string name="find_pre">前へ</string>
+    <string name="find_next">次へ</string>
+    <string name="action_modify">編集</string>
+    <string name="no_bookmark">ブックマークはありません</string>
+    <string name="settings_general">一般</string>
+    <string name="adblock_info">%1$d件の広告がブロックされ、%2$s節約しました</string>
+    <string name="cannot_work">「http(s)」で始まるURLのみで動作します。</string>
+    <string name="search_by_image">画像で検索</string>
+    <string name="res_log_hint">アイテムを表示するにはタップ、ダウンロードするには長押ししてください。</string>
+    <string name="action_downloads">ダウンロード</string>
+    <string name="empty_password_info">パスワードを入力してください。</string>
+    <string name="offline_page_hint">以下は保存済みページです。インターネット接続が無くても閲覧可能です。</string>
+    <string name="history_page_hint_when_incognito">シークレットモード中です。シークレットモードでは履歴は保存されません。</string>
+    <string name="file_size">ファイルサイズ: %1$s</string>
+    <string name="action_preview">プレビュー</string>
+    <string name="action_page_info">ページ情報</string>
+    <string name="page_info_title">タイトル:</string>
+    <string name="page_info_url">現在のページのURL:</string>
+    <string name="page_info_link">リンク先のURL:</string>
+    <string name="title_app_chooser">アプリ選択</string>
+    <string name="force_enable_zoom">強制的にズームを有効にする</string>
+    <string name="action_play_with">&#8230;で再生する</string>
+    <string name="open_file_failed">このファイルを開くためのアプリがありません</string>
+    <string name="file_does_not_exist">ファイルがありません</string>
+    <string name="dialog_message_from">%1$sからのメッセージ</string>
+    <string name="url_is_invalid">URLが無効です</string>
+</resources>

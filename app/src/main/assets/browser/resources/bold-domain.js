@@ -1,0 +1,1 @@
+function getDomain(a){var b=a.split("/"),c="";return a.indexOf("://")>-0&&b.length>2&&""!=b[2]&&(c=b[2]),c}function boldDomain(){var b,c,d,a=document.getElementsByClassName("url");for(d=a.length-1;d>=0;d--)b=a[d].innerHTML,c=getDomain(b),""!=c&&(a[d].innerHTML=b.replace(c,"<b>"+c+"</b>"))}boldDomain();

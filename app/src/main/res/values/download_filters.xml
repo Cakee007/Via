@@ -1,0 +1,11 @@
+<resources>
+    <!-- b1.v3 / x7.p.t..A: the filter radios are identified by resource ids, not by their category. -->
+    <item name="download_filter_all" type="id" />
+    <item name="download_filter_documents" type="id" />
+    <item name="download_filter_archives" type="id" />
+    <item name="download_filter_apk" type="id" />
+    <item name="download_filter_images" type="id" />
+    <item name="download_filter_video" type="id" />
+    <item name="download_filter_audio" type="id" />
+    <item name="download_filter_others" type="id" />
+</resources>

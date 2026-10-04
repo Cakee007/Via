@@ -1,0 +1,36 @@
+<resources>
+    <dimen name="menu_icon_size">24dp</dimen>
+    <dimen name="menu_text_size">11sp</dimen>
+    <dimen name="menu_control_padding">13dp</dimen>
+    <dimen name="menu_footer_height">48dp</dimen>
+    <dimen name="menu_corner_radius">18dp</dimen>
+    <!-- f8.l0 sheet: row height (dimen ba), new-tab height (b_), container
+         padding (af), height reserve (b), favicon (i). -->
+    <dimen name="tab_row_height">48dp</dimen>
+    <dimen name="tab_new_tab_height">48dp</dimen>
+    <dimen name="tab_sheet_padding">8dp</dimen>
+    <dimen name="tab_sheet_max_reserve">48dp</dimen>
+    <dimen name="favicon_size">22dp</dimen>
+    <!-- c8.f8 scrim (color a8) and f8.l0 drag row tint (color l). -->
+    <color name="popup_scrim">#40808080</color>
+    <color name="drag_row_background">#30808080</color>
+    <color name="control_ripple_color">#30808080</color>
+    <integer name="menu_animation_duration">160</integer>
+    <style name="BrowserMenuWindow" parent="android:style/Theme.Material.Dialog.NoActionBar">
+        <item name="android:windowBackground">?attr/viaDialogBackground</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
+    <style name="BrowserMenuBottom">
+        <item name="android:windowEnterAnimation">@anim/menu_bottom_enter</item>
+        <item name="android:windowExitAnimation">@anim/menu_bottom_exit</item>
+    </style>
+    <style name="BrowserMenuTop">
+        <item name="android:windowEnterAnimation">@anim/menu_top_enter</item>
+        <item name="android:windowExitAnimation">@anim/menu_top_exit</item>
+    </style>
+</resources>

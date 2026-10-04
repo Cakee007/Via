@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- f9.b / original layout y. -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/rounded_rect_ripple">
+    <ImageView android:id="@+id/home_custom_control_icon" android:layout_width="24dp" android:layout_height="24dp"
+        android:layout_marginTop="12dp" android:layout_centerHorizontal="true" android:tint="?attr/viaSubtleColor" />
+    <TextView android:id="@+id/home_custom_control_title" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_below="@id/home_custom_control_icon" android:textSize="11sp" android:textColor="?attr/viaSelectionTint"
+        android:ellipsize="end" android:gravity="center" android:paddingLeft="4dp" android:paddingRight="4dp" android:paddingTop="2dp"
+        android:maxLines="2" android:lineSpacingExtra="0dp" style="@style/Via.Dialog.Text" />
+    <TextView android:id="@+id/home_custom_control_value" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_below="@id/home_custom_control_title" android:textSize="11sp" android:textColor="?attr/viaSelectionTint"
+        android:ellipsize="end" android:gravity="center" android:paddingLeft="4dp" android:paddingRight="4dp" android:paddingTop="2dp"
+        android:maxLines="1" style="@style/Via.Dialog.Text" />
+</RelativeLayout>

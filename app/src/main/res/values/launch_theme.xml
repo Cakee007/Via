@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Original style/t: the runtime browser theme replaces this in Shell.onCreate. -->
+    <style name="Theme.Via.Launch" parent="@android:style/Theme.DeviceDefault.DayNight">
+        <item name="android:windowBackground">@color/via_launch_background</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:statusBarColor">@color/via_launch_background</item>
+        <item name="android:navigationBarColor">@color/via_launch_background</item>
+        <item name="android:windowLightStatusBar">@bool/via_launch_light_system_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/via_launch_light_system_bars</item>
+        <item name="android:navigationBarDividerColor">@android:color/transparent</item>
+    </style>
+    <color name="via_launch_background">@android:color/white</color>
+    <bool name="via_launch_light_system_bars">true</bool>
+</resources>

@@ -1,0 +1,1 @@
+(function(){if(!window["via-fake-notification"])try{window["via-fake-notification"]=!0,window.Notification=function(a,b){},window.Notification.permission="denied",window.Notification.requestPermission=function(a){"function"===typeof a&&a("denied");return Promise.resolve("denied")}}catch(a){}})();

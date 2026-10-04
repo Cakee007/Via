@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="search_input_text_size">16sp</dimen>
+    <dimen name="search_badge_text_size">11sp</dimen>
+    <dimen name="search_suggestion_title_size">14sp</dimen>
+    <dimen name="search_suggestion_url_size">11sp</dimen>
+</resources>

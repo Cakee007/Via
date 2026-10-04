@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:paddingLeft="16dp" android:paddingRight="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+    <CheckBox android:ellipsize="middle" android:id="@+id/dialog_choice" android:paddingTop="12dp" android:paddingBottom="12dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:button="?attr/viaChoiceIndicator" android:singleLine="true" android:drawablePadding="24dp" android:textDirection="locale" android:paddingStart="12dp" android:paddingEnd="0dp" style="@style/Via.Dialog.Text" />
+</FrameLayout>

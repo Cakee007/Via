@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original layout b, IDs/theme names translated. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+    <TextView android:id="@+id/marker_selection" android:textSize="@dimen/settings_row_summary_size"
+        android:textColor="?attr/viaSecondaryTextColor" android:textColorHint="?attr/viaSecondaryTextColor"
+        android:ellipsize="end" android:gravity="center" android:paddingLeft="16dp" android:paddingTop="4dp"
+        android:paddingRight="16dp" android:paddingBottom="4dp" android:layout_width="match_parent"
+        android:layout_height="match_parent" android:hint="@string/mark_as_ad_guide" android:maxLines="1" android:lines="1" />
+    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="48dp">
+        <ImageView android:id="@+id/marker_move" android:gravity="center" android:background="@drawable/flat_ripple"
+            android:padding="12dp" android:layout_width="0dp" android:layout_height="match_parent" android:src="@drawable/ad_marker_move"
+            android:tint="?attr/viaSubtleColor" android:layout_weight="1" android:contentDescription="@string/mark_as_ad_move_view" />
+        <TextView android:id="@+id/marker_expand" android:textColor="?attr/viaPrimaryTextColor" android:gravity="center"
+            android:background="@drawable/flat_ripple" android:layout_width="0dp" android:layout_height="48dp"
+            android:text="@string/mark_as_ad_expand" android:layout_weight="1" />
+        <TextView android:id="@+id/marker_shrink" android:textColor="?attr/viaPrimaryTextColor" android:gravity="center"
+            android:background="@drawable/flat_ripple" android:layout_width="0dp" android:layout_height="match_parent"
+            android:text="@string/mark_as_ad_shrink" android:layout_weight="1" />
+        <TextView android:id="@+id/marker_confirm" android:textColor="?attr/viaPrimaryTextColor" android:gravity="center"
+            android:background="@drawable/flat_ripple" android:layout_width="0dp" android:layout_height="match_parent"
+            android:text="@string/action_mark" android:layout_weight="1" />
+        <TextView android:id="@+id/marker_cancel" android:textColor="?attr/viaPrimaryTextColor" android:gravity="center"
+            android:background="@drawable/flat_ripple" android:layout_width="0dp" android:layout_height="match_parent"
+            android:text="@android:string/cancel" android:layout_weight="1" />
+    </LinearLayout>
+</LinearLayout>

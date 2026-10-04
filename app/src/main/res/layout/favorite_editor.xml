@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original g.xml (qa.h0), kept as a centered custom-layout dialog. -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" android:paddingTop="12dp"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <TextView android:id="@+id/favorite_dialog_heading" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/title_edit_favorite" android:textDirection="locale" android:textSize="16sp" android:textStyle="bold"
+        android:textColor="?attr/viaPrimaryTextColor" android:ellipsize="end" android:maxLines="1" android:lines="1"
+        android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_marginLeft="16dp" android:layout_marginRight="16dp"
+        android:layout_marginBottom="6dp" />
+    <ImageView android:id="@+id/favorite_dialog_icon" android:layout_width="36dp" android:layout_height="36dp"
+        android:layout_marginStart="16dp" android:layout_marginTop="8dp" android:layout_below="@id/favorite_dialog_heading"
+        android:layout_alignTop="@id/favorite_title_scroll" android:contentDescription="@string/desc_favorite_icon" />
+    <ImageView android:id="@+id/favorite_dialog_clear" android:padding="5dp" android:visibility="gone"
+        android:layout_width="28dp" android:layout_height="28dp" android:layout_marginTop="-8dp" android:layout_marginEnd="-8dp"
+        android:src="@drawable/favorite_delete_badge" android:tint="#55ffffff" android:alpha="0.8"
+        android:layout_alignTop="@id/favorite_dialog_icon" android:layout_alignEnd="@id/favorite_dialog_icon" android:contentDescription="@string/action_delete" />
+    <HorizontalScrollView android:id="@+id/favorite_title_scroll" style="@style/Password.Dialog.InputScroll"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:fillViewport="true"
+        android:layout_toEndOf="@id/favorite_dialog_icon" android:layout_below="@id/favorite_dialog_heading">
+        <EditText android:id="@+id/favorite_dialog_title" style="@style/Password.Dialog.Input"
+            android:layout_width="wrap_content" android:layout_height="wrap_content" android:hint="@string/hint_title"
+            android:inputType="textNoSuggestions" android:imeOptions="actionNext" android:textDirection="locale" />
+    </HorizontalScrollView>
+    <HorizontalScrollView android:id="@+id/favorite_url_scroll" style="@style/Password.Dialog.InputScroll"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:fillViewport="true"
+        android:layout_toEndOf="@id/favorite_dialog_icon" android:layout_below="@id/favorite_title_scroll">
+        <EditText android:id="@+id/favorite_dialog_url" style="@style/Password.Dialog.Input"
+            android:layout_width="wrap_content" android:layout_height="wrap_content" android:hint="@string/hint_url"
+            android:inputType="textUri|textNoSuggestions" android:imeOptions="actionDone" />
+    </HorizontalScrollView>
+    <TextView android:id="@+id/favorite_dialog_save" style="@style/Via.Dialog.Button" android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:text="@android:string/ok" android:layout_below="@id/favorite_url_scroll" android:layout_alignParentEnd="true" />
+    <TextView android:id="@+id/favorite_dialog_cancel" style="@style/Via.Dialog.Button" android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:text="@android:string/cancel" android:layout_toStartOf="@id/favorite_dialog_save" android:layout_below="@id/favorite_url_scroll" />
+</RelativeLayout>

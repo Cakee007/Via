@@ -1,0 +1,131 @@
+package dev.ujhhgtg.via
+
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.os.Bundle
+import android.os.SystemClock
+import android.view.KeyEvent
+import android.widget.FrameLayout
+import androidx.fragment.app.Fragment
+import dev.ujhhgtg.via.common.SoftInputAssistObserver
+import dev.ujhhgtg.via.common.WindowInsetsHelper
+import dev.ujhhgtg.via.data.BrowserPreferences
+import dev.ujhhgtg.via.platform.AppUpdates
+import dev.ujhhgtg.via.settings.SettingsFragment
+import dev.ujhhgtg.via.ui.ViaActivity
+import dev.ujhhgtg.via.ui.WelcomeFragment
+import java.util.WeakHashMap
+
+/** Original mark.via.Shell and g6.i: the activity owns the fragment container. */
+open class Shell : ViaActivity() {
+    private val lastNavigation = WeakHashMap<Fragment, Long>()
+    private lateinit var softInputAssist: SoftInputAssistObserver
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        WindowInsetsHelper.enableEdgeToEdge(this)
+        super.onCreate(savedInstanceState)
+        window.attributes = window.attributes.apply {
+            layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+        setContentView(FrameLayout(this).apply {
+            id = R.id.fragment_container
+            layoutParams = FrameLayout.LayoutParams(-1, -1)
+        })
+        if (savedInstanceState == null) {
+            if (BrowserPreferences(this).agreementLevel < 1) {
+                supportFragmentManager.beginTransaction().setReorderingAllowed(true)
+                    .replace(R.id.fragment_container, WelcomeFragment(), WelcomeFragment::class.java.name).commit()
+            } else showBrowser()
+        }
+        softInputAssist = SoftInputAssistObserver(this).apply {
+            onKeyboardHiddenChanged = { hidden -> browserFragment()?.onKeyboardHiddenChanged(hidden) }
+        }
+        lifecycle.addObserver(softInputAssist)
+        window.decorView.post { WindowInsetsHelper.readRoundedCorners(androidx.core.view.ViewCompat.getRootWindowInsets(window.decorView)) }
+    }
+
+    fun showBrowser() {
+        // Shell.g0 / CustomTab.V: without a loaded WebView provider the browser is replaced by ra.h.
+        if (dev.ujhhgtg.via.ui.WebViewMissingFragment.webViewMissing()) {
+            supportFragmentManager.beginTransaction().setReorderingAllowed(true)
+                .replace(R.id.fragment_container, dev.ujhhgtg.via.ui.WebViewMissingFragment.newInstance(
+                    dev.ujhhgtg.via.ui.WebViewMissingFragment.CODE_MISSING_WEBVIEW)).commit()
+            return
+        }
+        supportFragmentManager.beginTransaction().setReorderingAllowed(true)
+            .replace(R.id.fragment_container, BrowserFragment(), BrowserFragment::class.java.name).commit()
+    }
+
+    fun navigate(fragment: Fragment) {
+        val manager = supportFragmentManager
+        val current = manager.fragments.lastOrNull { it.isVisible } ?: return
+        val now = SystemClock.elapsedRealtime()
+        val previous = lastNavigation[current]
+        if (previous != null && now - previous <= 300) return
+        lastNavigation[current] = now
+        manager.beginTransaction().setReorderingAllowed(true)
+            .setCustomAnimations(R.anim.fragment_enter, R.anim.fragment_exit, R.anim.fragment_pop_enter, R.anim.fragment_pop_exit)
+            .add(R.id.fragment_container, fragment, fragment.javaClass.name)
+            .hide(current).addToBackStack(null).commit()
+    }
+
+    fun openSettings(action: String? = null) = navigate(SettingsFragment.newInstance(action))
+
+    fun openPage(action: String) {
+        when (action.substringBefore(':')) {
+            "homepage_customization" -> navigate(dev.ujhhgtg.via.home.HomeCustomizationFragment())
+            "password_manager" -> navigate(dev.ujhhgtg.via.passwords.PasswordManagerFragment())
+            "site_conf" -> navigate(dev.ujhhgtg.via.sites.GlobalSiteSettingsFragment())
+            "user_syns" -> navigate(dev.ujhhgtg.via.sync.SyncSettingsFragment())
+            else -> openSettings(action)
+        }
+    }
+
+    fun openRecordFromRecords(url: String, background: Boolean) = browserFragment()?.openRecordFromRecords(url, background)
+    fun openRecordFromRecords(url: String, mode: Int) = browserFragment()?.openRecordFromRecords(url, mode)
+    fun openClosedTabFromRecords(id: String, mode: Int) = browserFragment()?.openClosedTabFromRecords(id, mode)
+    fun copyRecordFromRecords(url: String) = browserFragment()?.copyRecordFromRecords(url)
+
+    /** bb.v -> pc: recently closed tabs remains inside the records flow. */
+    fun openTabsFromRecords() = browserFragment()?.openClosedTabsFromRecords()
+    fun browserReloadPreferences() = browserFragment()?.reloadBrowserPreferences()
+
+    /** Shell.onConfigurationChanged dispatches o8.b: browser rebinding, settings view rebuilding. */
+    override fun onNightThemeChanged(night: Boolean) {
+        // Publish the live browser background before a settings page takes its new snapshot.
+        browserFragment()?.onNightThemeChanged(night)
+        super.onNightThemeChanged(night)
+        val manager = supportFragmentManager
+        if (manager.isStateSaved) return
+        manager.fragments.filter { it.view != null && !it.isDetached }.forEach { fragment ->
+            when (fragment) {
+                is dev.ujhhgtg.via.home.HomeCustomizationFragment -> fragment.refreshForTheme()
+                is dev.ujhhgtg.via.tools.PdfViewerFragment -> {
+                    manager.beginTransaction().detach(fragment).commit()
+                    manager.beginTransaction().attach(fragment).commit()
+                }
+            }
+        }
+    }
+
+    fun checkForUpdates() = AppUpdates.check(this)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Original Shell dispatches to its Intent receiver without replacing the cold-start Intent.
+        browserFragment()?.onNewIntent(intent)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        browserFragment()?.onWindowFocusChanged(hasFocus)
+    }
+
+    @SuppressLint("RestrictedApi")
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val browser = browserFragment()
+        return event.action == KeyEvent.ACTION_DOWN && browser?.isVisible == true && browser.onKeyDown(event.keyCode, event) || super.dispatchKeyEvent(event)
+    }
+
+    private fun browserFragment() = supportFragmentManager.findFragmentByTag(BrowserFragment::class.java.name) as? BrowserFragment
+}

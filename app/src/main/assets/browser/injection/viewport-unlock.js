@@ -1,0 +1,1 @@
+(function(){var b=document.querySelector("meta[name=viewport]");if(b){for(var d=b.getAttribute("content").split(","),e=[],c=0;c<d.length;c++){var a=d[c].trim();(a.startsWith("width")||a.startsWith("initial-scale")||a.startsWith("minimum-scale"))&&e.push(a)}b.setAttribute("content",e.join(",").trim())}})();

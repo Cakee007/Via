@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- d9.q / original layout q. The preview leaves 48dp for the tab strip. -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <FrameLayout android:id="@+id/home_custom_preview" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginBottom="48dp" />
+    <LinearLayout android:id="@+id/home_custom_prompt" android:orientation="horizontal" android:gravity="center_vertical" android:background="#ff333333"
+        android:paddingLeft="16dp" android:paddingRight="16dp" android:layout_width="match_parent" android:layout_height="48dp">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="#b2ffffff" android:text="@string/set_it_as_homepage" />
+        <TextView android:id="@+id/home_custom_set_home" android:layout_width="wrap_content" android:layout_height="match_parent" android:minWidth="56dp"
+            android:gravity="center" android:background="@drawable/rounded_rect_ripple" android:textColor="?attr/viaAccentColor" android:text="@android:string/ok" />
+    </LinearLayout>
+    <FrameLayout android:id="@+id/home_custom_panel" android:background="#b2ffffff" android:visibility="gone" android:layout_width="match_parent"
+        android:layout_height="136dp" android:layout_above="@id/home_custom_tabs" android:translationY="160dp" />
+    <RadioGroup android:id="@+id/home_custom_tabs" android:orientation="horizontal" android:background="@android:color/white"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true">
+        <RadioButton android:id="@+id/home_custom_logo" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:minHeight="48dp" android:text="@string/skin_logo" style="@style/HomeCustomizationTab" />
+        <RadioButton android:id="@+id/home_custom_search" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:minHeight="48dp" android:text="@string/skin_search_bar" style="@style/HomeCustomizationTab" />
+        <RadioButton android:id="@+id/home_custom_background" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:minHeight="48dp" android:text="@string/skin_bg" style="@style/HomeCustomizationTab" />
+        <RadioButton android:id="@+id/home_custom_favorites" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:minHeight="48dp" android:text="@string/action_favorites" style="@style/HomeCustomizationTab" />
+        <RadioButton android:id="@+id/home_custom_advanced" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:minHeight="48dp" android:text="@string/settings_advanced" style="@style/HomeCustomizationTab" />
+    </RadioGroup>
+</RelativeLayout>

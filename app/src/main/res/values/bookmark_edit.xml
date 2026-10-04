@@ -1,0 +1,11 @@
+<resources>
+    <item type="id" name="bookmark_edit_pager" />
+    <color name="bookmark_folder_selected">#30808080</color>
+    <dimen name="bookmark_picker_back_width">54dp</dimen>
+    <!-- Original style z / a1, without introducing a different input widget. -->
+    <style name="Bookmark.Dialog.FolderChoice" parent="Password.Dialog.Search">
+        <item name="android:layout_marginLeft">16dp</item>
+        <item name="android:layout_marginRight">16dp</item>
+        <item name="android:layout_marginBottom">12dp</item>
+    </style>
+</resources>

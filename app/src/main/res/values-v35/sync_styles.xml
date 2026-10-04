@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Original values-v35/styles.xml f, inherited by a1 and z. -->
+    <style name="Sync.Dialog.InputBase" parent="">
+        <item name="android:useLocalePreferredLineHeightForMinimum">false</item>
+    </style>
+</resources>

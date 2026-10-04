@@ -1,0 +1,5 @@
+<resources>
+    <!-- x7.n.h / x7.n.g: original dimens v (42dp) and u (36dp). -->
+    <dimen name="floating_toolbar_button_size">42dp</dimen>
+    <dimen name="floating_toolbar_button_margin">36dp</dimen>
+</resources>

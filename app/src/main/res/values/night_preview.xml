@@ -1,0 +1,9 @@
+<resources>
+    <string name="night_filter_preview" translatable="false">Less is more.</string>
+    <string name="night_filter_preview_china" translatable="false">莫忧世事兼身事，须著人间比梦间。</string>
+    <dimen name="night_preview_text_size">14sp</dimen>
+    <style name="OriginalSeekbar">
+        <item name="android:maxHeight">3dp</item>
+        <item name="android:minHeight">3dp</item>
+    </style>
+</resources>

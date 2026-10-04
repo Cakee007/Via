@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Original x7.l.a / @bool/a: Android's predictive-back integration starts on API 35. -->
+    <bool name="enable_predictive_back">false</bool>
+</resources>

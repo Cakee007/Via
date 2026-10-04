@@ -1,0 +1,1 @@
+(function(){if(!document.__via_disable_dnd){document.__via_disable_dnd=!0;document.addEventListener("dragstart",function(t){let e=t.target;for(;e&&e!==document;){if(e.getAttribute&&"true"===e.getAttribute("draggable"))return;e=e.parentNode}t.preventDefault()},!0)}})();

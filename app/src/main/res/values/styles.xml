@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Base.Via.Light.Edge" parent="@style/Base.Via.Light.Content">
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:defaultFocusHighlightEnabled">false</item>
+    </style>
+    <style name="Theme.Via.Dark" parent="@style/Base.Via.Dark.Content">
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="viaActionIconTint">@drawable/via_action_tint_dark</item>
+        <item name="viaOverlayColor">@color/via_overlay_dark</item>
+        <item name="viaChoiceIndicator">@drawable/via_choice_dark</item>
+        <item name="viaAccentColor">@color/via_accent_dark</item>
+        <item name="viaDarkAccentColor">@color/via_accent_pressed_dark</item>
+        <item name="viaAccentTextColor">@color/via_accent_text_dark</item>
+        <item name="viaProgressSpinner">@drawable/via_spinner_dark</item>
+        <item name="viaControlTint">@drawable/via_control_tint_dark</item>
+        <item name="viaSelectionTint">@drawable/via_selection_tint_dark</item>
+        <item name="viaTabTint">@drawable/via_tab_tint_dark</item>
+    </style>
+    <style name="Theme.Via" parent="@style/Base.Via.Light.Edge">
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="viaActionIconTint">@drawable/via_action_tint_light</item>
+        <item name="viaOverlayColor">@color/via_overlay_light</item>
+        <item name="viaChoiceIndicator">@drawable/via_choice_light</item>
+        <item name="viaAccentColor">@color/via_accent_light</item>
+        <item name="viaDarkAccentColor">@color/via_accent_pressed_light</item>
+        <item name="viaAccentTextColor">@color/via_accent_text_light</item>
+        <item name="viaProgressSpinner">@drawable/via_spinner_light</item>
+        <item name="viaControlTint">@drawable/via_control_tint_light</item>
+        <item name="viaSelectionTint">@drawable/via_selection_tint_light</item>
+        <item name="viaTabTint">@drawable/via_tab_tint_light</item>
+    </style>
+    <style name="Widget.Via.EditText" parent="@android:style/Widget.EditText">
+        <item name="android:typeface">normal</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+    <style name="Base.Via.Light.Platform" parent="@android:style/Theme.Material.Light">
+        <item name="android:statusBarColor">@color/via_background_light</item>
+        <item name="android:navigationBarColor">@color/via_background_light</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:navigationBarDividerColor">@android:color/transparent</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:isLightTheme">true</item>
+    </style>
+    <style name="Base.Via.Light.Content" parent="@style/Base.Via.Light.Platform">
+        <item name="android:windowBackground">@color/via_background_light</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:editTextStyle">@style/Widget.Via.EditText</item>
+        <item name="viaBackgroundColor">@color/via_background_light</item>
+        <item name="viaSurfaceColor">@color/via_surface_light</item>
+        <item name="viaDialogBackground">@drawable/via_dialog_background_light</item>
+        <item name="viaDialogColor">@color/via_dialog_light</item>
+        <item name="viaSubtleColor">@color/via_subtle_light</item>
+        <item name="viaDisabledTextColor">@color/via_disabled_text_light</item>
+        <item name="viaPrimaryTextColor">@color/via_primary_text_light</item>
+        <item name="viaSecondaryTextColor">@color/via_secondary_text_light</item>
+        <item name="viaOverlayTextColor">@color/via_overlay_text_light</item>
+    </style>
+    <style name="Base.Via.Dark.Content" parent="@style/Base.Via.Dark.Platform">
+        <item name="android:windowBackground">@color/via_background_dark</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:editTextStyle">@style/Widget.Via.EditText</item>
+        <item name="viaBackgroundColor">@color/via_background_dark</item>
+        <item name="viaSurfaceColor">@color/via_surface_dark</item>
+        <item name="viaDialogBackground">@drawable/via_dialog_background_dark</item>
+        <item name="viaDialogColor">@color/via_dialog_dark</item>
+        <item name="viaSubtleColor">@color/via_subtle_dark</item>
+        <item name="viaDisabledTextColor">@color/via_disabled_text_dark</item>
+        <item name="viaPrimaryTextColor">@color/via_primary_text_dark</item>
+        <item name="viaSecondaryTextColor">@color/via_secondary_text_dark</item>
+        <item name="viaOverlayTextColor">@color/via_overlay_text_dark</item>
+    </style>
+    <style name="Base.Via.Dark.Platform" parent="@android:style/Theme.Material">
+        <item name="android:statusBarColor">@color/via_background_dark</item>
+        <item name="android:navigationBarColor">@color/via_background_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:navigationBarDividerColor">@android:color/transparent</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:isLightTheme">false</item>
+    </style>
+    <style name="Theme.Via.Translucent" parent="@android:style/Theme.Translucent.NoTitleBar" />
+</resources>

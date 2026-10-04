@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original ac.xml child order and colors, with upstream component/resource names. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:id="@+id/scanner_status" android:textColor="#ffffffff" android:layout_gravity="center|bottom" android:background="#00000000" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    <com.journeyapps.barcodescanner.BarcodeView android:id="@+id/scanner_barcode" android:layout_width="match_parent" android:layout_height="match_parent" />
+    <dev.ujhhgtg.via.tools.scanner.MyViewfinderView android:id="@+id/scanner_viewfinder" android:layout_width="match_parent" android:layout_height="match_parent" app:zxing_viewfinder_mask="#60000000" app:zxing_result_view="#b0000000" app:zxing_viewfinder_laser="#ffcc0000" app:zxing_possible_result_points="#00ffbd21" />
+</merge>

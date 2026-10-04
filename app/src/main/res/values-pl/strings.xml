@@ -1,0 +1,1022 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources tools:ignore="MissingTranslation" xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">Via Browser</string>
+    <string name="action_new_tab">Nowa karta</string>
+    <string name="action_open_in_new">Otwórz i przejdź</string>
+    <string name="action_save_img">Zapisz obraz</string>
+    <string name="action_share">Udostępnij link</string>
+    <string name="action_history">Historia</string>
+    <string name="action_bookmarks">Zakładki</string>
+    <string name="action_add_bookmark">Dodaj zakładkę</string>
+    <string name="action_night">Tryb nocny</string>
+    <string name="action_copy">Skopiuj adres linku</string>
+    <string name="action_block_domain">Zablokuj domenę</string>
+    <string name="action_unblock_domain">Odblokuj domenę</string>
+    <string name="action_unblock_url">Odblokuj link</string>
+    <string name="action_block_url">Zablokuj link</string>
+    <string name="action_copy_text">Skopiuj tekst</string>
+    <string name="action_copy_link_text">Skopiuj tekst linku</string>
+    <string name="action_tools">Narzędzia</string>
+    <string name="settings">Ustawienia</string>
+    <string name="location">Dostęp do lokalizacji</string>
+    <string name="donate">Wspomóż</string>
+    <string name="orientation">Orientacja ekranu</string>
+    <string name="follow_system">Jak w systemie</string>
+    <string name="orientation_auto">Automatyczna</string>
+    <string name="orientation_portrait">Pionowa</string>
+    <string name="orientation_landscape">Pozioma</string>
+    <string name="agent">Agent użytkownika</string>
+    <string name="home">Strona domowa</string>
+    <string name="fullscreen">Ukrywanie / pokazywanie pasków narzędzi</string>
+    <string name="download">Miejsce pobierania</string>
+    <string name="size">Rozmiar tekstu</string>
+    <string name="search">Wyszukiwarka</string>
+    <string name="search_hint">Szukaj</string>
+    <string name="action_delete">Usuń</string>
+    <string name="action_delete_all">Usuń wszystko</string>
+    <string name="action_blank">Pusta strona</string>
+    <string name="agent_iphone">Safari</string>
+    <string name="agent_symbian">Symbian</string>
+    <string name="agent_custom">Własny</string>
+    <string name="dialog_download">Pobrać ten plik?</string>
+    <string name="title_warning">Ostrzeżenie</string>
+    <string name="title_custom_homepage">Własna strona</string>
+    <string name="action_webpage">Własna strona</string>
+    <string name="hint_title">Tytuł</string>
+    <string name="hint_url">Adres</string>
+    <string name="hint_folder">Folder</string>
+    <string name="title_edit_bookmark">Edytuj zakładkę</string>
+    <string name="action_edit">Edytuj</string>
+    <string name="action_incognito">Tryb prywatny</string>
+    <string name="action_find">Szukaj</string>
+    <string name="download_pending">Rozpoczynanie pobierania\u2026</string>
+    <string name="cannot_download">Pobieranie plików możliwe jest tylko przez \"http\" i \"https\".</string>
+    <string name="bookmarks_imported">Zaimportowane zakładki: %1d.</string>
+    <string name="custom_url">Własny adres</string>
+    <string name="baidu_url">Baidu</string>
+    <string name="shenma_url">ShenMa</string>
+    <string name="bing_url">Bing</string>
+    <string name="haosou_url">360 Search</string>
+    <string name="duckduckgo_url">DuckDuckGo</string>
+    <string name="startpage_url">StartPage</string>
+    <string name="yahoo_url">Yahoo</string>
+    <string name="yandex_url">Yandex</string>
+    <string name="google_url">Google</string>
+    <string name="sougou_url">Sougou</string>
+    <string name="block_ads">Blokowanie reklam</string>
+    <string name="title_form_resubmission">Ponowne wysłanie danych</string>
+    <string name="message_form_resubmission">Wysłać ponownie dane?</string>
+    <string name="action_dont_allow">Odmów</string>
+    <string name="title_sign_in">Zaloguj się</string>
+    <string name="hint_username">Nazwa użytkownika</string>
+    <string name="hint_password">Hasło</string>
+    <string name="untitled">Bez tytułu</string>
+    <string name="image_auto">Włącz tylko w WiFi</string>
+    <string name="image_off">Wyłącz wszędzie</string>
+    <string name="image_on">Włącz wszędzie</string>
+    <string name="title_file_chooser">Wybór pliku</string>
+    <string name="import_bookmarks">Importuj</string>
+    <string name="export_bookmarks_to">Wyeksportowano zakładki do pliku %1$s</string>
+    <string name="import_bookmark_error">Nie zaimportowano zakładek z tego pliku.</string>
+    <string name="message_add_bookmark">Dodano zakładkę.</string>
+    <string name="message_exit">Naciśnij jeszcze raz, aby wyjść.</string>
+    <string name="dialog_message">Wiadomość</string>
+    <string name="wait_a_moment">Momencik&#8230;</string>
+    <string name="toast_operation_failed">Operacja nie powiodła się.</string>
+    <string name="volume">Przewijaj strony przyciskami głośności</string>
+    <string name="msg_intent">Otworzyć związaną z tym działaniem aplikację?</string>
+    <string name="setting_default">Domyślna przeglądarka</string>
+    <string name="toast_copy_url_successful">Skopiowano adres.</string>
+    <string name="toast_copy_text_successful">Skopiowano tekst.</string>
+    <string name="incognito_on">Włączono tryb prywatny.</string>
+    <string name="incognito_off">Wyłączono tryb prywatny.</string>
+    <string name="operation_none">Brak operacji</string>
+    <string name="operation_reload">Odśwież</string>
+    <string name="operation_top">Przewiń na samą górę</string>
+    <string name="operation_bottom">Przewiń na sam dół</string>
+    <string name="operation_input">Wprowadź adres</string>
+    <string name="operation_openbookmark">Otwórz zakładkę</string>
+    <string name="operation_open_bookmarks_dialog">Otwórz okno dialogowe zakładek</string>
+    <string name="operation_openhistory">Otwórz historię</string>
+    <string name="operation_closetab">Zamknij kartę</string>
+    <string name="operation_lasttab">Ostatnia karta</string>
+    <string name="operation_nexttab">Następna karta</string>
+    <string name="operation_goback">Wstecz</string>
+    <string name="operation_goforward">Dalej</string>
+    <string name="settings_operation">Operacje</string>
+    <string name="settings_privacy">Prywatność</string>
+    <string name="settings_advanced">Zaawansowane</string>
+    <string name="settings_about">O aplikacji</string>
+    <string name="url_box">Tekst w pasku narzędzi</string>
+    <string name="url_box_domain">Domena</string>
+    <string name="action_pcview">Pełna wersja strony</string>
+    <string name="action_source">Kod źródłowy strony</string>
+    <string name="action_translate">Przetłumacz stronę</string>
+    <string name="title_edit_folder">Edytuj folder</string>
+    <string name="msg_delete_folder">Usunąć folder?</string>
+    <string name="desc_suggestion">sugestie</string>
+    <string name="desc_home">Strona domowa</string>
+    <string name="desc_menu">menu</string>
+    <string name="action_mark">Oznacz jako reklamę</string>
+    <string name="dialog_confirm_mark">Oznaczyć to jako reklamę?</string>
+    <string name="do_not_track">Nie śledź mnie</string>
+    <string name="color_mode">Kolorowe paski</string>
+    <string name="dialog_sure">Na pewno?</string>
+    <string name="settings_cloud">Konto</string>
+    <string name="user">Zaloguj / zarejestruj się</string>
+    <string name="user_syns">Synchronizuj dane</string>
+    <string name="user_update">Wyślij dane</string>
+    <string name="wrong_psw">Niepoprawne hasło</string>
+    <string name="sign_up_success">Zarejestrowano konto.</string>
+    <string name="code_500">Usługa niedostępna</string>
+    <string name="syns_success">Zsynchronizowano dane.</string>
+    <string name="upload_success">Wysłano.</string>
+    <string name="log_out">Wylogować?</string>
+    <string name="crash_restart">Uruchom aplikację ponownie</string>
+    <string name="crash_close">Zamnknij aplikację</string>
+    <string name="ui_mode">Układ pasków narzędzi</string>
+    <string name="addon_download">Menedżer pobierania</string><![CDATA[
+
+    
+    ]]>
+    <string name="quick_back">Cofanie bez odświeżania strony</string>
+    <string name="open_with">Otwórz za pomocą</string>
+    <string name="download_completed">Pobieranie zakończone.</string>
+    <string name="toast_fullscreen_off">Opuść tryb pełnoekranowy</string>
+    <string name="clear_data">Usuń dane</string>
+    <string name="data_cache">Pamięć podręczna</string>
+    <string name="data_form_data">Dane formularzy</string>
+    <string name="data_history">Historia</string>
+    <string name="data_storage">Dane witryn</string>
+    <string name="data_cookies">Ciasteczka</string>
+    <string name="data_cleared">Usunięto dane.</string>
+    <string name="settings_skin">Ekran startowy</string>
+    <string name="default_set">Domyślne</string>
+    <string name="picture">Obraz</string>
+    <string name="text">Tekst</string>
+    <string name="html_code">Kod HTML</string>
+    <string name="action_view_image">Pokaż obraz</string><![CDATA[
+
+    
+    ]]>
+    <string name="action_save_web_page">Zapisz stronę</string>
+    <string name="action_saved_pages">Zapisane strony</string>
+    <string name="saved_page_successfully">Zapisano stronę.</string>
+    <string name="deleted_failed">Usunięcie nie powiodło się. Lokalizacja pliku: </string>
+    <string name="empty_hint">Cicho wszędzie,\ngłucho wszędzie&#8230;</string>
+    <string name="network_log">Dziennik sieci</string>
+    <string name="conn_timeout">Upłynął limit czasu połączenia</string>
+    <string name="sync_prompt">Lokalne zakładki i ustawienia zostaną nadpisane. Kontynuować?</string>
+    <string name="upload_prompt">Obecne zakładki i ustawienia zostaną wysłane. Kontynuować?</string>
+    <string name="none">Nic</string>
+   <string name="check_permission">Nie przyznano (niektórych) uprawnień. Ustawić je w ustawieniach systemowych?</string><![CDATA[
+
+
+
+    
+
+    ]]>
+    <string name="restore_tabs_hint">Przywrócić niezamknięte ostatnio karty?</string>
+    <string name="restore_tabs">Przywracaj karty po uruchomieniu</string>
+    <string name="log_page_hint">Możesz skopiować następujący link lub domenę i wkleić do %1$s, aby zablokować ich ładowanie.</string><![CDATA[
+       ]]>
+   <string name="fullscreen_1">Przewinięciem</string>
+    <string name="fullscreen_2">Kliknięciem</string>
+    <string name="settings_script">Skrypty</string>
+    <string name="add_script">Stwórz skrypt</string>
+    <string name="script_code">Kod (JavaScript)</string>
+    <string name="help_us_translate">Przetłumacz aplikację</string>
+    <string name="confirm_to_leave">Potwierdź</string>
+    <string name="leave">Opuść</string>
+    <string name="stay">Zostań</string>
+    <string name="skin_logo">Logo</string>
+    <string name="skin_bg">Tło</string>
+    <string name="set_it_as_homepage">Ustawić jako stronę domową?</string>
+    <string name="missing_webview">Systemowy moduł WebView nie jest (poprawnie) zainstalowany. Zainstalować go (ponownie)?</string>
+    <string name="install">Instaluj</string>
+    <string name="crash_hint">Przepraszamy za incydent.</string>
+    <string name="glean">Przeglądarka Via</string>
+    <string name="contact_us">Skontaktuj się z nami</string>
+    <string name="official_website">Oficjalna strona</string>
+    <string name="action_pic_mode">Tryb obrazkowy</string>
+    <string name="find_next">Następny</string>
+    <string name="find_pre">Poprzedni</string>
+    <string name="action_open_in_background">Otwórz w tle</string>
+    <string name="cannot_work">Funkcja działa tylko dla \"http\" i \"https\".</string>
+    <string name="action_fullscreen">Pełny\nekran</string>
+    <string name="settings_general">Ogólne</string>
+    <string name="no_bookmark">Brak zakładek</string>
+    <string name="import_or_export_bookmarks">Importuj / eksportuj zakładki</string>
+    <string name="export_bookmarks">Eksportuj</string>
+    <string name="back_forward_gesture">Gest przechodzenia wstecz / dalej</string>
+    <string name="toolbar_settings_hint">Kliknij (przeciągnij) poniższe przyciski, aby ustawić działanie po ich przytrzymaniu (przeciągnięciu). Przytrzymaj, aby zobaczyć ich obecne ustawienie.</string>
+    <string name="action_modify">Modyfikuj</string>
+    <string name="operation_hint">Operacje, gesty, itp.</string>
+    <string name="adblock_info">Zablokowane reklamy: %1$d, zaoszczędzony transfer: %2$s.</string>
+    <string name="disable">Wyłączone</string>
+    <string name="ui_traditional">Góra i dół</string>
+    <string name="color_mode_hint">Paski narzędziowe i pasek stanu będą przybierać kolory przeglądanych stron.</string><![CDATA[
+
+
+
+
+       ]]>
+    <string name="file_size">Rozmiar pliku: %1$s</string>
+    <string name="search_by_image">Szukaj według tego obrazu</string>
+    <string name="resource_sniffer">Zasoby strony</string>
+    <string name="res_log_hint">Kliknij element, aby wyświetlić podgląd. Przytrzymaj, aby wywołać menu kontekstowe z pozostałymi opcjami.</string>
+    <string name="no_resource">Nie wykryto zasobów na tej stronie.</string>
+    <string name="no_network_log">Ta strona nie ma dziennika sieci.</string>
+    <string name="resource_sniffer_hint">\nOdtwórz w niej jakiś film lub muzykę. Uwaga: wykrywacz nie wszędzie działa.</string>
+    <string name="action_downloads">Pobrane pliki</string>
+    <string name="empty_password_info">Wprowadź hasło</string>
+    <string name="offline_page_hint">Oto Twoje zapisane strony. Możesz je przeglądać, gdy nie masz połączenia z internetem.</string>
+    <string name="history_page_hint_when_incognito">Jesteś w trybie prywatnym. Historia przeglądania nie jest teraz zapisywana.</string>
+    <string name="action_preview">Podgląd</string>
+    <string name="action_page_info">Informacje o stronie</string>
+    <string name="page_info_title">Tytuł:</string>
+    <string name="page_info_url">Adres strony:</string>
+    <string name="page_info_link">Adres linku:</string>
+    <string name="title_app_chooser">Wybór aplikacji</string>
+    <string name="clear_data_on_exit">Czyść dane przy wyjściu</string>
+    <string name="action_add_to_homepage">Dodaj do sz. wyb.</string>
+    <string name="added_favorite_hint">Dodano do szybkiego wybierania.</string>
+    <string name="title_edit_favorite">Edytuj ulubione</string>
+    <string name="custom_css_special">Własny plik CSS</string>
+    <string name="force_enable_zoom">Wymuś powiększanie strony</string>
+    <string name="import_data">Importuj dane</string>
+    <string name="import_data_failed">Nie zaimportowano danych.</string>
+    <string name="import_data_succeed">Zaimportowano dane.</string>
+    <string name="export_data">Eksportuj dane</string>
+    <string name="export_data_to">Wyeksportowano dane do pliku\n%1$s.</string>
+    <string name="always_restore">Zawsze przywracaj</string>
+    <string name="ask_first">Zawsze pytaj</string>
+    <string name="disable_restore">Nigdy</string>
+    <string name="data_file">dane</string>
+    <string name="bookmarks_data_to_long">Dane zakładek są za duże do przesłania, ale inne dane zostaną przesłane. Kontynuować?</string>
+    <string name="restore_tabs_hint_settings">Kiedy jesteś w trybie prywatnym, nie zostaną przywrócone żadne karty.</string>
+    <string name="web_page_debug">Debugowanie stron</string>
+    <string name="web_page_debug_info">Możesz podłączyć urządzenie do komputera i debugować strony przez Chrome\'a (PC), używając adresu \"chrome://inspect\". Pamiętaj, aby przedtem włączyć Debugowanie USB (Ustawienia > Opcje programistyczne).</string>
+    <string name="action_re_download">Pobierz ponownie</string>
+    <string name="action_copy_download_link">Skopiuj link</string>
+    <string name="download_failed">Nie pobrano pliku.</string>
+    <string name="view_downloads">Pokaż</string>
+    <string name="message_delete_downloading_task">Pobrany plik również zostanie usunięty. Kontynuować?</string>
+    <string name="message_delete_downloaded_task">Usunąć zadanie?</string>
+    <string name="message_delete_downloaded_file">Usunąć także pobrany plik?</string>
+    <string name="block_popup_message">Zablokowano wyskakujące okno.</string>
+    <string name="allow_popup">Zezwól tym razem</string>
+    <string name="system_download_manager">Systemowy</string>
+    <string name="action_play_with">Odtwórz w&#8230;</string>
+    <string name="show_sniffer_btn_automatically">Pokazuj przycisk wykrywacza automatycznie</string>
+    <string name="open_file_failed">Nie znaleziono aplikacji mogącej otworzyć ten plik.</string>
+    <string name="cloud_data_server">Serwer chmury danych</string>
+    <string name="chinese_server">Chiński</string>
+    <string name="global_server">Globalny</string>
+    <string name="server_message">Dane serwerów nie są zsynchronizowane. Konieczne będzie ponowne zalogowanie się.</string>
+    <string name="delete_bookmark_folder_message">Zakładki w folderze \"%1$s\" również zostaną usunięte. Kontynuować?</string>
+    <string name="action_new">Stwórz</string>
+    <string name="block_hint">Zablokowano: %1$s\nOdśwież, aby zastosować zmiany.</string>
+    <string name="unblock_hint">Odblokowano: %1$s\nOdśwież, aby zastosować zmiany.</string>
+    <string name="block_3rd_party_cookies">Blokuj ciasteczka firm trzecich</string>
+    <string name="enable_site_conf">Ustawienia dla strony \"%1$s\":</string>
+    <string name="site_conf">Ustawienia stron</string>
+    <string name="ui_simple_top">Tylko góra</string>
+    <string name="ui_simple_bottom">Tylko dół</string>
+    <string name="file_does_not_exist">Plik nie istnieje.</string>
+    <string name="dialog_message_from">Wiadomość z %1$s</string>
+    <string name="filter_subscriptions">Listy z AdBlocka</string>
+    <string name="filter_subscriptions_description">Zarządzaj listami filtrów z tego programu.</string>
+    <string name="filter_subscription_exist">Ta lista filtrów już istnieje.</string>
+    <string name="custom_filters">Własne filtry</string>
+    <string name="custom_filters_description">Wliczane są tu także elementy stron oznaczone jako reklamy.</string>
+    <string name="add_filter_subscription">Nowa lista filtrów</string>
+    <string name="edit_filter_subscription">Edytuj listę filtrów</string>
+    <string name="update_filter_subscriptions_completed">Zaktualizowano listy filtrów.</string>
+    <string name="has_not_been_updated">nieaktualna</string>
+    <string name="just_now">przed chwilą</string>
+    <string name="url_is_invalid">Nieprawidłowy adres URL.</string>
+    <string name="simple_guide_of_writing_rule">Via wspiera niemal wszystkie fitry z Adblock Plusa.
+        \nBlokowanie wszystkich żądań:
+        \n||przykład.com^ (albo przykład.com)
+        \n\nBlokowanie części żądań:
+        \n||przykład.com/js/ads_*.js
+        \n\nOdblokowanie żądań specjalnych:
+        \n@@||przykład.com^
+        \n\nBlokowanie konkretnego elementu strony:
+        \nprzykład.com###reklama</string>
+    <string name="help">Pomoc</string>
+    <string name="learn_more">Dowiedz się więcej</string>
+    <plurals name="filters">
+        <item quantity="one">1 filtr</item>
+        <item quantity="few">%d filtry</item>
+        <item quantity="many">%d filtrów</item>
+        <item quantity="other">%d filtrów</item>
+    </plurals>
+    <string name="updated_">ost. aktualizacja: %1$s</string>
+    <string name="filter_subscription_info">%1$s, %2$s</string>
+    <string name="enable_built_in_filters">Wbudowane filtry</string>
+    <string name="enable_built_in_filters_description">Nie blokują one zbyt wiele, ale lepsze coś, niż nic.</string>
+    <string name="update">Aktualizuj</string>
+    <string name="bookmarks_exported_successfully">Zakładki zostały wyeksportowane.</string>
+    <string name="data_exported_successfully">Wyeksportowano dane.</string>
+    <string name="privacy_policy">Polityka prywatności</string>    
+    <string name="terms_of_use">Warunki korzystania</string>
+    <string name="welcome">Witamy</string>
+    <string name="agreement_message_short">Zaakceptuj treść poniższych dokumentów, aby kontynuować.</string>
+    <string name="agree_and_continue">Akceptuję</string>
+    <string name="disagree">Nie akceptuję</string>
+    <string name="exit">Wyjdź</string>
+    <string name="delete_account">Usuń konto</string>
+    <string name="delete_account_request_submitted">Przesłano prośbę o usunięcie konta.</string>
+    <string name="delete_account_hint">Usuń konto z serwera</string>
+    <string name="delete_account_message">Po przesłaniu prośby o usunięcie konta nastąpi wylogowanie z niego, a następnie zostanie ono wprowadzone w 15-dniowy stan hibernacji. Jeśli w tym czasie się na nie zalogujesz, proces zostanie anulowany. Gdy okres hibernacji minie, konto i wszelkie znajdujące się na nim dane zostaną usunięte.\nWprowadź hasło, aby przesłać prośbę.</string>
+    <string name="confirm_to_delete">Potwierdź usunięcie</string>
+    <string name="select_all">Zaznacz wszystko</string>
+    <string name="open_source_licenses">Licencje kodu źródłowego</string>
+    <string name="debugging_info">Szczegóły</string>
+    <string name="join_qq_group">Grupa na QQ</string>
+    <string name="join_telegram_group">Grupa na Telegramie</string>
+    <string name="paste_and_go">Wklej i przejdź</string>
+    <string name="night_filter_for_web_contents">Poziom przyciemnienia stron</string>
+    <string name="force_dark_mode_for_web_contents">Wymuszaj ciemny motyw zawartości stron</string>
+    <string name="force_dark_mode_for_web_contents_description">Niektóre mogą działać i wyglądać niepoprawnie.</string>
+    <string name="keyboard_shortcuts">Skróty klawiszowe</string>
+    <string name="export_data_description">Zakładki, ustawienia, skrypty i filtry reklam.</string>
+    <string name="language">Język</string>
+    <string name="restart_to_take_effect">Zmiany zajdą przy następnym uruchomieniu aplikacji. Czy chcesz zrobić to teraz?</string>
+    <string name="more">Więcej</string>
+    <string name="sort_order">Kolejność sortownaia</string>
+    <string name="sort_by_oldest_first">Od najstarszych</string>
+    <string name="sort_by_newest_first">Od najnowszych</string>
+    <string name="sort_by_alphabetical_order">Alfabetycznie</string>
+    <string name="select_folder">Wybierz folder</string>
+    <string name="move">Przenieś</string>
+    <string name="done">Zrobione</string>
+    <string name="root_folder">Folder główny</string>
+    <string name="delete_item_message">Usunąć \"%1$s\"?</string>
+    <string name="item_has_been_deleted">Usunięto \"%1$s\".</string>
+    <string name="undo">Cofnij</string>
+    <string name="opened_in_background_message">Otwarto nową kartę w tle</string>
+    <string name="bookmark_added">Dodano zakładkę</string>
+    <string name="allow_website_to_open_app_message">Zezwolić stronie na otwarcie aplikacji %1$s?</string>
+    <string name="width">Szerokość</string>
+    <string name="height">Wysokość</string>
+    <string name="corner_radius">Zaokrąglenie</string>
+    <string name="adaptive">Dynamiczna</string>
+    <string name="action_favorites">Ulubione</string>
+    <string name="skin_search_bar">Pasek wysz.</string>
+    <string name="stroke_width">Grubość krawędzi</string>
+    <string name="stroke_opacity">Przezr. krawędzi</string>
+    <string name="opacity">Przezr.</string>
+    <string name="font_style">Styl czcionki</string>
+    <string name="bold">Pogrubiona</string>
+    <string name="italics">Pochyła</string>
+    <string name="clear_website_icon_cache">Wyczyść pam. podr. ikon stron</string>
+    <string name="clear_website_icon_cache_message">Usunięte zostaną wszystkie ikony ulubionych na stronie głównej. Każda ikona zostanie ponownie pobrana przy wizycie na odpowiadającej jej stronie.</string>
+    <string name="desc_favorite_icon">Ikona ulubionej strony</string>
+    <string name="action_save">Zapisz</string>
+    <string name="reset_to_default_settings">Zresetuj do ust. domyślnych</string>
+    <string name="save_data">Oszczędzanie danych</string>
+    <string name="save_data_description">Włącz tryb oszczędzania danych na kompatybilnych stronach.</string>
+    <string name="action_manage_favorites">Menedżer ulubionych</string>
+    <string name="check_for_updates">Sprawdź aktualizacje</string>
+    <string name="checking_for_updates">Sprawdzam aktualizacje</string>
+    <string name="latest_version_already_installed">Korzystasz z najnowszej wersji</string>
+    <string name="new_version_available">Dostępna nowa wersja</string>
+    <string name="action_download_file">Pobierz</string>
+    <string name="delete_hint">Usuń (%1$d)</string>
+    <string name="follow_system_dark_mode_on">Śledzenie systemowego trybu ciemnego włączone</string>
+    <string name="scoped_search">Wyszukaj %1$s</string>
+    <string name="add_shortcut">Dodaj skrót</string>
+    <string name="need_shortcut_permission">Odmowa dostępu. Zezwól aplikacji na tworzenie skrótów na ekranie głównym.</string>
+    <string name="create_shortcut_successfully">Utworzono skrót dla %1$s</string>
+    <string name="update_shortcut_successfully">Zaktualizowano skrót dla %1$s</string>
+    <string name="today">Dzisiaj</string>
+    <string name="yesterday">Wczoraj</string>
+    <string name="same_year_date_format">EEEE, dd.MM</string>
+    <string name="default_date_format">EEEE, dd.MM.yyyy</string>
+    <string name="view_certificate">Pokaż certyfikat</string>
+    <string name="certificate_info">Informacje o certyfikacie</string>
+    <string name="certificate_detail"><![CDATA[
+        <b>WYSTAWIONY DLA</b><br />
+        <b>Domena (CN)</b><br />
+        %1$s
+        <br /><b>Organizacja (O)</b><br />
+        %2$s
+        <br /><b>Jednostka organizacyjna (OU)</b><br />
+        %3$s
+        <br /><br /><b>WYSTAWIONY PRZEZ</b><br />
+        <b>Nazwa podmiotu (CN)</b><br />
+        %4$s
+        <br /><b>Organizacja (O)</b><br />
+        %5$s
+        <br /><br /><b>OKRES WAŻNOŚCI</b><br />
+        <b>Wystawiony</b><br />
+        %6$s
+        <br /><b>Wygasa</b><br />
+        %7$s
+        <br />
+    ]]></string>
+    <string name="no_certificate">Ta strona nie posiada certyfikatu.</string>
+    <string name="site_conf_enabled">Konfiguracja strony (włącz)</string>
+    <string name="do_not_sell_or_share">Nie sprzedawaj ani nie udostępniaj danych</string>
+    <string name="do_not_sell_or_share_description">Wymagaj od stron, aby nie sprzedawały, ani nie udostępniały twoich danych w celu ochrony prywatności (opcja eksperymentalna).</string>
+    <string name="email_me">Napisz do mnie e-maila</string>
+    <string name="scan_qr_code">Zeskanuj kod QR</string>
+    <string name="scan_qr_code_from_image">Zeskanuj kod QR z obrazka</string>
+    <string name="switch_flash">Włącz / wyłącz latarkę</string>
+    <string name="qr_code_scan_result">Wynik skanowania</string>
+    <string name="qr_code_not_detected">Nie wykryto kodu QR</string>
+    <string name="save_qr_code_successfully">Kod QR został zapisany w galerii</string>
+    <string name="description_with_number">%1$s (%2$d)</string>
+    <string name="last_hour">Ostatnia godzina</string>
+    <string name="today_and_yesterday">Ost. 2 dni</string>
+    <string name="last_seven_days">Ost. tydzień</string>
+    <string name="all_time">Wszystko</string>
+    <string name="delete_history_from">Usuń historię</string>
+    <string name="save_as_pdf">Zapisz jako PDF</string>
+    <string name="export">Eksportuj</string>
+    <string name="export_successfully">Wyeksportowano.</string>
+    <string name="stop_loading_description">Via zapobiegła załadowaniu się poniższej strony:</string>
+    <string name="stop_loading_reason">Przez poniższy filtr:</string>
+    <string name="continue_loading">Kontynuuj ładowanie</string>
+    <string name="ask_to_allow_webpage_to_copy_text">Skopiować tekst z %DOMAIN%?</string>
+    <string name="search_bar_style">Styl paska</string>
+    <string name="search_bar_style_line">Linia</string>
+    <string name="search_bar_style_rectangle">Prostokąt</string>
+    <string name="favorites_icon_style">Styl ikon</string>
+    <string name="favorites_icon_style_text">Tekst</string>
+    <string name="favorites_icon_style_icon_first">Najpierw ikona</string>
+    <string name="favorites_icon_color">Przezr.</string>
+    <string name="favorites_icon_color_colorful">Wyłącz</string>
+    <string name="favorites_icon_color_transparent">Włącz</string>
+    <string name="search_bar_effect">Efekt paska</string>
+    <string name="search_bar_effect_blur">Rozmycie</string>
+    <string name="search_bar_effect_transparent">Przezr.</string>
+    <string name="search_part">Pasek wysz.</string>
+    <string name="search_part_hide">Wyłącz</string>
+    <string name="search_part_show">Włącz</string>
+    <string name="background_color">Kolor</string>
+    <string name="background_image">Obraz</string>
+    <string name="favorites_clear_icons">Wyczyść ikony</string>
+    <string name="customization_reset">Zresetuj</string>
+    <string name="theme_color">Motyw</string>
+    <string name="theme_color_dark">Ciemny</string>
+    <string name="theme_color_light">Jasny</string>
+    <string name="processing_blob_data">Przetwarzanie blobów…</string>
+    <string name="tineye_url">TinEye</string>
+    <string name="login_username">Nazwa użytkownika (jeśli konto nie istnieje, zostanie utworzone)</string>
+    <string name="read_and_agree">%1$s i %2$s - akceptuję</string>
+    <string name="wechat_official_account">Oficjalne konto Wechat</string>
+    <string name="notification_channel_downloads">Download contents</string>
+    <string name="notification_channel_foreground">Foreground notification</string>
+    <string name="download_progress">%1$s/%2$s</string>
+    <string name="download_progress_indeterminate">%1$s</string>
+    <string name="download_progress_status">%1$s • %2$s</string>
+    <string name="download_status_paused">Wstrzymano</string>
+    <string name="download_action_pause">Wstrzymaj</string>
+    <string name="download_action_resume">Wznów</string>
+    <string name="app_downloading_files">Via pobiera pliki</string>
+    <string name="app_downloading_files_subtitle">Dotknij, aby zobaczyć postępy</string>
+    <string name="built_in_download_manager">Wbudowany</string>
+    <string name="cancel_all">Anuluj wszystko</string>
+    <string name="message_delete_selected_download_tasks">Usunąć te zadania (łącznie %1$d)?</string>
+    <string name="file_name">Nazwa pliku</string>
+    <string name="rename">Zmień nazwę</string>
+    <string name="message_re_download">Usunąć pobrany plik i pobrać ponownie %1$s?</string>
+    <string name="share_image">Udostępnij obraz</string>
+    <string name="ssl_warning_insecure_connection_message">Połączenie z %1$s nie jest bezpieczne:\n%2$s\nKontynuować?</string>
+    <string name="ssl_warning_dont_ask_again">Nie pytaj ponownie w tej sesji</string>
+    <string name="ssl_warning_certificate_untrusted">Certyfikat nie jest zaufany</string>
+    <string name="ssl_warning_certificate_date_invalid">Data certyfikatu jest nieprawidłowa</string>
+    <string name="ssl_warning_certificate_expired">Certyfikat wygasł</string>
+    <string name="ssl_warning_certificate_domain_mismatch">Domena w certyfikacie nie zgadza się z domeną strony</string>
+    <string name="ssl_warning_certificate_invalid">Certyfikat jest już nieważny</string>
+    <string name="ssl_warning_certificate_not_yet_valid">Certyfikat jest jeszcze nieważny</string>
+    <string name="the_site">Strona</string>
+    <string name="navigation_up">Do góry</string>
+    <string name="hide_popup_window">Ukryj wyskakujące okno</string>
+    <plurals name="open_tabs">
+        <item quantity="zero">0 kart</item>
+        <item quantity="one">1 karta</item>
+        <item quantity="few">%d karty</item>
+        <item quantity="many">%d kart</item>
+        <item quantity="other">%d kart</item>
+    </plurals>
+    <string name="qr_code">Kod QR</string>
+    <string name="download_progress_speed">%1$s • %2$s</string>
+    <string name="download_progress_speed_eta">%1$s • %2$s • %3$s</string>
+    <string name="download_speed_unknown">b/d</string>
+    <string name="download_eta_unknown">-</string>
+    <plurals name="hours_left">
+        <item quantity="zero">0 godzin do końca</item>
+        <item quantity="one">1 godzina do końca</item>
+        <item quantity="few">%d godziny do końca</item>
+        <item quantity="many">%d godzin do końca</item>
+        <item quantity="other">%d godzin do końca</item>
+    </plurals>
+    <plurals name="mins_left">
+        <item quantity="zero">0 minut do końca</item>
+        <item quantity="one">1 minuta do końca</item>
+        <item quantity="few">%d minuty do końca</item>
+        <item quantity="many">%d minut do końca</item>
+        <item quantity="other">%d minut do końca</item>
+    </plurals>
+    <plurals name="secs_left">
+        <item quantity="zero">0 sekund do końca</item>
+        <item quantity="one">1 sekunda do końca</item>
+        <item quantity="few">%d sekundy do końca</item>
+        <item quantity="many">%d sekund do końca</item>
+        <item quantity="other">%d sekund do końca</item>
+    </plurals>
+    <string name="translation_engine_google">Tłumacz Google</string>
+    <string name="translation_engine_baidu">Tłumacz Baidu</string>
+    <string name="ignore_site_message_for_a_minute">Zignoruj tą wiadomość na jakiś czas</string>
+    <string name="download_status_waiting_for_network">Czekam na sieć</string>
+    <string name="download_failed_with_message">Pobieranie nie powiodło się: %1$s</string>
+    <string name="agent_windows_chrome">Windows (Chrome)</string>
+    <string name="agent_windows_ie11">Windows (IE 11)</string>
+    <string name="agent_android_phone">Android (Smartfon)</string>
+    <string name="agent_android_tablet">Android (Tablet)</string>
+    <string name="agent_ipad">iPad</string>
+    <string name="agent_osx">macOS</string>
+    <string name="toutiao_url">Toutiao</string>
+    <string name="title_can_not_be_empty">Tytuł nie może być pusty</string>
+    <string name="user_agent_can_not_be_empty">Agent użytkownka nie może być pusty</string>
+    <string name="download_filter_all">Wszystko</string>
+    <string name="download_filter_others">Inne</string>
+    <string name="download_filter_documents">Dokumenty</string>
+    <string name="download_filter_images">Obrazy</string>
+    <string name="download_filter_video">Wideo</string>
+    <string name="download_filter_apk">APK</string>
+    <string name="download_filter_audio">Audio</string>
+    <string name="download_filter_archives">Archiwa</string>
+    <string name="simple_guide_of_writing_userscript"><![CDATA[
+        <b>Blok metadanych</b><br />
+        Metadane muszą być w poniższym formacie:<br />
+        <tt>
+        // ==UserScript==<br />
+        // @klucz wartość<br />
+        // ==/UserScript==
+        </tt>
+        <br /><br />
+        <b><tt>@name</tt></b>: Nazwa skryptu.
+        <br /><br />
+        <b><tt>@namespace</tt></b>: Kombinacja klucza <tt>@namespace</tt> i <tt>@name</tt> stanowi unikatowy identyfikator skryptu.
+        <br /><br />
+        <b><tt>@match/@exclude-match</tt></b>: Określ czy skrypt powinien być wykonywany. Zalecane jest korzystanie z klucza <tt>@match</tt> zamiast <tt>@include</tt>.
+        <br /><br />
+        <b><tt>@include/@exclude</tt></b>: Stary sposób na określenie czy skrypt powinien być wykonywany.
+        <br /><br />
+        <b><tt>@version</tt></b>: Wersja skryptu.
+        <br /><br />
+        <b><tt>@description</tt></b>: Opis skryptu.
+        <br /><br />
+        <b><tt>@author</tt></b>: Autor(zy) skryptu.
+        <br /><br />
+        <b><tt>@require</tt></b>: Wymagania skryptu. Na przykład: <br /><tt>// @require https://my.cdn.com/jquery.js</tt>.
+        <br /><br />
+        <b><tt>@run-at</tt></b>: Określ kiedy skrypt ma być wykonywany. Klucz <tt>document-start</tt> jest używany do wstrzykiwania skryptów przed załadowaniem się strony, a <tt>document-end</tt> - po załadowaniu się strony.
+        <br /><br />
+        <b><tt>@grant</tt></b>: Określ które specjalne API GM_* powinny być dołączone i użyte przy wykonywaniu skryptu.<br />
+        <br /><br />
+        <b><tt>@downloadURL</tt></b>: Adres, z którego skrypt może zostać pobrany.
+        <br /><br />
+        <b><tt>@supportURL</tt></b>: Adres wsparcia dla skryptu.
+        <br /><br />
+        <b><tt>@homepageURL</tt></b>: Strona internetowa skryptu.
+        <br /><br />
+        <b>API GM_*</b><br />
+        <tt>GM_*</tt> to grupa specjalnych API dostępnych w aplikacji Via. Obecnie wspierane API: <br/>
+        <tt>GM_getValue/GM_setValue/GM_deleteValue/GM_listValues/GM_getResourceText/GM_getResourceURL/GM_addElement/GM_addStyle/GM_setClipboard/GM_xmlhttpRequest/GM_download/GM_registerMenuCommand/GM_unregisterMenuCommand</tt>.
+        <br /><br />
+        <b>Dopasowanie</b><br />
+        <tt>@match</tt> definiuje regułę dopasowania adresu. <tt>@exclude-match</tt> wyklucza dopasowane adresy, podobnie jak <tt>@exclude</tt>.
+        <br /><br />
+        Na przykład:<br />
+        <tt>
+        // @match https://www.google.com/cośtam <br />
+        // @match https://www.google.com/cokolwiek/* <br />
+        // @exclude-match https://www.google.com/cokolwiek/ale-nie-to
+        </tt>
+        <br /><br />
+    ]]></string>
+    <string name="toast_install_script_successfully">Skrypt \"%1$s\" został zainstalowany.</string>
+    <string name="toast_install_script_failed_unknown">Skrypt \"%1$s\" nie został zainstalowany.</string>
+    <string name="toast_install_script_failed_dependency_error">Pobieranie zależności \"%1$s\" nie powiodło się.</string>
+    <string name="title_install_script">Instalacja skryptu</string>
+    <string name="message_install_script">Zainstalować skrypt \"%1$s\"(%2$s)?</string>
+    <string name="title_reinstall_script">Reinstalacja skryptu</string>
+    <string name="message_reinstall_script">Zainstalować ponownie skrypt \"%1$s\"(%2$s)?</string>
+    <string name="title_update_script">Aktualizacja skryptu</string>
+    <string name="message_update_script">Zaktualizować skrypt \"%1$s\"(%2$s -> %3$s)?</string>
+    <string name="toast_parsing_script">Przetwarzanie skryptu…</string>
+    <string name="title_add_metadata_block">Dodawanie bloku metadanych</string>
+    <string name="message_add_metadata_block">Ten skrypt nie zawiera bloku metadanych, więc nie może zostać zapisany. Dodać domyślny blok metadanych?</string>
+    <string name="title_disable_safe_browsing">Wyłącz bezpieczne przeglądanie</string>
+    <string name="title_close_all_tabs">Zamknij wszystkie karty</string>
+    <string name="message_close_all_tabs_before_disabling_incognito_mode">Zamknąć wszystkie karty przed wyłączeniem trybu prywatnego?</string>
+    <string name="action_close">Zamknij</string>
+    <string name="action_keep">Zachowaj</string>
+    <string name="desc_bookmark_folder">%1$s folder</string>
+    <string name="message_splash_agreement">Korzystając z aplikacji Via, akceptujesz treść dokumentów: %1$s i %2$s.</string>
+    <string name="translation_engine_google_in_page">Tłumacz Google (strony)</string>
+    <string name="action_view_cookies">Pokaż ciasteczka</string>
+    <string name="title_cookies_for_site">Ciasteczka dla strony %1$s</string>
+    <string name="message_no_cookies">Brak ciasteczek.</string>
+    <string name="toast_cookies_for_site_cleared">Ciasteczka dla strony %1$s zostały wyczyszczone</string>
+    <string name="desc_expand_text">Rozwiń tekst</string>
+    <string name="desc_collapse_text">Zwiń tekst</string>
+    <string name="desc_clear_text">Wyczyść tekst</string>
+    <string name="title_search_suggestions">Sugestie wyszukiwania</string>
+    <string name="message_search_suggestions">Przy korzystaniu z paska adresu sugeruj poniższą zawartość:</string>
+    <string name="title_open_tabs">Otwarte karty</string>
+    <string name="desc_fill_in_text">Wypełnij tekst</string>
+    <string name="action_default_location">Domyślne miejsce</string>
+    <string name="action_choose_folder">Wybierz folder…</string>
+    <string name="title_permission_denied">Odmowa uprawnień</string>
+    <string name="message_reselect_download_location">Uprawnienie do zapisu w tym miejscu zostało cofnięte. Ustaw ponownie miejsce do pobierania plików.</string>
+    <string name="detect_language">Wykryj język</string>
+    <string name="title_source_language">Język źródłowy</string>
+    <string name="title_target_language">Język docelowy</string>
+    <string name="desc_swap_language">Zamień</string>
+    <string name="desc_paste_text">Wklej tekst</string>
+    <string name="translation_engine_google_text">Tłumacz Google (tekst)</string>
+    <string name="saucenao_url">SauceNAO</string>
+    <string name="iqdb_url">IQDB</string>
+    <string name="iqdb_3d_url">3D IQDB</string>
+    <string name="whatanime_url">WhatAnime</string>
+    <string name="ascii2d_url">Ascii2D</string>
+    <string name="title_scripts_for_site">Skrypty dla strony %1$s</string>
+    <string name="disabled">Wyłączone</string>
+    <string name="enabled">Włączone</string>
+    <string name="action_view_in_settings">Pokaż w ustawieniach</string>
+    <string name="message_delete_following_items">Usunąć te elementy?</string>
+    <string name="action_reset">Zresetuj</string>
+    <string name="title_reset_site_conf">Zresetuj konfigurację strony</string>
+    <string name="message_reset_site_conf">Zresetować konfigurację dla strony %1$s?</string>
+    <string name="title_ignore_ssl_warnings">Ignoruj ostrzeżenia o cert. SSL</string>
+    <string name="title_ignore_ssl_warnings_description">Uwaga - połączenie ze stroną może być wtedy niebezpieczne</string>
+    <string name="message_ignore_ssl_warnings">Certyfikaty SSL używane są do weryfikacji tożsamości stron i szyfrowania połączenia z nimi.\n\nIgnorowanie certyfikatów SSL sprawia, że połączenie ze stronami może być niebezpieczne, a dane przez nie przesyłane mogą zostać skradzione.</string>
+    <string name="title_ignore_ssl_warnings_confirmation">Znam ryzyko</string>
+    <string name="title_disable_safe_browsing_description">Bezpieczne przeglądanie pozwala modułowi WebView chronić Cię przed złośliwym oprogramowaniem i atakami phishingowymi poprzez weryfikację linków.</string>
+    <string name="action_close_all_tabs">Zamknij wszystkie karty</string>
+    <string name="action_close_other_tabs">Zamknij inne karty</string>
+    <string name="action_close_tabs_to_the_bottom">Zamknij karty poniżej</string>
+    <string name="action_close_tabs_to_the_top">Zamknij karty powyżej</string>
+    <string name="action_close_tabs_to_the_left">Zamknij karty po lewej</string>
+    <string name="action_close_tabs_to_the_right">Zamknij karty po prawej</string>
+    <string name="message_permission_request">%1$s chce skorzystać z</string>
+    <string name="list_item_dash">- %1$s</string>
+    <string name="permission_microphone">mikrofonu</string>
+    <string name="permission_camera">kamery</string>
+    <string name="add_site_exception">Dodaj wyjątek</string>
+    <string name="blocked">Blokuj</string>
+    <string name="allowed">Zezwól</string>
+    <string name="exception">Wyjątki</string>
+    <string name="block">Zablokuj</string>
+    <string name="allow">Zezwól</string>
+    <string name="all_sites">Wszystkie strony</string>
+    <string name="category_content">Zawartość</string>
+    <string name="category_basics">Podstawowe</string>
+    <string name="category_permissions">Uprawnienia</string>
+    <string name="agent_add_site_exception">Ustaw agenta użytkownika dla danej strony.</string>
+    <string name="images">Grafika</string>
+    <string name="images_allowed_description">Zezwalaj stronom na wczytywanie grafik</string>
+    <string name="images_allowed_via_wifi_description">Zezwalaj stronom na wczytywanie grafik tylko przez WiFi</string>
+    <string name="images_allowed_via_wifi_description_short">Tylko przez WiFi</string>
+    <string name="images_add_site_exception_allow">Tu będą wczytywane grafiki</string>
+    <string name="images_add_site_exception_block">Tu nie będą wczytywane grafiki</string>
+    <string name="javascript">JavaScript</string>
+    <string name="javascript_allowed_description">Zezwalaj stronom na uruchamianie JavaScriptu</string>
+    <string name="javascript_add_site_exception_allow">Tu będzie działał JavaScript</string>
+    <string name="javascript_add_site_exception_block">Tu nie będzie działał JavaScript</string>
+    <string name="cookies">Ciasteczka</string>
+    <string name="cookies_allowed_description">Zezwalaj stronom na zapis i odczyt ciasteczek</string>
+    <string name="cookies_allowed_except_third_party_description_short">Zezwalaj z wyjątkiem stron trzecich</string>
+    <string name="popups">Wyskakujące okna</string>
+    <string name="popups_ask_first_description">Zapytaj przed zezwoleniem</string>
+    <string name="clipboard">Schowek</string>
+    <string name="clipboard_ask_first_description">Zapytaj przed zezwoleniem</string>
+    <string name="clipboard_allowed_description">Zezwalaj stronom na korzystanie ze schowka</string>
+    <string name="clipboard_blocked_description">Nie zezwalaj stronom na korzystanie ze schowka</string>
+    <string name="clipboard_add_site_exception_allow">Tu będzie można korzystać ze schowka</string>
+    <string name="clipboard_add_site_exception_block">Tu nie będzie można korzystać ze schowka</string>
+    <string name="location1">Lokalizacja</string>
+    <string name="location_ask_first_description">Zapytaj przed zezwoleniem</string>
+    <string name="camera">Kamera</string>
+    <string name="camera_ask_first_description">Zapytaj przed zezwoleniem</string>
+    <string name="microphone">Mikrofon</string>
+    <string name="microphone_ask_first_description">Zapytaj przed zezwoleniem</string>
+    <string name="on">Włączone</string>
+    <string name="off">Wyłączone</string>
+    <string name="default_description">%1$s (opcja domyślna)</string>
+    <string name="grant">Przyznaj</string>
+    <string name="skins">Skórki</string>
+    <string name="load_skin">Wczytaj skórkę</string>
+    <string name="load_skin_failed">Nie udało się wczytać skórki</string>
+    <string name="skin_changed">Skórka zmieniona</string>
+    <string name="import_script_from_url">Zaimportuj skrypt z linku</string>
+    <string name="import_script_from_file">Zaimportuj skrypt z pliku</string>
+    <string name="script_invalid">Nieprawidłowy skrypt</string>
+    <string name="open_app">Otwieranie aplikacji</string>
+    <string name="open_app_ask_first_description">Zapytaj przed zezwoleniem</string>
+    <string name="open_app_allowed_description">Zezwalaj stronom na otwieranie aplikacji</string>
+    <string name="open_app_blocked_description">Nie zezwalaj stronom na otwieranie aplikacji</string>
+    <string name="open_app_add_site_exception_allow">Tu będzie można otwierać aplikacje</string>
+    <string name="open_app_add_site_exception_block">Tu nie będzie można otwierać aplikacji</string>
+    <string name="update_interval">Częstotliwość aktualizacji</string>
+    <string name="never">Nigdy</string>
+    <string name="every_day">Codziennie</string>
+    <string name="every_3_days">Co 3 dni</string>
+    <string name="every_week">Co tydzień</string>
+    <string name="every_15_days">Co 15 dni</string>
+    <string name="adblock_add_site_exception_on">Tu reklamy będą blokowane</string>
+    <string name="adblock_add_site_exception_off">Tu reklamy nie będą blokowane</string>
+    <string name="sync">Synchronizacja</string>
+    <string name="sync_webdav">WebDAV</string>
+    <string name="sync_webdav_user">%1$s (WebDAV)</string>
+    <string name="webdav_configuration">Konfiguracja WebDAV</string>
+    <string name="webdav_digest_access_authentication">Używa uwierzytelniania dostępu szyfrowanego</string>
+    <string name="no_configuration">Brak konfiguracji</string>
+    <string name="has_never_been_synced">Nie przeprowadzano synchronizacji</string>
+    <string name="synced_">Zsynchronizowano %1$s</string>
+    <string name="auto_sync">Automatyczna synchronizacja</string>
+    <string name="sync_data">Synchronizuj dane</string>
+    <string name="sync_data_none">Żadne</string>
+    <string name="sync_data_bookmarks">Zakładki</string>
+    <string name="sync_data_favorites">Ulubione</string>
+    <string name="sync_data_settings">Ustawienia</string>
+    <string name="delimiter">, </string>
+    <string name="sync_done">Synchronizacja zakończona</string>
+    <string name="sync_failed">Synchronizacja nie powiodła się</string>
+    <string name="hint_password_unchanged">Hasło (niezmienione)</string>
+    <string name="enable_video_player_gestures">Gesty odtwarzacza wideo</string>
+    <string name="enable_video_player_gestures_description">Zezwalaj na gesty przeciągnięcia w celu przewijania, zmiany jasności i głośności</string>
+    <string name="external_video_player">Zewnętrzny odtwarzacz wideo</string>
+    <string name="external_video_player_description">Jakiego zewnętrznego odtwarzacza wideo mam używać?</string>
+    <string name="player_system_sharing">Jak w systemie</string>
+    <string name="request_to_download_full_script">Skrypt jest niekompletny i przez to nie działa. Pobrać pełny skrypt?</string>
+    <string name="data_app_cache">Pamięć podręczna</string>
+    <string name="sync_manually">Ręczna synchronizacja</string>
+    <string name="sync_push_description">Zastąp dane z chmury danymi lokalnymi</string>
+    <string name="sync_push_confirm">Zastąpić dane z chmury danymi lokalnymi?</string>
+    <string name="sync_pull_description">Zastąp dane lokalne daymi z chmury</string>
+    <string name="sync_pull_confirm">Zastąpić dane lokalne daymi z chmury?</string>
+    <string name="sync_merge_description">Połącz dane lokalne z tymi z chmury</string>
+    <string name="mark_as_ad_expand">Więcej</string>
+    <string name="mark_as_ad_shrink">Mniej</string>
+    <string name="mark_as_ad_move_view">Przenieś</string>
+    <string name="page_redirection">Przekierowywanie stron</string>
+    <string name="page_redirection_allowed_description">Zezwalaj na przekierowywanie stron do dowolnego adresu URL</string>
+    <string name="page_redirection_ask_first_description">Zapytaj przed przekierowaniem strony do adresu URL z innego źródła</string>
+    <string name="page_redirection_ask_first_description_short">Zapytaj przed przekierowaniem między źródłami</string>
+    <string name="page_redirection_add_site_exception_allow">Tu można będzie przekierowywać</string>
+    <string name="page_redirection_add_site_exception_ask_first">Zapytaj przed przekierowaniem między źródłami dla określonej strony.</string>
+    <string name="allow_page_redirection_to_msg">Zezwolić na przekierowywanie do %1$s?</string>
+    <string name="allow_page_redirection_msg">Zezwolić na przekierowywanie?</string>
+    <string name="sort">Sortuj</string>
+    <string name="new_folder">Nowy folder</string>
+    <string name="page_up">Do góry</string>
+    <string name="page_down">W dół</string>
+    <string name="select_action">Wybierz akcję</string>
+    <string name="tab_actions">Akcje kart</string>
+    <string name="feature_actions">Akcje funkcji</string>
+    <string name="address_bar_actions">Akcje paska adresu</string>
+    <string name="webpage_actions">Akcje stron</string>
+    <string name="message_close_all_tabs">Zamknąć wszystkie karty?</string>
+    <string name="search_in_via">Wyszukaj w Vii</string>
+    <string name="following_filters_invalid_message">Poniższe filtry mają niewłaściwy format:</string>
+    <string name="customize_menu">Edytuj menu podręczne</string>
+    <string name="hold_and_drag_to_rearrange_items">Przeciągaj i upuszczaj ikony, aby zmienić ich kolejność</string>
+    <string name="hold_and_drag_or_tap_to_add_item">Przeciągnij / dotknij ikonę, aby dodać ją do menu podręcznego</string>
+    <string name="enable_tab_bar">Włącz pasek kart</string>
+    <string name="enable_scripts">Włącz skrypty</string>
+    <string name="scripts_enabled">Skrypty włączone</string>
+    <string name="print_or_pdf">Drukuj / PDF</string>
+    <string name="site_info">Inf. o stronie</string>
+    <string name="is_on">%s jest włączone</string>
+    <string name="is_off">%s jest wyłączone</string>
+    <string name="is_set">%s jest ustawione</string>
+    <string name="is_required">%s jest wymagane</string>
+    <string name="close_tab_description">Zamknij %s</string>
+    <string name="toast_enable_tab_bar">Aby włączyć pasek kart, wybierz inny układ pasków narzędzi</string>
+    <string name="import_data_failed_file_too_large">Plik jest za duży i nie może zostać zaimportowany</string>
+    <string name="remember_my_choice">Zapamiętaj</string>
+    <string name="microphone_add_site_exception_allow">Tu będzie można korzystać z mikrofonu</string>
+    <string name="microphone_add_site_exception_block">Tu nie będzie można korzystać z mikrofonu</string>
+    <string name="camera_add_site_exception_allow">Tu będzie można korzystać z kamery</string>
+    <string name="camera_add_site_exception_block">Tu nie będzie można korzystać z kamery</string>
+    <string name="recently_closed_tabs">Ostatnio zamknięte karty</string>
+    <string name="tabs">Karty</string>
+    <string name="tab_settings">Ustawienia kart</string>
+    <string name="show_toast_to_undo_closing_tab">Powiadomienie z opcją cofnięcia</string>
+    <string name="show_toast_to_undo_closing_tab_description">Nie działa w trybie prywatnym.</string>
+    <string name="open_all">Otwórz wszystko</string>
+    <string name="expand_web_content_automatically">Automatyczne rozwijanie zawartości</string>
+    <string name="expand_web_content_automatically_description">Rozwijaj całą zwiniętą zawartość stron przy ich otwieraniu.</string>
+    <string name="read_aloud">Czytaj na głos</string>
+    <string name="start_reading_aloud">Rozpocznij czytanie na głos</string>
+    <string name="cannot_read_this_page_aloud">Nie można odczytać tej strony na głos</string>
+    <string name="tts_failed_to_initialize">Nie można zainicjować silnika TTS</string>
+    <string name="fastforward">Przewiń (+)</string>
+    <string name="rewind">Przewiń (-)</string>
+    <string name="add_to_home_screen">Dodaj do ekr. głównego</string>
+    <string name="certificate_detail_fingerprints"><![CDATA[
+        <b>ODCISKI SHA-256</b><br />
+        <b>Certyfikat</b><br />
+        %1$s
+        <br /><b>Klucz publiczny</b><br />
+        %2$s
+        <br />
+    ]]></string>
+    <string name="show_reader">Włącz tryb czytnika</string>
+    <string name="hide_reader">Wyłącz tryb czytnika</string>
+    <string name="reader_is_shown">Tryb czytnika włączony</string>
+    <string name="reader_is_hidden">Tryb czytnika wyłączony</string>
+    <string name="custom_reader_css">Własny plik CSS</string>
+    <string name="reader_mode">Tryb czytnika</string>
+    <string name="the_page_has_not_fully_loaded">Strona nie wczytała się w całości</string>
+    <string name="more_options">Więcej opcji</string>
+    <string name="link_too_long_to_generate_qr_code">Nie można wygenerować kodu QR, gdyż link jest za długi</string>
+    <string name="view_scripts">Pokaż skrypty</string>
+    <string name="exit_message_if_incognito_mode_is_on">Wszystkie karty zostaną zamknięte i nie będzie można ich przywrócić. Czy na pewno chcesz wyjść z aplikacji?</string>
+    <string name="dont_remind_me_again">Nie przypominaj mi więcej</string>
+    <string name="cannot_work_javascript_is_blocked">Zadziała tylko przy włączonej obsłudze JavaScriptu.</string>
+    <string name="one_filter_per_line">Jeden filtr na linię.</string>
+    <string name="modified_content_has_not_been_saved_message">Modyfikacje nie zostały zapisane. Zrobić to teraz?</string>
+    <string name="operation_opensettings">Otwórz ustawienia</string>
+    <string name="file_download_completed">Pobrano plik %1$s</string>
+    <string name="file_download_failed">Pobranie pliku %1$s nie powiodło się</string>
+    <string name="require_confirmation_to_enable_reader_mode">Wymagaj potwierdzenia</string>
+    <string name="require_confirmation_to_enable_reader_mode_description_enabled">Przed włączeniem trybu czytnika w pasku adresu najpierw pokazuj menu.</string>
+    <string name="require_confirmation_to_enable_reader_mode_description_disabled">Po kliknięciu opcji w pasku adresu przechodź od razu do trybu czytnika.</string>
+    <string name="appearance">Wygląd</string>
+    <string name="open_app_failed">Nie udało mi się znaleźć aplikacji do otworzenia tego linku</string>
+    <string name="stop_reading_aloud">Przestań czytać na głos</string>
+    <string name="read_aloud_panel">Panel czytania na głos</string>
+    <string name="duplicate_tab">Skopiuj kartę</string>
+    <string name="clear_search_history">Wyczyść historię wyszukiwania</string>
+    <string name="clear_search_history_message">Wyczyścić historię wyszukiwania?</string>
+    <string name="open">Otwórz</string>
+    <string name="mark_as_ad_guide">Kliknij w reklamę, aby ją oznaczyć</string>
+    <string name="log_out_webdav">Wyloguj się</string>
+    <string name="run_at">Moment uruchomienia</string>
+    <string name="matches">Dopasowania</string>
+    <string name="match">Dopasowanie</string>
+    <string name="add_match">Dodaj dopasowanie</string>
+    <string name="excludes">Wykluczenia</string>
+    <string name="exclude">Wykluczenie</string>
+    <string name="add_exclude">Dodaj wykluczenie</string>
+    <string name="edit_source_code">Edytuj kod źródłowy</string>
+    <string name="reset_script_message">Zresetować ten skrypt?</string>
+    <string name="exclude_domain">Wyklucz %1$s</string>
+    <string name="exclude_domain_from_script_toast">Skrypt %1$s nie będzie działał na %2$s.</string>
+    <string name="search_history">Historia wyszukiwania</string>
+    <string name="metaso_url">Metaso</string>
+    <string name="search_settings">Ustawienia wyszukiwania</string>
+    <string name="search_engines">Wyszukiwarki</string>
+    <string name="search_toolbar">Pasek wyszukiwarki</string>
+    <string name="enable_search_toobar">Włącz pasek wyszukiwarki</string>
+    <string name="invalid_url">Nieprawidłowy adres</string>
+    <string name="grant_camera_permission_hint">Dotknij ekranu, aby zezwolić na użycie kamery \ndo zeskanowania kodu</string>
+    <string name="location_add_site_exception_allow">Tu będzie można udostępnić lokalizację</string>
+    <string name="location_add_site_exception_block">Tu nie będzie można udostępnić lokalizacji</string>
+    <string name="site_request_location_permission">%1$s chce znać twoją lokalizację.</string>
+    <string name="site_is_using_your_location">%1$s ma dostęp do twojej lokalizacji</string>
+    <string name="text_size_site_exception_add">Tu rozmiar tekstu będzie inny</string>
+    <string name="only_take_effect_for_current_site">Tylko dla obecnej strony</string>
+    <string name="disable_webrtc">Wyłącz WebRTC</string>
+    <string name="lock">Zablokuj</string>
+    <string name="unlock">Odblokuj</string>
+    <string name="delete_items_message">Na pewno usuąć %1$d elementów?</string>
+    <string name="pip">Obraz w obrazie</string>
+    <string name="game_mode">Tryb gry</string>
+    <string name="game_mode_is_on">Tryb gry jest włączony. Naciśnij dwukrotnie przycisk wstecz, aby z niego wyjść.</string>
+    <string name="game_mode_exit">Naciśnij przycisk jeszcze raz, aby wyjść z trybu gry.</string>
+    <string name="show_details">Pokaż szczegóły</string>
+    <string name="hide_details">Ukryj szczegóły</string>
+    <plurals name="items">
+        <item quantity="zero">Brak elementów</item>
+        <item quantity="one">1 element</item>
+        <item quantity="few">%d elementy</item>
+        <item quantity="many">%d elementów</item>
+        <item quantity="other">%d elementów</item>
+    </plurals>
+    <string name="no_images">Brak obazów</string>
+    <string name="update_pending">Rozpoczynam aktualizację\u2026</string>
+    <string name="update_scripts_completed">Aktualizacja skryptów zakończona.</string>
+    <string name="request_item_update">Na pewno mam zaktualizować %1$s?</string>
+    <string name="vibrate">Wibracje</string>
+    <string name="vibrate_allowed_description">Zezwalaj stronom na korzystanie z wibracji</string>
+    <string name="requires">Wymaga</string>
+    <string name="resources">Zasoby</string>
+    <string name="info_name">Nazwa</string>
+    <string name="info_version">Wersja</string>
+    <string name="info_download_url">Link do pobrania</string>
+    <string name="info_homepage_url">Strona główna</string>
+    <string name="info_support_url">Wsparcie</string>
+    <string name="info_url">URL</string>
+    <string name="info_file_path">Ścieżka do pliku</string>
+    <string name="info_updated">Data aktualizacji</string>
+    <string name="info_created">Data utworzenia</string>
+    <string name="info_size">Rozmiar</string>
+    <string name="resource_does_not_exist_message">Zasób nie istnieje, przez co skrypt może nie działać prawidłowo. Pobrać owy zasób?</string>
+    <string name="script_info">Informacje o skrypcie</string>
+    <string name="resource_info">Informacje o zasobach</string>
+    <string name="quick_back_add_site_exception_on">Tu cofanie bez odświeżania będzie włączone</string>
+    <string name="quick_back_add_site_exception_off">Tu cofanie bez odświeżania będzie wyłączone</string>
+    <string name="desktop_mode_add_site_exception_on">Ta strona będzie wyświetlana w pełnej wersji</string>
+    <string name="desktop_mode_add_site_exception_off">Ta strona nie będzie wyświetlana w pełnej wersji</string>
+    <string name="no_camera">Brak kamery</string>
+    <string name="two_row_toolbar">Dwurzędowy pasek narzędzi</string>
+    <string name="experimental">Eksperyment</string>
+    <string name="blur_effect">Efekt rozmycia</string>
+    <string name="blur_effect_description">Włącz efekt rozmycia w aplikacji. Niektóre urządzenia mogą go nie wspierać.</string>
+    <string name="show_background_in_settings">Pokazuj tło w ustawieniach</string>
+    <string name="show_background_in_settings_toast">Zmiany zajdą przy następnym otwarciu ustawień.</string>
+    <string name="toolbars_settings">Ustawienia pasków narzędzi</string>
+    <string name="user_agent_in_desktop_mode">Agent użytkownika w pełnej wersji stron</string>
+    <string name="user_agent_reduction">Ograniczenie agenta użytkownika</string>
+    <string name="user_agent_reduction_description">Usuń informacje o urządzeniu i pomniejszy numer wersji z agenta użytkownika.</string>
+    <string name="operation_opendownloads">Otwórz listę pobranych plików</string>
+    <string name="closed_tab">Zamknięto kartę %1$s</string>
+    <string name="find">Znajdź</string>
+    <string name="google_lens_url">Obiektyw Google</string>
+    <string name="translation_engine_microsoft">Tłumacz Microsoftu</string>
+    <string name="message">Wiadomość</string>
+    <string name="permission_microphone_description">Używane do przechwytywania dźwięku na stronach</string>
+    <string name="permission_camera_description">Używane do robienia zdjęć lub nagrywania filmów na stronach</string>
+    <string name="permission_summary">%1$s: %2$s</string>
+    <string name="action_add_favorite">Dodaj do ulubionych</string>
+    <string name="favorite_added">Dodano do ulubionych</string>
+    <string name="customize_context_menu">Edytuj menu kontekstowe</string>
+    <string name="font">Czcionka</string>
+    <string name="unable_to_add_font">Nie udało się dodać czcionki. Kod błędu: %1$d</string>
+    <string name="password_manager">Menedżer haseł</string>
+    <string name="offer_to_save_passwords">Proponuj zapisywanie haseł</string>
+    <string name="sites_that_never_save_passwords">Strony, które nigdy nie zapisują haseł</string>
+    <string name="passwords">Hasła</string>
+    <string name="save_password">Zapisz hasło</string>
+    <string name="save_password_message">Zapisać hasło dla %1$s?</string>
+    <string name="password_saved">Hasło zostało zapisane</string>
+    <string name="update_password">Zaktualizuj hasło</string>
+    <string name="update_password_message">Zaktualizować hasło dla %1$s?</string>
+    <string name="password_updated">Hasło zostało zaktualizowane</string>
+    <string name="note">Uwaga</string>
+    <string name="password_exists">Hasło już istnieje</string>
+    <string name="password_exists_message">Zapisano już login i hasło dla %1$s. Czy chcesz je zobaczyć?</string>
+    <string name="view_password">Pokaż hasło</string>
+    <string name="unlock_device_to_view_password">Odblokuj urządzenie, aby zobaczyć hasło</string>
+    <string name="fill_password">Uzupełnij hasło</string>
+    <string name="unlock_device_to_fill_password">Odblokuj urządzenie, aby uzupełnić hasło</string>
+    <string name="import_passwords">Importuj hasła</string>
+    <string name="import_passwords_description">Importuj hasła z pliku CSV.</string>
+    <string name="failed_to_import_passwords">Nie udało się zaimportować haseł</string>
+    <string name="passwords_import">Zaimportowane hasła: %1$d</string>
+    <string name="export_passwords">Eksportuj hasła</string>
+    <string name="export_passwords_description">Usuń plik z hasłami po jego użyciu, aby zapobiec wyciekom danych.</string>
+    <string name="unlock_device_to_export_passwords">Odblokuj urządzenie, aby wyeksportować hasła</string>
+    <string name="never_for_this_site">Nigdy dla tej strony</string>
+    <string name="unlock_device_to_export_data">Odblokuj urządzenie, aby wyeksportować dane</string>
+    <string name="enter_password">Wprowadź hasło</string>
+    <string name="enter_password_for_exporting_data">Eksportujesz sekretne dane. Wprowadź hasło, aby je zaszyfrować. Zapamiętaj to hasło, gdyż bez niego nie zaimportujesz zaszyfrowanych danych.</string>
+    <string name="password_required">Wymagane hasło</string>
+    <string name="password_required_for_importing_data">Importujesz zaszyfrowane dane. Wprowadź hasło, aby je odszyfrować i zaimportować. Przy nieprawidłowym haśle zostaną zaimportowane tylko niezaszyfrowane dane.</string>
+    <string name="copy_username">Skopiuj nazwę użytkownika</string>
+    <string name="copy_password">Skopiuj hasło</string>
+    <string name="unlock_device_to_copy_password">Odblokuj urządzenie, aby skopiować hasło</string>
+    <string name="no_passwords">Brak haseł</string>
+    <string name="report_abuse">Zgłoś nadużycie</string>
+    <string name="reason_distracting_content">Zbyt dużo rozpraszających treści</string>
+    <string name="reason_dangerous_website">To niebezpieczna witryna</string>
+    <string name="reason_display_incorrectly">Strona wyświetla się nieprawidłowo</string>
+    <string name="remarks_optional">Uwagi (opcjonalne)</string>
+    <string name="report_submitted">Zgłoszenie przesłano pomyślnie</string>
+    <string name="unknown_website">Nieznana strona internetowa</string>
+    <string name="toast_install_script_failed_parse_error">Nie udało się przeanalizować skryptu!</string>
+    <string name="fullscreen_0">Zawsze pokazuj</string>
+    <string name="open_in_via">Otwórz w Via</string>
+    <string name="oops">Ups</string>
+    <string name="disable_custom_tabs">Wyłącz karty niestandardowe</string>
+    <string name="disable_custom_tabs_description">Pomijaj stronę przekierowania, gdy aplikacje firm trzecich otwierają linki poprzez karty niestandardowe</string>
+    <string name="open_file_no_available_options">Brak dostępnych sposobów otwarcia tego pliku.</string>
+    <string name="open_option_pdf_preview">Podgląd PDF</string>
+    <string name="image_saved_to_gallery">Obraz zapisano w galerii</string>
+    <string name="action_download_image">Pobierz obraz</string>
+    <string name="save_and_exit">Zapisz i wyjdź</string>
+    <string name="playback_speed_description">Prędkość odtwarzania, %1$s razy</string>
+    <string name="tab_position_description">Karta %1$d z %2$d</string>
+    <string name="accessibility_selected">Wybrano</string>
+    <string name="accessibility_not_selected">Nie wybrano</string>
+    <string name="move_tab_previous">Przenieś kartę wcześniej</string>
+    <string name="move_tab_next">Przenieś kartę później</string>
+    <string name="key_is_set_as_value">%1$s ustawiono jako %2$s</string>
+    <string name="search_shortcut">Skrót wyszukiwania</string>
+    <string name="search_shortcut_description">Wpisz „skrót + spacja + zapytanie”, aby wyszukać za pomocą tej wyszukiwarki, na przykład „g Via”. Użyj maksymalnie 16 znaków bez spacji lub pozostaw puste pole, aby wyłączyć skrót.</string>
+    <string name="search_shortcut_invalid">Nieprawidłowy skrót</string>
+    <string name="search_shortcut_duplicate">Ten skrót jest już używany</string>
+    <string name="site_conf_exists">Konfiguracja strony dla %1$s już istnieje.</string>
+    <string name="disable_predictive_back_gesture">Wyłącz predykcyjny gest powrotu</string>
+</resources>
