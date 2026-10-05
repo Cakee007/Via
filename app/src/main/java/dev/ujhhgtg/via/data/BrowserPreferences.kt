@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import android.graphics.Typeface
 import android.os.LocaleList
 import androidx.core.content.edit
+import dev.ujhhgtg.via.common.GeneratedDocumentState
 import org.json.JSONObject
 import java.io.File
 import java.util.Locale
@@ -42,8 +43,8 @@ class BrowserPreferences(context: Context) {
         val mode = nightMode
         if (mode == 0 || mode == 1 || (mode == 3) == systemNight) return false
         nightMode = if (systemNight) 3 else 2
-        dev.ujhhgtg.via.common.GeneratedDocumentState.initialize(this)
-        dev.ujhhgtg.via.common.GeneratedDocumentState.mark(dev.ujhhgtg.via.common.GeneratedDocumentState.ALL_DOCUMENTS)
+        GeneratedDocumentState.initialize(this)
+        GeneratedDocumentState.mark(GeneratedDocumentState.ALL_DOCUMENTS)
         return true
     }
     var nightFilter: Int get() = int("nightfilter", 77).coerceIn(0, 255); set(value) = putInt("nightfilter", value)
