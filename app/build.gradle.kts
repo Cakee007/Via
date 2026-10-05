@@ -10,8 +10,8 @@ android {
         applicationId = "dev.ujhhgtg.via"
         minSdk = 29
         targetSdk = 37
-        versionCode = 20260823
-        versionName = "7.3.3"
+        versionCode = 20261005
+        versionName = "7.3.3-r2"
     }
 
     compileOptions {
