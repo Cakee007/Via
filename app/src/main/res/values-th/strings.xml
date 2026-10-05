@@ -957,12 +957,6 @@
     <string name="copy_password">คัดลอกรหัสผ่าน</string>
     <string name="unlock_device_to_copy_password">ปลดล็อกอุปกรณ์เพื่อคัดลอกรหัสผ่าน</string>
     <string name="no_passwords">ไม่มีรหัสผ่าน</string>
-    <string name="report_abuse">รายงานการละเมิด</string>
-    <string name="reason_distracting_content">มีเนื้อหาที่รบกวนมากเกินไป</string>
-    <string name="reason_dangerous_website">นี่เป็นเว็บไซต์อันตราย</string>
-    <string name="reason_display_incorrectly">หน้าแสดงผลไม่ถูกต้อง</string>
-    <string name="remarks_optional">หมายเหตุ (ไม่บังคับ)</string>
-    <string name="report_submitted">ส่งรายงานสำเร็จ</string>
     <string name="unknown_website">เว็บไซต์ไม่ทราบ</string>
     <string name="toast_install_script_failed_parse_error">แยกวิเคราะห์สคริปต์ล้มเหลว!</string>
     <string name="fullscreen_0">แสดงเสมอ</string>

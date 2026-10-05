@@ -966,12 +966,6 @@
     <string name="copy_password">Copy password</string>
     <string name="unlock_device_to_copy_password">Unlock device to copy password</string>
     <string name="no_passwords">No passwords</string>
-    <string name="report_abuse">Report abuse</string>
-    <string name="reason_distracting_content">Too much distracting content</string>
-    <string name="reason_dangerous_website">This is a dangerous website</string>
-    <string name="reason_display_incorrectly">The page is displaying incorrectly</string>
-    <string name="remarks_optional">Remarks (optional)</string>
-    <string name="report_submitted">Report submitted successfully</string>
     <string name="unknown_website">Unknown website</string>
     <string name="toast_install_script_failed_parse_error">Failed to parse the script!</string>
     <string name="fullscreen_0">Always show</string>

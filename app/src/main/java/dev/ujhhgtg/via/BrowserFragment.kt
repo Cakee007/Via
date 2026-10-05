@@ -1594,7 +1594,6 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 val internal = dev.ujhhgtg.via.browser.ResourceDocument.isInternalPage(host, url)
                 openFavoriteEditor(if (internal) "https://" else url, if (internal) null else it.webView.title)
             }
-            41 -> current()?.let { dev.ujhhgtg.via.tools.ReportAbuse.show(host, visibleUrl(it), it.title) }
             else -> toast(text(R.string.toast_operation_failed))
         }
     }

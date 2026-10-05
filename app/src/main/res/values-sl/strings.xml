@@ -968,12 +968,6 @@
     <string name="copy_password">Kopiraj geslo</string>
     <string name="unlock_device_to_copy_password">Odkleni napravo za kopiranje gesla</string>
     <string name="no_passwords">Ni gesel</string>
-    <string name="report_abuse">Prijavi zlorabo</string>
-    <string name="reason_distracting_content">Preveč moteče vsebine</string>
-    <string name="reason_dangerous_website">Spletno mesto je nevarno</string>
-    <string name="reason_display_incorrectly">Stran se ne prikazuje pravilno</string>
-    <string name="remarks_optional">Opombe (izbirno)</string>
-    <string name="report_submitted">Poročilo je bilo uspešno poslano</string>
     <string name="unknown_website">Neznano spletno mesto</string>
     <string name="toast_install_script_failed_parse_error">Skripta ni bilo mogoče razčleniti!</string>
     <string name="fullscreen_0">Vedno prikaži</string>

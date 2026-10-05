@@ -7,7 +7,6 @@ object SkinIconKeys {
     fun forDrawable(resource: Int): String? = when (resource) {
         R.drawable.address_incognito -> "ic_incognito_mode"
         R.drawable.address_lock -> "ic_lock"
-        R.drawable.alert -> "ic_menu_report_abuse"
         R.drawable.android_head -> "ic_menu_open_with"
         R.drawable.arrow_down -> "ic_menu_downloads"
         R.drawable.bars_circle -> "ic_menu_read_aloud"

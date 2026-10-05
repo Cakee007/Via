@@ -909,12 +909,6 @@
     <string name="copy_password">پاس ورڈ کاپی کریں</string>
     <string name="unlock_device_to_copy_password">پاس ورڈ کاپی کرنے کے لیے ڈیوائس ان لاک کریں</string>
     <string name="no_passwords">کوئی پاس ورڈز نہیں</string>
-    <string name="report_abuse">غلط استعمال کی رپورٹ کریں</string>
-    <string name="reason_distracting_content">بہت زیادہ توجہ ہٹانے والا مواد ہے</string>
-    <string name="reason_dangerous_website">یہ ایک خطرناک ویب سائٹ ہے</string>
-    <string name="reason_display_incorrectly">پیج صحیح طریقے سے نہیں دکھایا جا رہا</string>
-    <string name="remarks_optional">ریمارکس (اختیاری)</string>
-    <string name="report_submitted">رپورٹ کامیابی سے بھیج دی گئی</string>
     <string name="unknown_website">نامعلوم ویب سائٹ</string>
     <string name="toast_install_script_failed_parse_error">اسکرپٹ پارس کرنے میں ناکامی!</string>
     <string name="fullscreen_0">ہمیشہ دکھائیں</string>

@@ -957,12 +957,6 @@
     <string name="copy_password">Salin kata sandi</string>
     <string name="unlock_device_to_copy_password">Buka kunci perangkat untuk menyalin kata sandi</string>
     <string name="no_passwords">Tidak ada kata sandi</string>
-    <string name="report_abuse">Laporkan penyalahgunaan</string>
-    <string name="reason_distracting_content">Terlalu banyak konten yang mengganggu</string>
-    <string name="reason_dangerous_website">Ini adalah situs web berbahaya</string>
-    <string name="reason_display_incorrectly">Halaman ditampilkan dengan tidak benar</string>
-    <string name="remarks_optional">Catatan (opsional)</string>
-    <string name="report_submitted">Laporan berhasil dikirim</string>
     <string name="unknown_website">Situs web tidak dikenal</string>
     <string name="toast_install_script_failed_parse_error">Gagal memproses skrip!</string>
     <string name="fullscreen_0">Selalu tampilkan</string>

@@ -950,12 +950,6 @@
     <string name="copy_password">رونوشت رمز‌عبور</string>
     <string name="unlock_device_to_copy_password">باز‌کردن قفل دستگاه برای رونوشت رمز‌عبور</string>
     <string name="no_passwords">بدون رمز‌عبور</string>
-    <string name="report_abuse">گزارش تخلف</string>
-    <string name="reason_distracting_content">محتوای حواس‌پرت‌کننده‌ی بیش از حد</string>
-    <string name="reason_dangerous_website">این یک وب‌سایت خطرناک است</string>
-    <string name="reason_display_incorrectly">صفحه به درستی نمایش داده نمی‌شود</string>
-    <string name="remarks_optional">توضیحات (اختیاری)</string>
-    <string name="report_submitted">گزارش با موفقیت ارسال شد</string>
     <string name="unknown_website">وب‌سایت ناشناخته</string>
     <string name="toast_install_script_failed_parse_error">تجزیه اسکریپت ناموفق بود!</string>
     <string name="fullscreen_0">همیشه نشان بده</string>

@@ -957,12 +957,6 @@
     <string name="copy_password">Copiar contraseña</string>
     <string name="unlock_device_to_copy_password">Desbloquea el dispositivo para copiar la contraseña</string>
     <string name="no_passwords">No hay contraseñas</string>
-    <string name="report_abuse">Reportar abuso</string>
-    <string name="reason_distracting_content">Demasiado contenido que distrae</string>
-    <string name="reason_dangerous_website">Este es un sitio web peligroso</string>
-    <string name="reason_display_incorrectly">La página no se muestra correctamente</string>
-    <string name="remarks_optional">Comentarios (opcional)</string>
-    <string name="report_submitted">El reporte se ha enviado correctamente</string>
     <string name="unknown_website">Sitio web desconocido</string>
     <string name="toast_install_script_failed_parse_error">¡No se pudo analizar el script!</string>
     <string name="fullscreen_0">Mostrar siempre</string>

@@ -148,6 +148,7 @@ class BrowserMenuDialog : ViaDialogFragment() {
         val seen = HashSet<Int>()
         for (id in displayed) {
             if (!seen.add(id)) return
+            if (id in OriginalMenu.removed) continue
             val entry = OriginalMenu.entries[id]
             items += if (entry == null) Item(22) else Item(id, entry.icon, getString(entry.titleRes))
         }
@@ -191,7 +192,6 @@ class BrowserMenuDialog : ViaDialogFragment() {
         for (id in intArrayOf(32, 33, 36, 37, 38)) item(id)?.enabled = !generated
         item(38)?.active = runtime?.gameMode ?: false
         item(36)?.active = runtime?.readerState == 3
-        item(41)?.enabled = network
     }
 
     private inner class MenuAdapter : RecyclerView.Adapter<MenuHolder>() {

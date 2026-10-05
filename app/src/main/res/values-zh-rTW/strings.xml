@@ -947,10 +947,4 @@
     <string name="copy_password">複製密碼</string>
     <string name="unlock_device_to_copy_password">解鎖裝置來複制密碼</string>
     <string name="no_passwords">沒有密碼</string>
-    <string name="report_abuse">舉報網站</string>
-    <string name="reason_distracting_content">干擾內容太多</string>
-    <string name="reason_dangerous_website">這是危險網站</string>
-    <string name="reason_display_incorrectly">網頁顯示不正確</string>
-    <string name="remarks_optional">備註（可不填）</string>
-    <string name="report_submitted">舉報成功</string>
 </resources>

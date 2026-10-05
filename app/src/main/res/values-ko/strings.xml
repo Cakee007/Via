@@ -957,10 +957,4 @@
     <string name="copy_password">비밀번호 복사</string>
     <string name="unlock_device_to_copy_password">비밀번호를 복사하려면 기기 잠금 해제</string>
     <string name="no_passwords">비밀번호 없음</string>
-    <string name="report_abuse">악용 사례 신고</string>
-    <string name="reason_distracting_content">집중을 방해하는 콘텐츠가 너무 많음</string>
-    <string name="reason_dangerous_website">위험한 웹사이트임</string>
-    <string name="reason_display_incorrectly">페이지가 잘못 표시됨</string>
-    <string name="remarks_optional">비고 (선택 사항)</string>
-    <string name="report_submitted">신고가 성공적으로 제출되었습니다.</string>
 </resources>

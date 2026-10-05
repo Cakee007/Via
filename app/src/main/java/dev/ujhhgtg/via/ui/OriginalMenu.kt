@@ -48,9 +48,10 @@ object OriginalMenu {
         Entry(37, R.string.open_with, R.drawable.android_head),
         Entry(38, R.string.game_mode, R.drawable.gamepad),
         Entry(40, R.string.action_add_favorite, R.drawable.heart_plus),
-        Entry(41, R.string.report_abuse, R.drawable.alert),
         Entry(3, R.string.action_history, R.drawable.clock_outline)
     ).associateBy { it.id }
-    // w9.k.s0(), c0.f() CN build replaces item 31 with 41.
-    val defaults = listOf(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,25,34,33,30,28,23,29,41,35)
+    // w9.k.s0(): the non-CN default; the CN build's item 41 (report abuse) was removed.
+    val defaults = listOf(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,25,34,33,30,28,23,29,31,35)
+    /** Retired ids still present in saved menu layouts; dropped instead of rendering as blank slots. */
+    val removed = setOf(41)
 }

@@ -719,12 +719,6 @@
     <string name="game_mode">ゲームモード</string>
     <string name="game_mode_is_on">ゲームモードが有効になっています。終了するには「戻る」を2回タップしてください</string>
     <string name="game_mode_exit">もう一度タップするとゲームモードを終了します</string>
-    <string name="report_abuse">問題を報告</string>
-    <string name="reason_distracting_content">気を散らすコンテンツが多すぎる</string>
-    <string name="reason_dangerous_website">危険なウェブサイトである</string>
-    <string name="reason_display_incorrectly">ページが正しく表示されない</string>
-    <string name="remarks_optional">備考（オプション）</string>
-    <string name="report_submitted">問題の報告が完了しました</string>
     <string name="download_completed">ダウンロード完了</string>
     <string name="toast_fullscreen_off">全画面解除</string>
     <string name="action_view_image">画像を開く</string>

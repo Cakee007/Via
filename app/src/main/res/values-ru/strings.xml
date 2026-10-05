@@ -964,12 +964,6 @@
     <string name="copy_password">Копировать пароль</string>
     <string name="unlock_device_to_copy_password">Разблокируйте устройство для копирования пароля</string>
     <string name="no_passwords">Нет паролей</string>
-    <string name="report_abuse">Жалоба</string>
-    <string name="reason_distracting_content">Много отвлекающего</string>
-    <string name="reason_dangerous_website">Опасный сайт</string>
-    <string name="reason_display_incorrectly">Неправильное отображение</string>
-    <string name="remarks_optional">Комментарий (необязательно)</string>
-    <string name="report_submitted">Жалоба отправлена</string>
     <string name="unknown_website">Неизвестный сайт</string>
     <string name="toast_install_script_failed_parse_error">Невозможно обработать скрипт!</string>
     <string name="fullscreen_0">Всегда показывать</string>

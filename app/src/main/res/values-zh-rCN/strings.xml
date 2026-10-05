@@ -949,12 +949,6 @@
     <string name="copy_password">复制密码</string>
     <string name="unlock_device_to_copy_password">解锁设备来复制密码</string>
     <string name="no_passwords">没有密码</string>
-    <string name="report_abuse">举报网站</string>
-    <string name="reason_distracting_content">干扰内容太多</string>
-    <string name="reason_dangerous_website">这是危险网站</string>
-    <string name="reason_display_incorrectly">页面显示不正确</string>
-    <string name="remarks_optional">备注（可不填）</string>
-    <string name="report_submitted">举报成功</string>
     <string name="unknown_website">未知网站</string>
     <string name="toast_install_script_failed_parse_error">解析脚本失败！</string>
     <string name="fullscreen_0">总是显示</string>
