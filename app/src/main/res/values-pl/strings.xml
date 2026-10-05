@@ -380,10 +380,6 @@
     <string name="save_data">Oszczędzanie danych</string>
     <string name="save_data_description">Włącz tryb oszczędzania danych na kompatybilnych stronach.</string>
     <string name="action_manage_favorites">Menedżer ulubionych</string>
-    <string name="check_for_updates">Sprawdź aktualizacje</string>
-    <string name="checking_for_updates">Sprawdzam aktualizacje</string>
-    <string name="latest_version_already_installed">Korzystasz z najnowszej wersji</string>
-    <string name="new_version_available">Dostępna nowa wersja</string>
     <string name="action_download_file">Pobierz</string>
     <string name="delete_hint">Usuń (%1$d)</string>
     <string name="follow_system_dark_mode_on">Śledzenie systemowego trybu ciemnego włączone</string>

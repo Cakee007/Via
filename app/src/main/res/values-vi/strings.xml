@@ -360,10 +360,6 @@
     <string name="save_data">Lưu dữ liệu</string>
     <string name="save_data_description">Bật chế độ tiết kiệm dữ liệu trên các trang web tương thích</string>
     <string name="action_manage_favorites">Quản lý yêu thích</string>
-    <string name="check_for_updates">Kiểm tra cập nhật</string>
-    <string name="checking_for_updates">Đang kiểm tra bản cập nhật</string>
-    <string name="latest_version_already_installed">Phiên bản mới nhất đã được cài đặt</string>
-    <string name="new_version_available">Đã có phiên bản mới</string>
     <string name="action_download_file">Tải xuống</string>
     <string name="delete_hint">Xóa (%1$d)</string>
     <string name="follow_system_dark_mode_on">Chế độ tối của hệ thống đã bật</string>

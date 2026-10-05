@@ -372,10 +372,6 @@
     <string name="save_data">Salvare date</string>
     <string name="save_data_description">Activare mod de economisire a datelor pe site-uri suportate</string>
     <string name="action_manage_favorites">Manager de favorite</string>
-    <string name="check_for_updates">Căutare actualizări</string>
-    <string name="checking_for_updates">Se caută actualizări…</string>
-    <string name="latest_version_already_installed">Cea mai recentă versiune este deja instalată</string>
-    <string name="new_version_available">Versiune nouă disponibilă</string>
     <string name="action_download_file">Descărcare</string>
     <string name="delete_hint">Ștergere(%1$d)</string>
     <string name="follow_system_dark_mode_on">Urmarea setării Mod Întunecat a sistemului este activată</string>

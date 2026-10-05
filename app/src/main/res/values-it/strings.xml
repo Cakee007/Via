@@ -351,10 +351,6 @@
     <string name="save_data">Risparmia dati</string>
     <string name="save_data_description">Abilita la modalità di risparmio dati per i siti compatibili</string>
     <string name="action_manage_favorites">Gestisci preferiti</string>
-    <string name="check_for_updates">Controlla aggiornamenti</string>
-    <string name="checking_for_updates">Controllo degli aggiornamenti in corso</string>
-    <string name="latest_version_already_installed">L\'ultima versione è già installata</string>
-    <string name="new_version_available">Nuova versione disponibile</string>
     <string name="action_download_file">Scarica</string>
     <string name="delete_hint">Rimuovi (%1$d)</string>
     <string name="scoped_search">Cerca %1$s</string>

@@ -371,10 +371,6 @@
     <string name="save_data">Trafik tejash</string>
     <string name="save_data_description">Mos keluvchi saytlarda trafik tejash</string>
     <string name="action_manage_favorites">Boshqaruv</string>
-    <string name="check_for_updates">Yangilanishlarni tekshirish</string>
-    <string name="checking_for_updates">Yangilanishlar tekshirilmoqda</string>
-    <string name="latest_version_already_installed">Oxirgi versiya allaqachon o‘rnatilgan</string>
-    <string name="new_version_available">Yangi versiya mavjud</string>
     <string name="action_download_file">Yuklab olish</string>
     <string name="delete_hint">O‘chirish (%1$d)</string>
     <string name="follow_system_dark_mode_on">Tizim qorong‘i rejimidan foydalanish</string>

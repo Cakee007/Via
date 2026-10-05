@@ -360,10 +360,6 @@
     <string name="save_data">ประหยัดข้อมูล</string>
     <string name="save_data_description">เปิดใช้งานโหมดประหยัดข้อมูลบนเว็บไซต์ที่รองรับ</string>
     <string name="action_manage_favorites">ตัวจัดการรายการโปรด</string>
-    <string name="check_for_updates">ตรวจสอบอัปเดต</string>
-    <string name="checking_for_updates">กำลังตรวจสอบอัปเดต</string>
-    <string name="latest_version_already_installed">ติดตั้งเวอร์ชันล่าสุดแล้ว</string>
-    <string name="new_version_available">มีเวอร์ชันใหม่</string>
     <string name="action_download_file">ดาวน์โหลด</string>
     <string name="delete_hint">ลบ (%1$d)</string>
     <string name="follow_system_dark_mode_on">เปิดใช้งานโหมดมืดตามระบบ</string>

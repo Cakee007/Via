@@ -174,7 +174,7 @@ class SettingsScreen(
                 if (Build.VERSION.SDK_INT >= 31) toggleRow("blur_effect", R.string.blur_effect, state.blurEffect, R.string.blur_effect_description)
                 toggleRow("show_background_in_settings", R.string.show_background_in_settings, state.showSettingsBackground)
             }
-            Page.ABOUT -> listOf("debugging_info" to R.string.debugging_info, "check_for_updates" to R.string.check_for_updates, "join_telegram_group" to R.string.join_telegram_group, "join_qq_group" to R.string.join_qq_group, "email_me" to R.string.email_me, "wechat_official_account" to R.string.wechat_official_account,
+            Page.ABOUT -> listOf("debugging_info" to R.string.debugging_info, "join_telegram_group" to R.string.join_telegram_group, "join_qq_group" to R.string.join_qq_group, "email_me" to R.string.email_me, "wechat_official_account" to R.string.wechat_official_account,
                 "help_us_translate" to R.string.help_us_translate, "terms_of_use" to R.string.terms_of_use, "privacy_policy" to R.string.privacy_policy, "open_source_licenses" to R.string.open_source_licenses).forEach { (action, label) -> actionRow(action, label) }
             Page.NIGHT -> {
                 actionRow("night_filter_for_web_contents", R.string.night_filter_for_web_contents); toggleRow("force_dark_mode_for_web_contents", R.string.force_dark_mode_for_web_contents, state.nightCss, R.string.force_dark_mode_for_web_contents_description)

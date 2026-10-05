@@ -17,7 +17,6 @@ import dev.ujhhgtg.via.BuildConfig
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.Shell
 import dev.ujhhgtg.via.data.BrowserPreferences
-import dev.ujhhgtg.via.ui.ViaToast
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
 import dev.ujhhgtg.via.ui.dp
 import java.util.Locale
@@ -44,7 +43,6 @@ class AboutSettingsFragment : SettingsListFragment() {
     }
 
     private fun buildRows() = buildList {
-        add(SettingsRow(12, getString(R.string.check_for_updates)))
         add(SettingsRow(4, getString(R.string.open_source_repository)))
         add(SettingsRow(1, getString(R.string.open_source_licenses)))
     }
@@ -86,8 +84,6 @@ class AboutSettingsFragment : SettingsListFragment() {
         }
         when {
             row.id == 1 -> (requireActivity() as Shell).navigate(OpenSourceLicensesFragment())
-            // hb.d case 12: announce the check before Shell.c0 starts it.
-            row.id == 12 -> { ViaToast.show(requireContext(), R.string.checking_for_updates); (requireActivity() as Shell).checkForUpdates() }
             !url.isNullOrEmpty() -> runCatching { startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) }
         }
     }

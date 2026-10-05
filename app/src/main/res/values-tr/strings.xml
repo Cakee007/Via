@@ -372,10 +372,6 @@
     <string name="save_data">Veri kaydet</string>
     <string name="save_data_description">Uyumlu web sitelerinde veri tasarrufu modunu etkinleştirin</string>
     <string name="action_manage_favorites">Favoriler yöneticisi</string>
-    <string name="check_for_updates">Güncellemeleri kontrol et</string>
-    <string name="checking_for_updates">Güncellemeler kontrol ediliyor</string>
-    <string name="latest_version_already_installed">En son sürüm zaten yüklü</string>
-    <string name="new_version_available">Yeni sürüm mevcut</string>
     <string name="action_download_file">İndir</string>
     <string name="delete_hint">Sil(%1$d)</string>
     <string name="follow_system_dark_mode_on">Sistem karanlık modunu takip et etkin</string>

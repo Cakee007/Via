@@ -360,10 +360,6 @@
     <string name="save_data">Ahorrar datos</string>
     <string name="save_data_description">Activa el modo de ahorro de datos en sitios web compatibles</string>
     <string name="action_manage_favorites">Administrador de favoritos</string>
-    <string name="check_for_updates">Buscar actualizaciones</string>
-    <string name="checking_for_updates">Buscando actualizaciones</string>
-    <string name="latest_version_already_installed">Última versión ya instalada</string>
-    <string name="new_version_available">Nueva versión disponible</string>
     <string name="action_download_file">Descargar</string>
     <string name="delete_hint">Eliminar (%1$d)</string>
     <string name="follow_system_dark_mode_on">Seguir el modo oscuro del sistema está activado</string>

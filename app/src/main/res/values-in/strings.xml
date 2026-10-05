@@ -360,12 +360,6 @@
     <string name="save_data">Hemat data</string>
     <string name="save_data_description">Aktifkan mode hemat data di situs web jika memungkinkan</string> 
     <string name="action_manage_favorites">Pengelola favorit</string>
-    <string name="check_for_updates">Periksa pembaruan</string> 
-    <string name="checking_for_updates">Memeriksa pembaruan</string> 
-    <string name="latest_version_already_installed">Versi terbaru sudah diinstal</string> 
-    <string name="new_version_available">Versi baru tersedia</string> 
-    <string name="action_download_file">Unduh</string> 
-    <string name="delete_hint">Hapus (%1$d)</string>
     <string name="follow_system_dark_mode_on">Ikuti mode gelap sistem diaktifkan</string> 
     <string name="scoped_search">Telusuri %1$s</string> 
     <string name="add_shortcut">Tambahkan pintasan</string> 

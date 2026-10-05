@@ -186,7 +186,6 @@ class SettingsController(
             "join_qq_group" -> openUrl("https://viayoo.com/contact/qqgroup/")
             "email_me" -> startActivity(Intent(Intent.ACTION_SENDTO, "mailto:yafengtu@gmail.com".toUri()))
             "wechat_official_account" -> openUrl("https://viayoo.com/contact/wechat/")
-            "check_for_updates" -> openUrl("https://github.com/tuyafeng/Via/releases")
             "about", "debugging_info" -> about()
             else -> unavailable(key)
         }

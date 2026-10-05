@@ -10,7 +10,6 @@ import androidx.fragment.app.Fragment
 import dev.ujhhgtg.via.common.SoftInputAssistObserver
 import dev.ujhhgtg.via.common.WindowInsetsHelper
 import dev.ujhhgtg.via.data.BrowserPreferences
-import dev.ujhhgtg.via.platform.AppUpdates
 import dev.ujhhgtg.via.settings.SettingsFragment
 import dev.ujhhgtg.via.ui.ViaActivity
 import dev.ujhhgtg.via.ui.WelcomeFragment
@@ -111,8 +110,6 @@ open class Shell : ViaActivity() {
             }
         }
     }
-
-    fun checkForUpdates() = AppUpdates.check(this)
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)

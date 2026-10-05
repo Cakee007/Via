@@ -360,10 +360,6 @@
     <string name="save_data">ڈیٹا بچائیں</string>
     <string name="save_data_description">مطابقت رکھنے والی ویب سائٹس پر ڈیٹا سیونگ موڈ آن کریں</string>
     <string name="action_manage_favorites">فیورٹ مینیجر</string>
-    <string name="check_for_updates">اپ ڈیٹس چیک کریں</string>
-    <string name="checking_for_updates">اپ ڈیٹس چیک کی جا رہی ہیں</string>
-    <string name="latest_version_already_installed">لیٹسٹ ورژن پہلے سے انسٹال ہے</string>
-    <string name="new_version_available">نیا ورژن دستیاب ہے</string>
     <string name="action_download_file">ڈاؤن لوڈ</string>
     <string name="delete_hint">ڈیلیٹ کریں (%1$d)</string>
     <string name="follow_system_dark_mode_on">سسٹم کا ڈارک موڈ آن ہے</string>
