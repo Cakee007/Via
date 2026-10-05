@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.net.toUri
 import dev.ujhhgtg.via.common.launchIo
 import dev.ujhhgtg.via.R
@@ -27,6 +28,12 @@ class GeneralSettingsFragment : SettingsListFragment() {
     private var managers: List<ExternalDownloadManagers.Choice>? = null
     private var players: List<ExternalVideoPlayers.Choice>? = null
     private var agentTitle: String? = null
+    private var pendingRequest = 0
+    private val document = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (!::handlers.isInitialized) return@registerForActivityResult
+        handlers.onActivityResult(pendingRequest, result.resultCode, result.data)
+        refreshRows()
+    }
     private val preferenceChanged = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> refreshRows() }
 
     override fun configureToolbar(toolbar: SettingsToolbar) = toolbar.setTitle(R.string.settings_general)
@@ -36,8 +43,9 @@ class GeneralSettingsFragment : SettingsListFragment() {
         preferences = BrowserPreferences(requireContext())
         handlers = SettingsController(requireActivity(), onBack = { parentFragmentManager.popBackStack() },
             openPage = { (requireActivity() as Shell).openPage(it) },
-            launchForResult = { intent, code -> @Suppress("DEPRECATION") startActivityForResult(intent, code) }, scopeOwner = viewLifecycleOwner, exportScopeOwner = this)
+            launchForResult = { intent, code -> pendingRequest = code; document.launch(intent) }, scopeOwner = viewLifecycleOwner, exportScopeOwner = this)
         handlers.restoreState(savedInstanceState)
+        pendingRequest = savedInstanceState?.getInt("pending_request") ?: 0
         rows = SettingsRowsAdapter(::openRow)
         list.itemAnimator = null
         list.adapter = rows
@@ -174,13 +182,11 @@ class GeneralSettingsFragment : SettingsListFragment() {
         }
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        handlers.onActivityResult(requestCode, resultCode, data)
-        refreshRows()
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("pending_request", pendingRequest)
+        if (::handlers.isInitialized) handlers.saveState(outState)
     }
-    override fun onSaveInstanceState(outState: Bundle) { super.onSaveInstanceState(outState); if (::handlers.isInitialized) handlers.saveState(outState) }
     override fun onDestroyView() {
         requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(preferenceChanged)
         handlers.close()

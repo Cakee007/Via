@@ -13,7 +13,7 @@ import java.util.WeakHashMap
 /** c8.mb form scripts and c8.s6 actions 109/110, T7, L7, b5 and fill authentication. */
 class PasswordFormController(
     private val activity: FragmentActivity,
-    launchForResult: (Intent, Int) -> Unit = { intent, request -> activity.startActivityForResult(intent, request) },
+    launchForResult: (Intent, Int) -> Unit,
     private val indicator: (WebView, Boolean) -> Unit,
 ) {
     private val repository = PasswordRepository.get(activity)

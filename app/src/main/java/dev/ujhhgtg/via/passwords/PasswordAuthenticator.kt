@@ -12,7 +12,7 @@ import dev.ujhhgtg.via.ui.ViaToast
 /** wa/r + wa/c: device authentication and the original three-minute successful-auth cache. */
 class PasswordAuthenticator(
     private val activity: FragmentActivity,
-    private val launchForResult: (android.content.Intent, Int) -> Unit = { intent, request -> activity.startActivityForResult(intent, request) },
+    private val launchForResult: (android.content.Intent, Int) -> Unit,
 ) {
     private var success: (() -> Unit)? = null
     private var cancelled: (() -> Unit)? = null

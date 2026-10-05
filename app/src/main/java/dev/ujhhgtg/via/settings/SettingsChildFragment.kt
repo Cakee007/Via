@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import dev.ujhhgtg.via.Shell
 import dev.ujhhgtg.via.ui.SettingsScreen
@@ -13,10 +14,15 @@ import dev.ujhhgtg.via.ui.SettingsScreen
 class SettingsChildFragment : Fragment() {
     private var controller: SettingsController? = null
     private var initialActionDelivered = false
+    private var pendingRequest = 0
+    private val document = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        controller?.onActivityResult(pendingRequest, result.resultCode, result.data)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         initialActionDelivered = savedInstanceState?.getBoolean("initial_action_delivered") ?: false
+        pendingRequest = savedInstanceState?.getInt("pending_request") ?: 0
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
@@ -29,8 +35,8 @@ class SettingsChildFragment : Fragment() {
             if (SettingsScreen.Page.fromAction(target) != null) shell.navigate(newInstance(target))
             else shell.openPage(target)
         }, page = page, launchForResult = { intent, requestCode ->
-            @Suppress("DEPRECATION")
-            startActivityForResult(intent, requestCode)
+            pendingRequest = requestCode
+            document.launch(intent)
         }, scopeOwner = this, exportScopeOwner = this).also { controller = it; it.restoreState(state) }.view
     }
 
@@ -52,19 +58,10 @@ class SettingsChildFragment : Fragment() {
         if (!hidden) controller?.onHostResume()
     }
 
-    /** Credential fallback is launched by the Activity; Shell forwards that result here. */
-    fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean =
-        controller?.onActivityResult(requestCode, resultCode, data) == true
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        handleActivityResult(requestCode, resultCode, data)
-    }
-
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putBoolean("initial_action_delivered", initialActionDelivered)
+        outState.putInt("pending_request", pendingRequest)
         controller?.saveState(outState)
     }
 

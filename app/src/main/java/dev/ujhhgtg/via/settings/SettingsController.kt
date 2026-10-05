@@ -1,7 +1,5 @@
 package dev.ujhhgtg.via.settings
 
-import dev.ujhhgtg.via.common.GeneratedDocumentState
-
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.ContextWrapper
@@ -12,15 +10,15 @@ import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.provider.Settings
-import dev.ujhhgtg.via.ui.ViaToast
 import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.LifecycleOwner
-import dev.ujhhgtg.via.common.launchIo
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.browser.script.ScriptResources
 import dev.ujhhgtg.via.browser.script.ScriptStore
 import dev.ujhhgtg.via.browser.script.UserScript
+import dev.ujhhgtg.via.common.GeneratedDocumentState
+import dev.ujhhgtg.via.common.launchIo
 import dev.ujhhgtg.via.data.BookmarkRepository
 import dev.ujhhgtg.via.data.BrowserDataBackup
 import dev.ujhhgtg.via.data.BrowserDatabase
@@ -28,6 +26,7 @@ import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.passwords.PasswordAuthenticator
 import dev.ujhhgtg.via.passwords.PasswordRepository
 import dev.ujhhgtg.via.ui.SettingsScreen
+import dev.ujhhgtg.via.ui.ViaToast
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
 import java.io.File
 import java.util.Locale
@@ -38,7 +37,7 @@ class SettingsController(
     private val onBack: () -> Unit,
     private val openPage: (String) -> Unit,
     private val page: SettingsScreen.Page = SettingsScreen.Page.ROOT,
-    private val launchForResult: (Intent, Int) -> Unit = { intent, requestCode -> activity.startActivityForResult(intent, requestCode) },
+    private val launchForResult: (Intent, Int) -> Unit,
     private val scopeOwner: LifecycleOwner = activity as LifecycleOwner,
     private val exportScopeOwner: LifecycleOwner = scopeOwner,
 ) : ContextWrapper(activity), AutoCloseable {
@@ -106,7 +105,7 @@ class SettingsController(
         return true
     }
 
-    private fun startActivityForResult(intent: Intent, requestCode: Int) = launchForResult(intent, requestCode)
+    private fun launchDocument(intent: Intent, requestCode: Int) = launchForResult(intent, requestCode)
     private fun runOnUiThread(action: () -> Unit) = activity.runOnUiThread { if (!closed) action() }
 
     private fun settingsState() = SettingsScreen.State(
@@ -308,7 +307,7 @@ class SettingsController(
             }).show()
     }
 
-    private fun chooseDirectoryDocument() = startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+    private fun chooseDirectoryDocument() = launchDocument(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
         if (preferences.downloadDirectory.startsWith("content://")) putExtra(DocumentsContract.EXTRA_INITIAL_URI, preferences.downloadDirectory.toUri())
     }, chooseDirectoryRequest)
 
@@ -355,13 +354,13 @@ class SettingsController(
             }).show()
     }
 
-    private fun importRequest() = startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+    private fun importRequest() = launchDocument(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
         type = "*/*"
         putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("text/html"))
         addCategory(Intent.CATEGORY_OPENABLE)
     }, importBookmarksRequest)
 
-    private fun exportRequest() = startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+    private fun exportRequest() = launchDocument(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
         type = "text/html"
         putExtra(Intent.EXTRA_TITLE, "${getString(R.string.app_name)}_${getString(R.string.action_bookmarks)}_${exportDate()}.html")
     }, exportBookmarksRequest)
@@ -383,7 +382,7 @@ class SettingsController(
         ViaToast.makeText(this, getString(if (count == 0) R.string.no_bookmark else R.string.bookmarks_exported_successfully), ViaToast.LENGTH_SHORT).show()
     }
 
-    private fun importBackupRequest() = startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+    private fun importBackupRequest() = launchDocument(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
         type = "*/*"
         putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/zip", "text/plain"))
         addCategory(Intent.CATEGORY_OPENABLE)
@@ -427,7 +426,7 @@ class SettingsController(
         return java.text.SimpleDateFormat(pattern, locale).format(java.util.Date())
     }
 
-    private fun exportBackupRequest() = startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+    private fun exportBackupRequest() = launchDocument(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
         type = "application/zip"
         putExtra(Intent.EXTRA_TITLE, "${getString(R.string.app_name)}_${getString(R.string.data_file)}_${exportDate()}.zip")
     }, exportBackupRequest)
@@ -527,5 +526,4 @@ class SettingsController(
         .setTitle(getString(R.string.settings))
         .setMessage(getString(R.string.toast_operation_failed))
         .setPositiveButton(android.R.string.ok, null).show()
-
 }

@@ -1,9 +1,5 @@
 package dev.ujhhgtg.via
 
-import dev.ujhhgtg.via.common.launchIo
-import dev.ujhhgtg.via.common.applicationIoScope
-import kotlinx.coroutines.launch
-
 import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.ClipData
@@ -22,6 +18,7 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.GestureDetector
 import android.view.Gravity
 import android.view.KeyEvent
@@ -46,6 +43,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
@@ -60,13 +58,15 @@ import dev.ujhhgtg.via.browser.PageColorSampler
 import dev.ujhhgtg.via.browser.PageScriptsDialogFragment
 import dev.ujhhgtg.via.browser.TabController
 import dev.ujhhgtg.via.browser.UrlResolver
+import dev.ujhhgtg.via.browser.script.ScriptInstaller
 import dev.ujhhgtg.via.browser.script.ScriptManager
 import dev.ujhhgtg.via.browser.script.ScriptStore
-import dev.ujhhgtg.via.browser.script.UserScript
 import dev.ujhhgtg.via.common.GeneratedDocumentState
 import dev.ujhhgtg.via.common.LocalNetworkAccess
 import dev.ujhhgtg.via.common.ViaIntents
 import dev.ujhhgtg.via.common.WindowInsetsHelper
+import dev.ujhhgtg.via.common.applicationIoScope
+import dev.ujhhgtg.via.common.launchIo
 import dev.ujhhgtg.via.data.BookmarkItem
 import dev.ujhhgtg.via.data.BookmarkRepository
 import dev.ujhhgtg.via.data.BrowserDatabase
@@ -89,6 +89,8 @@ import dev.ujhhgtg.via.reader.ReadAloudDialog
 import dev.ujhhgtg.via.reader.ReaderMode
 import dev.ujhhgtg.via.records.RecordsBrowserView
 import dev.ujhhgtg.via.search.UrlInputText
+import dev.ujhhgtg.via.settings.SettingsController
+import dev.ujhhgtg.via.sites.SiteSettingsFragment
 import dev.ujhhgtg.via.skins.setSkinImageResource
 import dev.ujhhgtg.via.ui.AnchorTextMenu
 import dev.ujhhgtg.via.ui.BrowserBackgrounds
@@ -116,6 +118,7 @@ import dev.ujhhgtg.via.video.FullscreenVideoController
 import dev.ujhhgtg.via.video.FullscreenVideoControls
 import dev.ujhhgtg.via.video.VideoPictureInPicture
 import dev.ujhhgtg.via.video.VideoScripts
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.Executors
@@ -216,13 +219,22 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     private var nightApplied: Boolean? = null
     private var homeDocumentDirty = false
     private val webContentFilter = Color.TRANSPARENT.toDrawable()
-    private var menuSettings: dev.ujhhgtg.via.settings.SettingsController? = null
+    private var menuSettings: SettingsController? = null
     private var menuDialog: BrowserMenuDialog? = null
     private var appliedLanguage: String? = null
     private lateinit var behavior: BehaviorPreferences
     private val worker = Executors.newSingleThreadExecutor()
-    private val fileChooserRequest = 501
-    private val browserPermissionRequest = 502
+    private var pendingRequest = 0
+    private val activityResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (passwordForms.onActivityResult(pendingRequest, result.resultCode)) return@registerForActivityResult
+        menuSettings?.onActivityResult(pendingRequest, result.resultCode, result.data)
+    }
+    private val fileChooser = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        fileCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)); fileCallback = null
+    }
+    private val runtimePermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        val result = permissionResult; permissionResult = null; result?.invoke()
+    }
     private val httpAuthorization = mutableMapOf<String, String>()
     private var isPrivate = false
     private var restoring = false
@@ -253,6 +265,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
+        pendingRequest = state?.getInt("pending_request") ?: 0
         preferences = BrowserPreferences(host)
         GeneratedDocumentState.initialize(preferences)
         dev.ujhhgtg.via.skins.SkinResources.load(host, preferences.skin)
@@ -265,7 +278,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         privacyPolicy = dev.ujhhgtg.via.browser.BrowserPrivacyPolicy(preferences, siteConfigurations::get)
         downloader = DownloadCoordinator.get(host)
         downloadFeedback = dev.ujhhgtg.via.downloads.DownloadFeedback(host, this, { isVisible }, ::showDownloads)
-        passwordForms = PasswordFormController(host, { intent, request -> startActivityForResult(intent, request) }, ::showPasswordAssist)
+        passwordForms = PasswordFormController(host, ::launchForResult, ::showPasswordAssist)
         adMarker = dev.ujhhgtg.via.tools.AdMarker(host) { if (::tabs.isInitialized) reloadTabPreferences() }
         adMarker.presentPanel = ::showAdMarkerPanel
         adMarker.dismissPanel = {
@@ -924,7 +937,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                     dev.ujhhgtg.via.downloads.DownloadService.start(activity,
                         dev.ujhhgtg.via.downloads.DownloadService.ACTION_PAUSE_ALL)
                 } catch (error: IllegalStateException) {
-                    android.util.Log.w("ViaDownloads", "Cannot start pending downloads", error)
+                    Log.w("ViaDownloads", "Cannot start pending downloads", error)
                 }
             }
             // k5.t.a / b0.B: 0 = unavailable, 1 = unmetered, 2 = metered.
@@ -1458,7 +1471,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 val target = dev.ujhhgtg.via.browser.HistoryDocument.write(host, preferences, history)
                 host.runOnUiThread {
                     if (!isAdded || view == null) return@runOnUiThread
-                    if (dev.ujhhgtg.via.search.UrlInputText.isInternalDocument(currentWebView()?.url.orEmpty(), host.filesDir.path)) navigate(target) else newTab(target)
+                    if (UrlInputText.isInternalDocument(currentWebView()?.url.orEmpty(), host.filesDir.path)) navigate(target) else newTab(target)
                 }
             }
             4 -> BrowserMenuChoices.downloadManager(host)
@@ -1716,8 +1729,12 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
 
     /** c8.s6.C9: rotation and data clearing are browser dialogs, without a settings page underneath. */
     private fun showBrowserSettingAction(action: String) {
-        val controller = menuSettings ?: dev.ujhhgtg.via.settings.SettingsController(
-            host, onBack = {}, openPage = host::openPage, scopeOwner = this,
+        val controller = menuSettings ?: SettingsController(
+            host,
+            onBack = {},
+            openPage = host::openPage,
+            launchForResult = ::launchForResult,
+            scopeOwner = this,
         ).also { menuSettings = it }
         controller.route(action)
     }
@@ -1738,7 +1755,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                         onCancelled = { openCurrentSiteSettings(changed or 4) })
                 } else if (changed and 1 != 0) current()?.let(tabs::reloadSitePreferences)
             }
-            host.navigate(dev.ujhhgtg.via.sites.SiteSettingsFragment.newInstance(domain, flags))
+            host.navigate(SiteSettingsFragment.newInstance(domain, flags))
         }
     }
 
@@ -1969,16 +1986,16 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
      */
     @android.annotation.SuppressLint("DiscouragedApi")
     private fun installSelectionActions(view: WebView) {
-        val web = view as? dev.ujhhgtg.via.ui.behavior.GestureWebView ?: return
+        val web = view as? GestureWebView ?: return
         val provider = WebView.getCurrentWebViewPackage()?.packageName
         var webSearch = if (provider == null) 0 else resources.getIdentifier("websearch", "string", provider)
         if (provider != null && webSearch <= 0) webSearch = resources.getIdentifier("websearch", "string", "android")
         val webSearchTitle = if (provider != null && webSearch > 0) runCatching { getString(webSearch) }.getOrDefault("Web search") else "Web search"
         web.actionItems = listOf(
-            dev.ujhhgtg.via.ui.behavior.GestureWebView.ActionItem(0, webSearchTitle, 1),
-            dev.ujhhgtg.via.ui.behavior.GestureWebView.ActionItem(0, getString(R.string.search_in_via), 1),
-            dev.ujhhgtg.via.ui.behavior.GestureWebView.ActionItem(SELECTION_SEARCH, getString(R.string.search_hint)),
-            dev.ujhhgtg.via.ui.behavior.GestureWebView.ActionItem(SELECTION_FIND, getString(R.string.find)),
+            GestureWebView.ActionItem(0, webSearchTitle, 1),
+            GestureWebView.ActionItem(0, getString(R.string.search_in_via), 1),
+            GestureWebView.ActionItem(SELECTION_SEARCH, getString(R.string.search_hint)),
+            GestureWebView.ActionItem(SELECTION_FIND, getString(R.string.find)),
         )
         web.onActionItemClick = { action, text ->
             if (text.isNotEmpty() && isAdded) when (action.id) {
@@ -2904,7 +2921,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             val url = tab.webView.url
             applicationIoScope.launch {
                 try { dev.ujhhgtg.via.home.HomeIcons.save(host, url, icon) }
-                catch (error: Exception) { android.util.Log.w("Via", "Cannot store page favicon", error) }
+                catch (error: Exception) { Log.w("Via", "Cannot store page favicon", error) }
             }
         }
         override fun onTouchIconChanged(tab: BrowserTab, iconUrl: String) {
@@ -2913,7 +2930,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             if (iconUrl.contains("favicon.ico") || pageUrl.startsWith("file://", true)) return
             applicationIoScope.launch {
                 try { dev.ujhhgtg.via.home.TouchIconStore.download(host, iconUrl, pageUrl) }
-                catch (error: Exception) { android.util.Log.w("Via", "Cannot store page touch icon", error) }
+                catch (error: Exception) { Log.w("Via", "Cannot store page touch icon", error) }
             }
         }
         override fun onProgressChanged(tab: BrowserTab, progress: Int) {
@@ -3064,7 +3081,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         }, { suggestions ->
                 val values = suggestions.joinToString(",") { "'$it'" }
                 currentWebView()?.evaluateJavascript("javascript:try{OpenSuggestion.pushSuggestions([$values]);}catch(e){}", null)
-            }, { error -> android.util.Log.w("ViaSuggestions", "Suggestion request failed", error) })
+            }, { error -> Log.w("ViaSuggestions", "Suggestion request failed", error) })
     }
 
     /** z8.t2.o/d/q: decode the addon payload and ask before installing or updating it. */
@@ -3093,9 +3110,9 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                         }, { dependenciesReady ->
                                 toast(getString(if (dependenciesReady) R.string.toast_install_script_successfully else R.string.toast_install_script_failed_dependency_error, script.name))
                                 reloadTabPreferences()
-                            }, { error -> android.util.Log.e("ViaScripts", "Addon install failed", error); toast(getString(R.string.toast_install_script_failed_unknown, script.name)) })
+                            }, { error -> Log.e("ViaScripts", "Addon install failed", error); toast(getString(R.string.toast_install_script_failed_unknown, script.name)) })
                     }.negative(android.R.string.cancel).show()
-            }, { error -> android.util.Log.e("ViaScripts", "Addon parse failed", error) })
+            }, { error -> Log.e("ViaScripts", "Addon parse failed", error) })
     }
 
     /**
@@ -3153,13 +3170,13 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         // c8.s6.X normalizes extension accept types before launching the Android chooser.
         val types = params.acceptTypes.flatMap { it.split(',') }.mapNotNull { value -> value.trim().takeIf(String::isNotEmpty)?.let { if (it.startsWith('.')) MimeTypeMap.getSingleton().getMimeTypeFromExtension(it.drop(1).lowercase()) else it } }.distinct()
         val intent = params.createIntent().apply { type = types.singleOrNull() ?: "*/*"; if (types.size > 1) putExtra(Intent.EXTRA_MIME_TYPES, types.toTypedArray()) }
-        return try { startActivityForResult(Intent.createChooser(intent, params.title?.takeIf { it.isNotEmpty() } ?: getString(R.string.title_file_chooser)), fileChooserRequest); true } catch (_: android.content.ActivityNotFoundException) { fileCallback?.onReceiveValue(null); fileCallback = null; true }
+        return try { fileChooser.launch(Intent.createChooser(intent, params.title?.takeIf { it.isNotEmpty() } ?: getString(R.string.title_file_chooser))); true } catch (_: android.content.ActivityNotFoundException) { fileCallback?.onReceiveValue(null); fileCallback = null; true }
     }
 
     private fun hasPermission(permission: String) = host.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
     private fun requestRuntimePermissions(permissions: Array<String>, result: () -> Unit) {
         val missing = permissions.filterNot(::hasPermission)
-        if (missing.isEmpty()) result() else { permissionResult = result; requestPermissions(missing.toTypedArray(), browserPermissionRequest) }
+        if (missing.isEmpty()) result() else { permissionResult = result; runtimePermissions.launch(missing.toTypedArray()) }
     }
 
     private fun requestLocation(origin: String, callback: GeolocationPermissions.Callback) {
@@ -3275,7 +3292,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         customView = view
         customCallback = callback
         view.keepScreenOn = true
-        val controls = dev.ujhhgtg.via.video.FullscreenVideoControls(host)
+        val controls = FullscreenVideoControls(host)
         controls.setBackgroundColor(Color.BLACK)
         controls.addView(view, 0, FrameLayout.LayoutParams(-1, -1))
         videoContainer = controls
@@ -3339,7 +3356,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     }
 
     private fun installScript(url: String) {
-        dev.ujhhgtg.via.browser.script.ScriptInstaller(this).fromBrowserUrl(url) { reloadTabPreferences() }
+        ScriptInstaller(this).fromBrowserUrl(url) { reloadTabPreferences() }
     }
 
     /** c8.s6.J9: a page's external-app request follows its effective site policy. */
@@ -3460,20 +3477,13 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         updateChrome()
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (passwordForms.onActivityResult(requestCode, resultCode)) return
-        if (requestCode == fileChooserRequest) { fileCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data)); fileCallback = null }
-    }
+    private fun launchForResult(intent: Intent, request: Int) { pendingRequest = request; activityResult.launch(intent) }
 
-    @Deprecated("Deprecated in Java")
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == browserPermissionRequest) { val result = permissionResult; permissionResult = null; result?.invoke() }
+    override fun onSaveInstanceState(outState: Bundle) {
+        if (::tabs.isInitialized) outState.putBundle("browser_tabs", tabs.saveState())
+        outState.putInt("pending_request", pendingRequest)
+        super.onSaveInstanceState(outState)
     }
-
-    override fun onSaveInstanceState(outState: Bundle) { if (::tabs.isInitialized) outState.putBundle("browser_tabs", tabs.saveState()); super.onSaveInstanceState(outState) }
     override fun onPause() {
         GeneratedDocumentState.flush(preferences)
         if (::tabs.isInitialized) tabs.flushFilterStatistics()

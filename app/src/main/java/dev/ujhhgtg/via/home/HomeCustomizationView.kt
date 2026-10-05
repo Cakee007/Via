@@ -54,7 +54,7 @@ class HomeCustomizationView(
     private val activity: Activity,
     private val onClose: () -> Unit,
     private val onChanged: () -> Unit = {},
-    private val launchForResult: (Intent, Int) -> Unit = { intent, request -> activity.startActivityForResult(intent, request) },
+    private val launchForResult: (Intent, Int) -> Unit,
     private val editorOwner: LifecycleOwner = activity as LifecycleOwner,
 ) : FrameLayout(activity), AutoCloseable {
     private val preferences = BrowserPreferences(context)
