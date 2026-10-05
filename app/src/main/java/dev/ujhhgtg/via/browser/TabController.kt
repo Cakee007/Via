@@ -1,27 +1,25 @@
 package dev.ujhhgtg.via.browser
 
 import android.content.Context
-import android.net.Uri
 import android.os.Bundle
-import android.os.Message
-import android.view.View
-import android.webkit.GeolocationPermissions
-import android.webkit.HttpAuthHandler
-import android.webkit.PermissionRequest
-import android.webkit.SslErrorHandler
-import android.webkit.ValueCallback
-import android.webkit.WebChromeClient
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
-import android.webkit.WebView
 import dev.ujhhgtg.via.browser.script.ScriptManager
 import dev.ujhhgtg.via.browser.script.ScriptStore
 import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.data.SessionTab
 import dev.ujhhgtg.via.data.SiteConfiguration
-import dev.ujhhgtg.via.ui.behavior.GestureWebView
+import dev.ujhhgtg.via.engine.EnginePage
+import dev.ujhhgtg.via.engine.Engines
+import dev.ujhhgtg.via.engine.FileChooserRequest
+import dev.ujhhgtg.via.engine.FormResubmissionRequest
+import dev.ujhhgtg.via.engine.FullscreenRequest
+import dev.ujhhgtg.via.engine.HttpAuthRequest
+import dev.ujhhgtg.via.engine.LoadError
+import dev.ujhhgtg.via.engine.LocationRequest
+import dev.ujhhgtg.via.engine.MediaPermissionRequest
+import dev.ujhhgtg.via.engine.PopupRequest
+import dev.ujhhgtg.via.engine.SslErrorRequest
 
-/** Owns WebViews and their saved state while leaving activity UI decisions to [Host]. */
+/** Owns engine pages and their saved state while leaving activity UI decisions to [Host]. */
 class TabController(
     context: Context,
     private val preferences: BrowserPreferences,
@@ -32,8 +30,8 @@ class TabController(
     interface Host {
         fun onReaderCheckRequested() = Unit
 
-        fun onWebViewCreated(tab: BrowserTab) = Unit
-        fun onCurrentWebViewChanged(tab: BrowserTab) = Unit
+        fun onPageCreated(tab: BrowserTab) = Unit
+        fun onCurrentPageChanged(tab: BrowserTab) = Unit
         fun onResourceAvailabilityChanged(tab: BrowserTab, hasMedia: Boolean) = Unit
         fun onPageStarted(tab: BrowserTab, url: String) = Unit
         fun onPageFinished(tab: BrowserTab, url: String, title: String?) = Unit
@@ -51,33 +49,25 @@ class TabController(
         fun onBridgeAddon(tab: BrowserTab, id: String) = Unit
         fun installedAddonIds(tab: BrowserTab): String = "[]"
         fun onBeforeNavigate(tab: BrowserTab, url: String, proceed: () -> Unit): Boolean = false
-        /** Gate a restored WebView history before it is allowed to load a network page. */
+        /** Gate a restored page history before it is allowed to load a network page. */
         fun onBeforeRestore(tab: BrowserTab, url: String, proceed: () -> Unit): Boolean = false
         fun onNavigationRequest(tab: BrowserTab, url: String): Boolean = false
         fun onExternalUrl(tab: BrowserTab, url: String) = Unit
         fun onInternalUrl(tab: BrowserTab, url: String) = onExternalUrl(tab, url)
-        fun onError(tab: BrowserTab, request: WebResourceRequest?, error: WebResourceError?) = Unit
-        fun onHttpAuth(tab: BrowserTab, handler: HttpAuthHandler, host: String, realm: String?) = Unit
-        fun onSslError(tab: BrowserTab, handler: SslErrorHandler, error: android.net.http.SslError) =
-            handler.cancel()
-        fun onCreateWindow(tab: BrowserTab, isDialog: Boolean, userGesture: Boolean, message: Message) = message.sendToTarget()
+        fun onError(tab: BrowserTab, error: LoadError) = Unit
+        fun onHttpAuth(tab: BrowserTab, request: HttpAuthRequest) = request.cancel()
+        fun onSslError(tab: BrowserTab, request: SslErrorRequest) = request.cancel()
+        fun onCreateWindow(tab: BrowserTab, request: PopupRequest) = request.deny()
         fun onPopupCreated(opener: BrowserTab, popup: BrowserTab) = Unit
         fun onWindowClosed(tab: BrowserTab) = Unit
-        fun onGeolocationPrompt(tab: BrowserTab, origin: String, callback: GeolocationPermissions.Callback) =
-            callback.invoke(origin, false, false)
+        fun onGeolocationPrompt(tab: BrowserTab, request: LocationRequest) = request.respond(allow = false, retain = false)
         fun onGeolocationHidePrompt(tab: BrowserTab) = Unit
-        fun onPermissionRequest(tab: BrowserTab, request: PermissionRequest) = request.deny()
-        fun onPermissionRequestCanceled(tab: BrowserTab, request: PermissionRequest) = Unit
-        fun onShowCustomView(tab: BrowserTab, view: View, callback: WebChromeClient.CustomViewCallback) =
-            callback.onCustomViewHidden()
-        fun onHideCustomView(tab: BrowserTab) = Unit
-        fun onFormResubmission(tab: BrowserTab, dontResend: Message, resend: Message) =
-            dontResend.sendToTarget()
-        fun onFileChooser(
-            tab: BrowserTab,
-            callback: ValueCallback<Array<Uri>>,
-            params: WebChromeClient.FileChooserParams,
-        ): Boolean = false
+        fun onPermissionRequest(tab: BrowserTab, request: MediaPermissionRequest) = request.deny()
+        fun onPermissionRequestCanceled(tab: BrowserTab, request: MediaPermissionRequest) = Unit
+        fun onShowFullscreen(tab: BrowserTab, request: FullscreenRequest) = request.exited()
+        fun onHideFullscreen(tab: BrowserTab) = Unit
+        fun onFormResubmission(tab: BrowserTab, request: FormResubmissionRequest) = request.cancel()
+        fun onFileChooser(tab: BrowserTab, request: FileChooserRequest): Boolean = false
 
         companion object {
             val NONE = object : Host {}
@@ -115,7 +105,7 @@ class TabController(
     fun indexOf(tab: BrowserTab?): Int = if (tab == null) -1 else all.indexOfFirst { it.id == tab.id }
 
 
-    // WebView needs the host's themed context for popup/window and file chooser behavior.
+    // Pages need the host's themed context for popup/window and file chooser behavior.
     private val appContext = context
     private val filterEngine = dev.ujhhgtg.via.browser.filter.FilterRuntime.get(appContext, preferences.appFlags and 64 != 0)
     private val filterStatistics = FilterStatistics(preferences)
@@ -126,10 +116,11 @@ class TabController(
     val bridgeSecret: String = java.util.UUID.randomUUID().toString()
 
     private val tabs = LinkedHashMap<Long, BrowserTab>()
-    private val engines = LinkedHashMap<Long, BrowserEngine>()
-    private class PageState(var state: Bundle = Bundle(), var view: WebView? = null, var engine: BrowserEngine? = null,
+    private val controllers = LinkedHashMap<Long, PageController>()
+    /** One QuickBack segment. [controller] is null while the segment is released to [state]. */
+    private class PageState(var state: Bundle = Bundle(), var controller: PageController? = null,
         var lastActiveAt: Long = 0L,
-        // t4.b.j: freeze the old WebView's forward boundary when another segment is retained.
+        // t4.b.j: freeze the old page's forward boundary when another segment is retained.
         var nativeForwardAllowance: Int = Int.MAX_VALUE)
     private class TabHistory(val pages: MutableList<PageState>, var current: Int, original: SessionTab? = null) {
         val saved = PendingSessionSnapshot.SavedRow(original)
@@ -160,6 +151,10 @@ class TabController(
     val all: List<BrowserTab>
         get() = tabs.values.toList()
 
+    private fun newController(tab: () -> BrowserTab, url: String?) = PageController(appContext, preferences, callbacksFor(tab),
+        siteConfiguration, filterEngine, scripts, userAgentForId, bridgeSecret,
+        allowBlockedPage = { DocumentPolicy.host(it) in allowedBlockedPageHosts }, initialUrl = url)
+
     /** Creates the first tab after the activity has installed its host callbacks. */
     fun ensureInitialTab(): BrowserTab = selected ?: createTab(preferences.home, select = true, clearClosedTabRecovery = false)
 
@@ -175,37 +170,34 @@ class TabController(
         val id = savedState?.let(BrowserTab::stateId) ?: BrowserTab.nextId()
         BrowserTab.observeId(id)
         // Via's privacy is global plus SiteConf, not a permanent property of a tab.
-        val webView = GestureWebView(appContext).apply { this.id = View.generateViewId() }
         lateinit var tab: BrowserTab
-        val engine = BrowserEngine(appContext, preferences, callbacksFor { tab }, siteConfiguration, filterEngine, scripts, userAgentForId, bridgeSecret, allowBlockedPage = { url -> DocumentPolicy.host(url) in allowedBlockedPageHosts })
-        engine.configure(webView, url)
-        tab = BrowserTab(id, webView, url)
+        val controller = newController({ tab }, url)
+        tab = BrowserTab(id, controller.page, url)
         val index = insertIndex.coerceIn(0, tabs.size)
         if (index == tabs.size) tabs[id] = tab else {
             val ordered = tabs.values.toMutableList().apply { add(index, tab) }
             tabs.clear(); ordered.forEach { tabs[it.id] = it }
         }
-        engines[id] = engine
-        histories[id] = TabHistory(mutableListOf(PageState(view = webView, engine = engine)), 0)
-        host.onWebViewCreated(tab)
+        controllers[id] = controller
+        histories[id] = TabHistory(mutableListOf(PageState(controller = controller)), 0)
+        host.onPageCreated(tab)
         if (select || selectedId == null) {
             val previous = selectedId?.let(tabs::get)
-            if (previous?.id != id) previous?.let { engines[it.id]?.deactivate(it.webView) }
+            if (previous?.id != id) previous?.let { controllers[it.id]?.deactivate() }
             selectedId = id
-            engines[id]?.activate(webView)
+            controller.activate()
         }
         if (savedState != null) {
             fun restoreSavedTab() {
                 val restored = tab.restoreState(savedState)
-                if (restored) engine.reloadPreferences(webView, webView.url)
+                if (restored) controller.reloadPreferences()
                 if (!restored && loadInitialUrl) navigate(tab, tab.requestedUrl)
                 tab.restoreScroll(savedState, afterReload = !restored)
                 savedState.getBundle(KEY_ORIGINAL_SESSION)?.let { source ->
                     val history = historyFrom(source)
                     if (history.pages.isNotEmpty()) {
-                        history.pages[history.current].view = webView
-                        history.pages[history.current].engine = engine
-                        PageColorSampler.restoreColor(webView, history.pages[history.current].state.getInt("COLOR", 0))
+                        history.pages[history.current].controller = controller
+                        PageColorSampler.restoreColor(controller.page, history.pages[history.current].state.getInt("COLOR", 0))
                         histories[id] = history
                     }
                 }
@@ -220,28 +212,26 @@ class TabController(
     }
 
     /** c8.s6.ea/f5 + ua.i1: only an accepted request creates a selected blank tab. */
-    fun createPopupWindow(message: Message) {
-        val transport = message.obj as? WebView.WebViewTransport
+    fun createPopupWindow(request: PopupRequest) {
         val opener = selected
-        if (transport == null || opener == null) { message.sendToTarget(); return }
+        if (!request.canAttach || opener == null) { request.deny(); return }
         val referer = opener.url
         val popup = createTab("", select = true,
             loadInitialUrl = false, insertIndex = all.indexOf(opener) + 1)
         host.onPopupCreated(opener, popup)
-        popup.webView.post {
-            engines.getValue(popup.id).preparePopupWindow(referer)
-            transport.webView = popup.webView
-            message.sendToTarget()
+        popup.page.view.post {
+            controllers.getValue(popup.id).preparePopupWindow(referer)
+            request.attach(popup.page)
         }
     }
 
     fun select(id: Long): BrowserTab? {
         if (!tabs.containsKey(id)) return null
         val previous = selectedId?.let(tabs::get)
-        if (previous?.id != id) previous?.let { engines[it.id]?.deactivate(it.webView) }
+        if (previous?.id != id) previous?.let { controllers[it.id]?.deactivate() }
         selectedId = id
         val tab = tabs[id]
-        tab?.let { engines[id]?.activate(it.webView) }
+        tab?.let { controllers[id]?.activate() }
         if (tab != null && previous?.id != id) {
             val to = all.indexOfFirst { it.id == id }
             val from = all.indexOfFirst { it.id == previous?.id }
@@ -266,27 +256,27 @@ class TabController(
     }
 
     /** Newest resource first; the original resource/log page displays at most 64 requests. */
-    fun resources(tab: BrowserTab): List<BrowserResource> = engines[tab.id]?.resources().orEmpty()
-    fun hasMediaResources(tab: BrowserTab?): Boolean = tab != null && engines[tab.id]?.hasMediaResources() == true
-    fun clearResources(tab: BrowserTab) { engines[tab.id]?.clearResources() }
+    fun resources(tab: BrowserTab): List<BrowserResource> = controllers[tab.id]?.resources().orEmpty()
+    fun hasMediaResources(tab: BrowserTab?): Boolean = tab != null && controllers[tab.id]?.hasMediaResources() == true
+    fun clearResources(tab: BrowserTab) { controllers[tab.id]?.clearResources() }
     fun isResourceBlocked(url: String): Boolean = filterEngine.shouldBlock(ResourceDocumentActions.filterRequest(url))
     /** c8.ua.n0/q: bypass only the main-page blocking response, for the lifetime of this browser presenter. */
     fun allowBlockedPage(url: String) { DocumentPolicy.host(url).takeIf(String::isNotEmpty)?.let { allowedBlockedPageHosts = allowedBlockedPageHosts + it } }
 
-    /** c8.ua.p1/c2: called when the browser is hidden or paused, before pausing its WebViews. */
+    /** c8.ua.p1/c2: called when the browser is hidden or paused, before pausing its pages. */
     fun flushFilterStatistics() = filterStatistics.flush()
 
-    fun injectDocumentPhase(viewId: Int, runAt: Int): Boolean {
-        val tab = tabs.values.firstOrNull { it.webView.id == viewId } ?: return false
-        return engines[tab.id]?.injectDocumentPhase(tab.webView, runAt) == true
+    fun injectDocumentPhase(pageId: Int, runAt: Int): Boolean {
+        val tab = tabs.values.firstOrNull { it.page.id == pageId } ?: return false
+        return controllers[tab.id]?.injectDocumentPhase(runAt) == true
     }
 
-    fun scriptMenuState(tab: BrowserTab, callback: ValueCallback<String>) {
-        tab.webView.evaluateJavascript(scripts.menuStateSource(), callback)
+    fun scriptMenuState(tab: BrowserTab, callback: (String) -> Unit) {
+        tab.page.evaluate(scripts.menuStateSource(), callback)
     }
 
     fun executeScriptMenu(tab: BrowserTab, scriptId: String, name: String) {
-        tab.webView.evaluateJavascript(scripts.executeMenuSource(scriptId, name), null)
+        tab.page.evaluate(scripts.executeMenuSource(scriptId, name))
     }
 
     fun navigate(tab: BrowserTab, input: String, referer: String? = null, localNetworkChecked: Boolean = false): String? {
@@ -302,16 +292,16 @@ class TabController(
             host.onInternalUrl(tab, target)
             return target
         }
-        val view = tab.webView
-        val source = view.url
+        val page = tab.page
+        val source = page.url
         if (target == source) {
             // r4.d.v reloads an identical explicit URL without creating/discarding segments.
-            engines[tab.id]?.reloadPreferences(view, target)
-            view.reload()
+            controllers[tab.id]?.reloadPreferences(target)
+            page.reload()
             return target
         }
         if (target.startsWith("javascript:", true)) {
-            view.loadUrl(target)
+            page.load(target)
             return target
         }
         if (!source.isNullOrEmpty() && quickBackPolicy.shouldRetain(source, target, automatic = false)) {
@@ -319,7 +309,7 @@ class TabController(
             retainPage(tab, target, referer = null)
         } else {
             tab.update(target)
-            engines[tab.id]?.load(view, target, referer)
+            controllers[tab.id]?.load(target, referer)
             histories.getValue(tab.id).pages[histories.getValue(tab.id).current].nativeForwardAllowance = 0
             discardForwardPages(tab)
         }
@@ -329,12 +319,12 @@ class TabController(
     /** Generated file loads take the same N decision after the logical about:/v: action resolves. */
     fun loadInternalPage(tab: BrowserTab, documentUrl: String, logicalUrl: String = tab.requestedUrl) {
         if (tab.id !in tabs) return
-        val source = tab.webView.url
+        val source = tab.page.url
         if (source == documentUrl) {
             tab.requestedUrl = logicalUrl
             tab.internalDocumentUrl = documentUrl
-            engines[tab.id]?.reloadPreferences(tab.webView, documentUrl)
-            tab.webView.reload()
+            controllers[tab.id]?.reloadPreferences(documentUrl)
+            tab.page.reload()
             return
         }
         if (!source.isNullOrEmpty() && quickBackPolicy.shouldRetain(source, documentUrl, automatic = false)) {
@@ -342,40 +332,37 @@ class TabController(
         } else {
             tab.requestedUrl = logicalUrl
             tab.internalDocumentUrl = documentUrl
-            engines[tab.id]?.load(tab.webView, documentUrl)
+            controllers[tab.id]?.load(documentUrl)
             histories.getValue(tab.id).pages[histories.getValue(tab.id).current].nativeForwardAllowance = 0
             discardForwardPages(tab)
         }
     }
 
-    /** r4.d.H/S: retain the old page, discard its obsolete future, then select a fresh WebView. */
+    /** r4.d.H/S: retain the old page, discard its obsolete future, then select a fresh page. */
     private fun retainPage(tab: BrowserTab, target: String, referer: String?, logicalUrl: String? = null,
         freezePreviousForward: Boolean = false) {
         val history = histories.getValue(tab.id)
-        val previous = tab.webView
         val oldPage = history.pages[history.current]
         if (freezePreviousForward) oldPage.nativeForwardAllowance = 0 // H(..., 0) calls the old view's o().
         discardForwardPages(tab)
-        val created = GestureWebView(appContext).apply { id = View.generateViewId() }
-        val engine = BrowserEngine(appContext, preferences, callbacksFor { tab }, siteConfiguration, filterEngine, scripts, userAgentForId, bridgeSecret, allowBlockedPage = { url -> DocumentPolicy.host(url) in allowedBlockedPageHosts })
-        engine.configure(created, target)
-        previous.stopLoading()
-        engines[tab.id]?.deactivate(previous)
+        val controller = newController({ tab }, target)
+        tab.page.stopLoading()
+        controllers[tab.id]?.deactivate()
         oldPage.lastActiveAt = android.os.SystemClock.elapsedRealtime()
-        history.pages += PageState(view = created, engine = engine)
+        history.pages += PageState(controller = controller)
         history.current = history.pages.lastIndex
-        tab.webView = created
-        tab.title = created.title.orEmpty()
-        engines[tab.id] = engine
-        host.onWebViewCreated(tab)
+        tab.page = controller.page
+        tab.title = controller.page.title.orEmpty()
+        controllers[tab.id] = controller
+        host.onPageCreated(tab)
         if (logicalUrl != null) {
             tab.requestedUrl = logicalUrl
             tab.internalDocumentUrl = target
         } else tab.update(target)
-        engine.load(created, target, referer)
-        engine.activate(created)
+        controller.load(target, referer)
+        controller.activate()
         releaseDistantPages(history)
-        host.onCurrentWebViewChanged(tab)
+        host.onCurrentPageChanged(tab)
         notifyTabChanged(tab)
     }
 
@@ -387,7 +374,7 @@ class TabController(
         tabs.remove(id)
         destroyTab(tab)
         if (selectedId == id) selectedId = tabs.keys.lastOrNull()
-        selectedId?.let { tabs[it] }?.let { engines[it.id]?.activate(it.webView) }
+        selectedId?.let { controllers[it] }?.activate()
         if (wasSelected) {
             // o4.c.b re-selects through j(), which fires the r4.f Y event
             // before the H removal event.
@@ -399,24 +386,24 @@ class TabController(
         return true
     }
 
-    fun pause() = tabs.values.forEach { engines[it.id]?.pause(it.webView) }
+    fun pause() = tabs.values.forEach { controllers[it.id]?.pause() }
 
-    fun resume() { selected?.let { engines[it.id]?.resume(it.webView) } }
+    fun resume() { selected?.let { controllers[it.id]?.resume() } }
 
     fun reloadPreferences() {
         dev.ujhhgtg.via.browser.filter.FilterRuntime.get(appContext, preferences.appFlags and 64 != 0)
-        tabs.values.forEach { engines[it.id]?.reloadPreferences(it.webView, it.internalDocumentUrl ?: it.url) }
+        tabs.values.forEach { controllers[it.id]?.reloadPreferences(it.internalDocumentUrl ?: it.url) }
     }
 
     /** ua.v1 updates only the page edited through the browser's site-settings entry. */
     fun reloadSitePreferences(tab: BrowserTab) {
-        engines[tab.id]?.reloadPreferences(tab.webView, tab.webView.url ?: tab.url)
-        tab.webView.reload()
+        controllers[tab.id]?.reloadPreferences(tab.page.url ?: tab.url)
+        tab.page.reload()
     }
 
-    /** c8.ua.n1(false,true): rebind the active WebView of each resident tab. */
+    /** c8.ua.n1(false,true): rebind the active page of each resident tab. */
     fun applyNightTheme(night: Boolean) {
-        tabs.forEach { (id, tab) -> engines[id]?.applyNightTheme(tab.webView, night) }
+        tabs.keys.forEach { id -> controllers[id]?.applyNightTheme(night) }
     }
 
     fun saveState(out: Bundle = Bundle()): Bundle = out.apply {
@@ -470,8 +457,7 @@ class TabController(
         } else {
             histories[tab.id] = history
             val page = history.pages[history.current]
-            page.view = tab.webView
-            page.engine = engines[tab.id]
+            page.controller = controllers[tab.id]
             tab.requestedUrl = original.getString("URL", row.url ?: preferences.home)
             tab.title = original.getString("TITLE", row.title.orEmpty())
             val restoreUrl = page.state.getString("url") ?: tab.requestedUrl
@@ -498,12 +484,12 @@ class TabController(
         scripts.close()
     }
 
-    /** r4.d.j/n/M: Chromium history takes priority, then move between the saved WebView segments. */
+    /** r4.d.j/n/M: engine history takes priority, then move between the saved page segments. */
     fun canGoBack(tab: BrowserTab? = selected): Boolean = tab != null &&
-        (tab.webView.canGoBack() || (histories[tab.id]?.current ?: 0) > 0)
+        (tab.page.canGoBack || (histories[tab.id]?.current ?: 0) > 0)
 
     fun canGoForward(tab: BrowserTab? = selected): Boolean = tab != null && histories[tab.id]?.let { history ->
-        history.pages[history.current].nativeForwardAllowance > 0 && tab.webView.canGoForward() || history.current + 1 < history.pages.size
+        history.pages[history.current].nativeForwardAllowance > 0 && tab.page.canGoForward || history.current + 1 < history.pages.size
     } == true
 
     fun goBack(tab: BrowserTab? = selected): Boolean = moveInHistory(tab, -1)
@@ -513,58 +499,55 @@ class TabController(
 
     private fun moveInHistory(tab: BrowserTab?, direction: Int): Boolean {
         if (tab == null) return false
-        val view = tab.webView
+        val current = tab.page
         val history = histories[tab.id] ?: return false
         val currentPage = history.pages[history.current]
-        if (direction < 0 && view.canGoBack()) {
+        if (direction < 0 && current.canGoBack) {
             if (currentPage.nativeForwardAllowance < Int.MAX_VALUE) currentPage.nativeForwardAllowance++
-            view.goBack()
+            current.goBack()
             return true
         }
-        if (direction > 0 && currentPage.nativeForwardAllowance > 0 && view.canGoForward()) {
+        if (direction > 0 && currentPage.nativeForwardAllowance > 0 && current.canGoForward) {
             currentPage.nativeForwardAllowance--
-            view.goForward()
+            current.goForward()
             return true
         }
         val next = history.current + direction
         if (next !in history.pages.indices) return false
-        engines[tab.id]?.deactivate(view)
+        controllers[tab.id]?.deactivate()
         history.pages[history.current].lastActiveAt = android.os.SystemClock.elapsedRealtime()
         history.current = next
         val page = history.pages[next]
-        val cached = page.view
+        val cached = page.controller
         if (cached == null) {
-            val created = GestureWebView(appContext).apply { id = View.generateViewId() }
-            val engine = BrowserEngine(appContext, preferences, callbacksFor { tab }, siteConfiguration, filterEngine, scripts, userAgentForId, bridgeSecret, allowBlockedPage = { url -> DocumentPolicy.host(url) in allowedBlockedPageHosts })
-            page.view = created
-            page.engine = engine
+            val controller = newController({ tab }, page.state.getString("url"))
+            page.controller = controller
             page.nativeForwardAllowance = Int.MAX_VALUE
-            tab.webView = created
-            engines[tab.id] = engine
-            engine.configure(created, page.state.getString("url"))
-            host.onWebViewCreated(tab)
+            tab.page = controller.page
+            controllers[tab.id] = controller
+            host.onPageCreated(tab)
             val restoreUrl = page.state.getString("url") ?: tab.requestedUrl
             if (!host.onBeforeRestore(tab, restoreUrl) { if (tab.id in tabs) restorePage(tab, page) }) restorePage(tab, page)
         } else {
-            tab.webView = cached
-            engines[tab.id] = page.engine!!
-            tab.update(cached.url ?: page.state.getString("url"), cached.title.orEmpty())
+            tab.page = cached.page
+            controllers[tab.id] = cached
+            tab.update(cached.page.url ?: page.state.getString("url"), cached.page.title.orEmpty())
         }
-        engines[tab.id]?.activate(tab.webView)
+        controllers[tab.id]?.activate()
         releaseDistantPages(history)
-        host.onCurrentWebViewChanged(tab)
+        host.onCurrentPageChanged(tab)
         notifyTabChanged(tab)
         return true
     }
 
     private fun restorePage(tab: BrowserTab, page: PageState) {
-        val engine = page.engine ?: return
+        val controller = page.controller ?: return
         val sourceUrl = page.state.getString("url") ?: tab.requestedUrl
         tab.update(url = sourceUrl)
-        val restored = SessionState.restore(tab.webView, page.state) { engine.load(tab.webView, it) }
+        val restored = SessionState.restore(controller.page, page.state) { controller.load(it) }
         // t4.c.k -> r4.d.U -> e8.i.B uses the actual restored history URL.
-        if (!restored.isNullOrEmpty()) engine.reloadPreferences(tab.webView, restored)
-        tab.update(tab.webView.url, tab.webView.title.orEmpty())
+        if (!restored.isNullOrEmpty()) controller.reloadPreferences(restored)
+        tab.update(controller.page.url, controller.page.title.orEmpty())
     }
 
     @Suppress("DEPRECATION")
@@ -587,10 +570,11 @@ class TabController(
         val start = maxOf(0, history.current - 6)
         val end = minOf(history.current + 4, history.pages.size)
         val pages = history.pages.subList(start, end).map { page ->
-            page.view?.let { page.state = SessionState.capture(it, PageColorSampler.colorOf(it)) }
+            page.controller?.let { page.state = SessionState.capture(it.page) }
             Bundle(page.state)
         }
         return Bundle().apply {
+            putString(SessionState.KEY_ENGINE, Engines.backend.id)
             putString("TITLE", tab.title)
             putString("URL", tab.url)
             putParcelableArray("LIST", pages.toTypedArray())
@@ -602,40 +586,39 @@ class TabController(
         val history = histories[tab.id] ?: return
         while (history.pages.size > history.current + 1) {
             val page = history.pages.removeAt(history.pages.lastIndex)
-            page.view?.let { view -> page.engine?.destroy(view) ?: view.destroy() }
+            page.controller?.destroy()
         }
     }
 
-    /** r4.d.O/Q keeps the nearby three-back/two-forward WebViews live for at most five minutes. */
+    /** r4.d.O/Q keeps the nearby three-back/two-forward pages live for at most five minutes. */
     private fun releaseDistantPages(history: TabHistory) {
         val now = android.os.SystemClock.elapsedRealtime()
         history.pages.forEachIndexed { index, page ->
             if (index == history.current) return@forEachIndexed
-            val view = page.view ?: return@forEachIndexed
+            val controller = page.controller ?: return@forEachIndexed
             if (index in history.current - 3..history.current + 2 && now - page.lastActiveAt <= 300_000L) return@forEachIndexed
-            page.state = SessionState.capture(view, PageColorSampler.colorOf(view))
-            page.engine?.destroy(view) ?: view.destroy()
-            page.view = null
-            page.engine = null
+            page.state = SessionState.capture(controller.page)
+            controller.destroy()
+            page.controller = null
         }
     }
 
     private fun destroyTab(tab: BrowserTab) {
         val history = histories.remove(tab.id)
-        if (history != null) history.pages.forEach { page -> page.view?.let { page.engine?.destroy(it) ?: it.destroy() } }
-        else engines[tab.id]?.destroy(tab.webView) ?: tab.webView.destroy()
-        engines.remove(tab.id)
+        if (history != null) history.pages.forEach { page -> page.controller?.destroy() }
+        else controllers[tab.id]?.destroy() ?: tab.page.destroy()
+        controllers.remove(tab.id)
     }
 
-    private fun callbacksFor(tabProvider: () -> BrowserTab): BrowserEngine.Callbacks = object : BrowserEngine.Callbacks {
+    private fun callbacksFor(tabProvider: () -> BrowserTab): PageController.Callbacks = object : PageController.Callbacks {
         override fun onRequestBlocked(url: String) = filterStatistics.record(url)
         override fun onReaderCheckRequested() = host.onReaderCheckRequested()
         private fun tab() = tabProvider()
-        override fun onResourceAvailabilityChanged(webView: WebView, hasMedia: Boolean) {
-            if (tab().webView === webView) host.onResourceAvailabilityChanged(tab(), hasMedia)
+        override fun onResourceAvailabilityChanged(page: EnginePage, hasMedia: Boolean) {
+            if (tab().page === page) host.onResourceAvailabilityChanged(tab(), hasMedia)
         }
-        override fun onPageStarted(webView: WebView, url: String) {
-            if (tab().webView !== webView) return
+        override fun onPageStarted(page: EnginePage, url: String) {
+            if (tab().page !== page) return
             tab().update(url = url)
             if ((url.startsWith("http://") || url.startsWith("https://")) &&
                 url.substringBefore('?').lowercase().endsWith(".user.js")) {
@@ -643,46 +626,46 @@ class TabController(
             }
             host.onPageStarted(tab(), tab().displayUrl(url))
         }
-        override fun onPageFinished(webView: WebView, url: String, title: String?) {
-            if (tab().webView !== webView) return
+        override fun onPageFinished(page: EnginePage, url: String, title: String?) {
+            if (tab().page !== page) return
             tab().update(url = url, title = title)
             host.onPageFinished(tab(), tab().displayUrl(url), title)
         }
-        override fun onReceivedTitle(webView: WebView, title: String) {
-            if (tab().webView !== webView) return
+        override fun onReceivedTitle(page: EnginePage, title: String) {
+            if (tab().page !== page) return
             tab().update(title = title)
             // e8.n0.w -> s6.g0 clears ua.v on titles from any non-home document,
             // including a background tab; the generated homepage is exempt.
-            val page = webView.url.orEmpty().substringBefore('?').substringBefore('#')
+            val document = page.url.orEmpty().substringBefore('?').substringBefore('#')
             val files = "file://${appContext.filesDir.path}/"
-            if (page != "${files}homepage.html" && page != "${files}homepage2.html") clearClosedTabRecovery()
+            if (document != "${files}homepage.html" && document != "${files}homepage2.html") clearClosedTabRecovery()
             host.onTitleChanged(tab(), title)
         }
-        override fun onReceivedIcon(webView: WebView, icon: android.graphics.Bitmap?) {
-            if (tab().webView !== webView) return
+        override fun onReceivedIcon(page: EnginePage, icon: android.graphics.Bitmap?) {
+            if (tab().page !== page) return
             host.onIconChanged(tab(), icon)
         }
-        override fun onReceivedTouchIconUrl(view: WebView, url: String, precomposed: Boolean) {
-            if (tab().webView === view) host.onTouchIconChanged(tab(), url)
+        override fun onReceivedTouchIconUrl(page: EnginePage, url: String) {
+            if (tab().page === page) host.onTouchIconChanged(tab(), url)
         }
-        override fun onProgressChanged(webView: WebView, progress: Int) {
-            if (tab().webView === webView) host.onProgressChanged(tab(), progress)
+        override fun onProgressChanged(page: EnginePage, progress: Int) {
+            if (tab().page === page) host.onProgressChanged(tab(), progress)
         }
         override fun onDownload(url: String, userAgent: String?, contentDisposition: String?, mimeType: String?, size: Long) =
             host.onDownload(tab(), url, userAgent, contentDisposition, mimeType, size)
-        override fun onBridgeCommand(webView: WebView, command: Int): Int = host.onBridgeCommand(tab(), command)
-        override fun onBridgeDownload(webView: WebView, url: String, name: String?, mime: String?) = host.onBridgeDownload(tab(), url, name, mime)
-        override fun onBridgeMessage(webView: WebView, token: String, json: String) = host.onBridgeMessage(tab(), token, json)
-        override fun onBridgeRecord(webView: WebView, url: String, mime: String?) = host.onBridgeRecord(tab(), url, mime)
-        override fun onBridgeToast(webView: WebView, text: String) = host.onBridgeToast(tab(), text)
-        override fun onBridgeAddon(webView: WebView, id: String) = host.onBridgeAddon(tab(), id)
-        override fun onInstalledAddonIds(webView: WebView): String = host.installedAddonIds(tab())
-        override fun onNavigationRequest(webView: WebView, url: String, isRedirect: Boolean, isPopup: Boolean): Boolean {
+        override fun onBridgeCommand(page: EnginePage, command: Int): Int = host.onBridgeCommand(tab(), command)
+        override fun onBridgeDownload(page: EnginePage, url: String, name: String?, mime: String?) = host.onBridgeDownload(tab(), url, name, mime)
+        override fun onBridgeMessage(page: EnginePage, token: String, json: String) = host.onBridgeMessage(tab(), token, json)
+        override fun onBridgeRecord(page: EnginePage, url: String, mime: String?) = host.onBridgeRecord(tab(), url, mime)
+        override fun onBridgeToast(page: EnginePage, text: String) = host.onBridgeToast(tab(), text)
+        override fun onBridgeAddon(page: EnginePage, id: String) = host.onBridgeAddon(tab(), id)
+        override fun onInstalledAddonIds(page: EnginePage): String = host.installedAddonIds(tab())
+        override fun onNavigationRequest(page: EnginePage, url: String, isRedirect: Boolean, isPopup: Boolean): Boolean {
             if (host.onNavigationRequest(tab(), url)) return true
             // e8.i consumes a first-popup marker before N; handled schemes also precede N.
             if (isPopup || UrlResolver.isInternal(url) || UrlResolver.isExternalScheme(url) || url.startsWith("javascript:", true)) return false
-            if (quickBackPolicy.shouldRetain(webView.url, url, isRedirect)) {
-                retainPage(tab(), url, referer = webView.url, freezePreviousForward = true)
+            if (quickBackPolicy.shouldRetain(page.url, url, isRedirect)) {
+                retainPage(tab(), url, referer = page.url, freezePreviousForward = true)
                 return true
             }
             // r4.d.e(2): allow the native navigation, reset its forward limit and drop future segments.
@@ -691,20 +674,16 @@ class TabController(
             discardForwardPages(tab())
             return false
         }
-        override fun onExternalUrl(webView: WebView, url: String) = host.onExternalUrl(tab(), url)
-        override fun onInternalUrl(webView: WebView, url: String) = host.onInternalUrl(tab(), url)
-        override fun onError(webView: WebView, request: WebResourceRequest?, error: WebResourceError?) =
-            host.onError(tab(), request, error)
-        override fun onHttpAuth(webView: WebView, handler: HttpAuthHandler, host: String, realm: String?) =
-            this@TabController.host.onHttpAuth(tab(), handler, host, realm)
-        override fun onSslError(webView: WebView, handler: SslErrorHandler, error: android.net.http.SslError) =
-            host.onSslError(tab(), handler, error)
-        override fun onCreateWindow(source: WebView, isDialog: Boolean, userGesture: Boolean, message: Message) =
-            host.onCreateWindow(tab(), isDialog, userGesture, message)
-        override fun onCloseWindow(webView: WebView) {
-            tabs.values.firstOrNull { it.webView === webView }?.let { close(it.id) }
+        override fun onExternalUrl(page: EnginePage, url: String) = host.onExternalUrl(tab(), url)
+        override fun onInternalUrl(page: EnginePage, url: String) = host.onInternalUrl(tab(), url)
+        override fun onError(page: EnginePage, error: LoadError) = host.onError(tab(), error)
+        override fun onHttpAuth(page: EnginePage, request: HttpAuthRequest) = host.onHttpAuth(tab(), request)
+        override fun onSslError(page: EnginePage, request: SslErrorRequest) = host.onSslError(tab(), request)
+        override fun onCreateWindow(source: EnginePage, request: PopupRequest) = host.onCreateWindow(tab(), request)
+        override fun onCloseWindow(page: EnginePage) {
+            tabs.values.firstOrNull { it.page === page }?.let { close(it.id) }
         }
-        override fun onOpenScriptTab(webView: WebView, url: String, active: Boolean, insert: Int) {
+        override fun onOpenScriptTab(page: EnginePage, url: String, active: Boolean, insert: Int) {
             // c8.s6.q.d uses an absolute insertion index, defaulting to after the selected tab.
             val index = if (insert in 0..tabs.size) insert else all.indexOfFirst { it.id == selectedId }.coerceAtLeast(0) + 1
             val created = createTab(url, select = active, loadInitialUrl = false)
@@ -715,18 +694,14 @@ class TabController(
             listeners.toList().forEach { it.onTabsMoved(all.size - 1, ordered.indexOfFirst { tab -> tab.id == created.id }, ordered.indexOfFirst { tab -> tab.id == selectedId }) }
             host.onPopupCreated(tab(), created)
         }
-        override fun onGeolocationPrompt(origin: String, callback: GeolocationPermissions.Callback) =
-            host.onGeolocationPrompt(tab(), origin, callback)
+        override fun onGeolocationPrompt(request: LocationRequest) = host.onGeolocationPrompt(tab(), request)
         override fun onGeolocationHidePrompt() = host.onGeolocationHidePrompt(tab())
-        override fun onPermissionRequest(request: PermissionRequest) = host.onPermissionRequest(tab(), request)
-        override fun onPermissionRequestCanceled(request: PermissionRequest) = host.onPermissionRequestCanceled(tab(), request)
-        override fun onShowCustomView(view: View, callback: WebChromeClient.CustomViewCallback) =
-            host.onShowCustomView(tab(), view, callback)
-        override fun onHideCustomView() = host.onHideCustomView(tab())
-        override fun onFormResubmission(webView: WebView, dontResend: Message, resend: Message) =
-            host.onFormResubmission(tab(), dontResend, resend)
-        override fun onFileChooser(webView: WebView, callback: ValueCallback<Array<Uri>>, params: WebChromeClient.FileChooserParams): Boolean =
-            host.onFileChooser(tab(), callback, params)
+        override fun onPermissionRequest(request: MediaPermissionRequest) = host.onPermissionRequest(tab(), request)
+        override fun onPermissionRequestCanceled(request: MediaPermissionRequest) = host.onPermissionRequestCanceled(tab(), request)
+        override fun onShowFullscreen(request: FullscreenRequest) = host.onShowFullscreen(tab(), request)
+        override fun onHideFullscreen() = host.onHideFullscreen(tab())
+        override fun onFormResubmission(page: EnginePage, request: FormResubmissionRequest) = host.onFormResubmission(tab(), request)
+        override fun onFileChooser(page: EnginePage, request: FileChooserRequest): Boolean = host.onFileChooser(tab(), request)
     }
 
     companion object {

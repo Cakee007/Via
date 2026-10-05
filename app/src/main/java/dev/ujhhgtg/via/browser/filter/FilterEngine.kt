@@ -1,6 +1,5 @@
 package dev.ujhhgtg.via.browser.filter
 
-import android.webkit.WebResourceRequest
 
 /** Network and cosmetic rules; supported grammar is recovered from w4.a/d, not full uBlock. */
 class FilterEngine(webViewMajorVersion: Int = Int.MAX_VALUE) {
@@ -69,9 +68,6 @@ class FilterEngine(webViewMajorVersion: Int = Int.MAX_VALUE) {
     /** x4.a.c: expose the exact indexed result, including exceptions, to the warning-page caller. */
     fun matchingRule(request: FilterRequest): FilterRule? =
         if (loading || request.url.isEmpty()) null else networkIndex.match(request)
-
-    fun shouldBlock(request: WebResourceRequest, topUrl: String? = null): Boolean =
-        shouldBlock(request.toFilterRequest(topUrl))
 
     fun shouldBlock(request: FilterRequest): Boolean = matchingRule(request)?.exception == false
 

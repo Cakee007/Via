@@ -5,8 +5,8 @@ import android.os.BadParcelableException
 import android.os.Bundle
 import android.os.Parcel
 import android.util.Log
-import android.webkit.WebView
 import dev.ujhhgtg.via.data.SessionTab
+import dev.ujhhgtg.via.engine.EnginePage
 import dev.ujhhgtg.via.search.UrlInputText
 import java.io.File
 import java.io.FileInputStream
@@ -22,7 +22,22 @@ internal object SessionState {
 
     fun directory(context: Context): File = (context.getExternalFilesDir("tabs") ?: File(context.filesDir, "tabs")).apply { mkdirs() }
 
-    fun read(path: String?): Bundle? {
+    /** Key of the backend that wrote a session Bundle. Files without it predate backends and came from WebView. */
+    const val KEY_ENGINE = "ENGINE"
+    private const val LEGACY_ENGINE = "webview"
+
+    /**
+     * Reads a saved tab, or null when it is missing, unreadable, or written by another backend.
+     * Callers then restore the tab from its URL alone, since engine history states aren't portable.
+     */
+    fun read(path: String?): Bundle? = readFile(path)?.takeIf {
+        writtenBy(it.getString(KEY_ENGINE), dev.ujhhgtg.via.engine.Engines.backend.id)
+    }
+
+    /** Whether a state tagged [engine] (null for files from before backends existed) belongs to [backend]. */
+    internal fun writtenBy(engine: String?, backend: String): Boolean = (engine ?: LEGACY_ENGINE) == backend
+
+    private fun readFile(path: String?): Bundle? {
         if (path.isNullOrEmpty()) return null
         return try {
             FileInputStream(path).use { stream ->
@@ -55,30 +70,30 @@ internal object SessionState {
         return null
     }
 
-    /** t4.c.l/t4.b.saveState: COLOR accompanies a successful WebView state, url and scroll are fallbacks. */
-    fun capture(view: WebView, color: Int): Bundle = Bundle().apply {
-        if (view.saveState(this) != null) putInt("COLOR", color)
-        view.url?.takeIf(String::isNotEmpty)?.let { putString("url", it) }
-        val scroll = view.scrollX.toLong() or (view.scrollY.toLong() shl 32)
+    /** t4.c.l/t4.b.saveState: COLOR accompanies a successful engine state, url and scroll are fallbacks. */
+    fun capture(page: EnginePage): Bundle = Bundle().apply {
+        if (page.saveState(this)) putInt("COLOR", PageColorSampler.colorOf(page))
+        page.url?.takeIf(String::isNotEmpty)?.let { putString("url", it) }
+        val scroll = page.scrollX.toLong() or (page.scrollY.toLong() shl 32)
         if (scroll != 0L) putLong("scroll", scroll)
     }
 
     /** t4.c.k: use the restored current history item, then the stored URL, with the original scroll delays. */
-    fun restore(view: WebView, state: Bundle, loadFallback: (String) -> Unit): String? {
+    fun restore(page: EnginePage, state: Bundle, loadFallback: (String) -> Unit): String? {
         if (state.isEmpty) return null
-        PageColorSampler.restoreColor(view, state.getInt("COLOR", PageColorSampler.colorOf(view)))
-        val restored = view.restoreState(state)?.currentItem?.url
+        PageColorSampler.restoreColor(page, state.getInt("COLOR", PageColorSampler.colorOf(page)))
+        val restored = page.restoreState(state)
         val fallback = if (restored.isNullOrEmpty()) state.getString("url")?.takeIf(String::isNotEmpty) else null
         if (fallback != null) loadFallback(fallback)
         val scroll = state.getLong("scroll", 0L)
-        if (scroll != 0L) view.postDelayed({
-            if (view.scrollY <= 1000) view.scrollTo(scroll.toInt(), (scroll ushr 32).toInt())
+        if (scroll != 0L) page.view.postDelayed({
+            if (page.scrollY <= 1000) page.scrollTo(scroll.toInt(), (scroll ushr 32).toInt())
         }, if (fallback == null) 100L else 500L)
         return restored
     }
 }
 
-/** WebView capture is performed on the UI thread; writeFiles may then run on the browser's IO worker. */
+/** Page capture is performed on the UI thread; writeFiles may then run on the browser's IO worker. */
 class PendingSessionSnapshot internal constructor(
     private val directory: File,
     private val entries: List<Entry>,

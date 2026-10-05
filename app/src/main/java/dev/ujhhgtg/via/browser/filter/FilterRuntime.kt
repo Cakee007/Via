@@ -7,8 +7,7 @@ import java.util.concurrent.Executors
 
 /** pa.c.c/pa.r.c: one process filter repository, initially loaded by z8.h.b(m9.k). */
 internal object FilterRuntime {
-    private val filters = FilterEngine(android.webkit.WebView.getCurrentWebViewPackage()?.versionName
-        ?.substringBefore('.', "")?.toIntOrNull() ?: 0)
+    private val filters = FilterEngine(dev.ujhhgtg.via.engine.Engines.backend.engineMajorVersion)
     private val loader = Executors.newSingleThreadExecutor()
     @Volatile private var builtIn: Boolean? = null
     private var customRules: CustomFilterRules? = null

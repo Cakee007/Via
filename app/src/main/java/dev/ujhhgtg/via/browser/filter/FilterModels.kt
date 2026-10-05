@@ -1,6 +1,5 @@
 package dev.ujhhgtg.via.browser.filter
 
-import android.webkit.WebResourceRequest
 import java.net.URI
 
 enum class ResourceType(val mask: Int) {
@@ -60,38 +59,4 @@ data class FilterRule(
         }
 
     }
-}
-
-/** b5.c.j/l: one request can carry document/WebSocket/XHR and content-type bits. */
-fun WebResourceRequest.toFilterRequest(topUrl: String? = null): FilterRequest {
-    val target = url.toString()
-    val headers = requestHeaders ?: emptyMap()
-    val main = isForMainFrame && target == topUrl
-    var mask = if (main) 512 else 0
-    if (target.startsWith("ws")) mask = mask or 8192
-    if (headers["X-Requested-With"] == "XMLHttpRequest") mask = mask or 16384
-    val filename = target.substringBefore('?').substringAfterLast('/')
-    val extension = filename.indexOf('.').takeIf { it > 0 }?.let { filename.substring(it + 1).lowercase() }?.takeIf { it.length <= 8 }
-    fun mimeMask(mime: String?): Int = when {
-        mime in listOf("application/javascript", "application/x-javascript", "text/javascript", "application/json") -> 32
-        mime == "text/css" -> 128
-        mime?.startsWith("image/") == true -> 64
-        mime?.startsWith("video/") == true || mime?.startsWith("audio/") == true -> 1024
-        mime?.startsWith("font/") == true -> 2048
-        else -> 16
-    }
-    val known = when (extension) {
-        "js", "json" -> 32
-        "css" -> 128
-        "otf", "ttf", "ttc", "woff", "woff2" -> 2048
-        "php", null -> null
-        else -> android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)?.let(::mimeMask)
-    }
-    val content = known ?: if (main) 16 else headers["Accept"]?.takeUnless { it == "*/*" }?.substringBefore(',')?.trim()?.let(::mimeMask) ?: 3312
-    mask = mask or content
-    val type = ResourceType.entries.firstOrNull { it.mask == content } ?: if (main) ResourceType.DOCUMENT else ResourceType.OTHER
-    val sourceHost = FilterRule.host(topUrl)
-    val resourceHost = FilterRule.host(target)
-    return FilterRequest(target, topUrl, type, isForMainFrame,
-        sourceHost != null && resourceHost != null && resourceHost != sourceHost && !resourceHost.contains(FilterRule.baseDomain(sourceHost)), headers, mask)
 }

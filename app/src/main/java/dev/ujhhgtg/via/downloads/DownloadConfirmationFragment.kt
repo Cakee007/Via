@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.CookieManager
 import android.webkit.URLUtil
 import android.widget.EditText
 import android.widget.TextView
@@ -113,8 +112,8 @@ class DownloadConfirmationFragment : ViaDialogFragment() {
 
     private fun probePermitted() {
         val initial = request
-        val cookie = CookieManager.getInstance().getCookie(initial.url)
         viewLifecycleOwner.launchIo({
+            val cookie = dev.ujhhgtg.via.engine.Engines.backend.cookies.get(initial.url)
             try {
                 val response = httpClient.head(initial.url) {
                     cookie?.let { header("Cookie", it) }; header("Referer", initial.url)

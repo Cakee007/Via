@@ -55,6 +55,7 @@ class GlobalSiteSettingsFragment : SettingsListFragment() {
             SettingsRow(7, getString(R.string.microphone), permission(flags and 16777216 != 0)),
             SettingsRow(13, getString(R.string.page_redirection), if (flags and 134217728 == 0) allowed(true) else getString(R.string.page_redirection_ask_first_description_short)),
             SettingsRow(15, getString(R.string.vibrate), allowed(flags and 1073741824 != 0)),
+        ) + if (!dev.ujhhgtg.via.engine.Engines.backend.capabilities.quickBackSegments) emptyList() else listOf(
             SettingsHeadingRow(getString(R.string.settings_advanced)),
             SettingsRow(16, getString(R.string.quick_back), on(flags and 512 != 0)),
         ))

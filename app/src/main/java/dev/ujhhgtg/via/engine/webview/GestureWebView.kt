@@ -1,4 +1,4 @@
-package dev.ujhhgtg.via.ui.behavior
+package dev.ujhhgtg.via.engine.webview
 
 import android.content.Context
 import android.util.AttributeSet
@@ -19,6 +19,13 @@ class GestureWebView @JvmOverloads constructor(context: Context, attrs: Attribut
     /** t4.b.v / setOnActionItemClickListener: receives the selected text. */
     var onActionItemClick: ((ActionItem, String) -> Unit)? = null
     private var actionMode: ActionMode? = null
+    /** Sees every touch event before the view's OnTouchListener, which may consume it. */
+    var touchObserver: ((MotionEvent) -> Unit)? = null
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        touchObserver?.invoke(event)
+        return super.dispatchTouchEvent(event)
+    }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (parent != null && event.action == MotionEvent.ACTION_DOWN) edgeGestureReady = url == null

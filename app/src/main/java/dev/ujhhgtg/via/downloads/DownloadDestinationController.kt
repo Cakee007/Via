@@ -10,6 +10,7 @@ import android.webkit.URLUtil
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.common.LocalNetworkAccess
 import dev.ujhhgtg.via.common.launchIo
@@ -17,6 +18,7 @@ import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.settings.ExternalDownloadManagers
 import dev.ujhhgtg.via.ui.ViaToast
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
+import kotlinx.coroutines.launch
 
 /** c8.s6.Xa/na/f8/B4/Q4/M8. */
 class DownloadDestinationController(private val fragment: Fragment, private val onStarted: (Long) -> Unit) {
@@ -84,10 +86,12 @@ class DownloadDestinationController(private val fragment: Fragment, private val 
         val manager = selectedManager(context)
         if (manager?.packageName == "system") {
             if (!URLUtil.isNetworkUrl(request.url)) { ViaToast.show(context, R.string.cannot_download); return }
-            val id = ExternalDownloadManagers.downloadWithSystem(context, request.url, request.fileName.orEmpty(), request.userAgent, request.mimeType)
-            if (id > 0) ViaToast.show(context, R.string.download_pending, actionText = R.string.view_downloads) {
-                ExternalDownloadManagers.openDownloads(context, "system")
-            } else ViaToast.show(context, R.string.download_failed)
+            fragment.lifecycleScope.launch {
+                val id = ExternalDownloadManagers.downloadWithSystem(context, request.url, request.fileName.orEmpty(), request.userAgent, request.mimeType)
+                if (id > 0) ViaToast.show(context, R.string.download_pending, actionText = R.string.view_downloads) {
+                    ExternalDownloadManagers.openDownloads(context, "system")
+                } else ViaToast.show(context, R.string.download_failed)
+            }
             return
         }
         // j1.g/b is retained as its original empty result; z1 currently registers no rpc choice.

@@ -3,7 +3,7 @@ package dev.ujhhgtg.via.ui
 import android.content.Context
 import android.net.Uri
 import android.view.View
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 import androidx.core.text.htmlEncode
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.browser.UrlResolver
@@ -40,7 +40,7 @@ class HomeDocument(private val context: Context, private val preferences: Browse
             for (name in listOf("homepage.js", "suggestions.js", "bind-suggestions.js")) {
                 append("<script type=\"text/javascript\">")
                 // The original generated page resolves its native-call token at runtime. Keep the
-                // placeholder as a window property so the per-WebView ViaBridge secret is used;
+                // placeholder as a window property so the per-EnginePage ViaBridge secret is used;
                 // replacing it with a literal null silently disabled suggestions and page events.
                 append(context.assets.open("home/$name").bufferedReader().use { it.readText() }.replace("__VIA_SECRET__", "window.__VIA_SECRET__"))
                 append("</script>")
@@ -68,6 +68,6 @@ class HomeDocument(private val context: Context, private val preferences: Browse
 
     companion object {
         /** cmd515 is runtime toolbar-shown OR floating-button-shown, not a stored preference. */
-        fun updateGestureAvailability(webView: WebView, allowed: Boolean) { webView.evaluateJavascript("window.__via_home_gesture_allowed__=$allowed;", null) }
+        fun updateGestureAvailability(webView: EnginePage, allowed: Boolean) { webView.evaluate("window.__via_home_gesture_allowed__=$allowed;", null) }
     }
 }

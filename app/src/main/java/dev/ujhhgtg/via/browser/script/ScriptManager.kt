@@ -1,6 +1,6 @@
 package dev.ujhhgtg.via.browser.script
 
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 import dev.ujhhgtg.via.data.BrowserPreferences
 import java.util.UUID
 import org.json.JSONObject
@@ -12,9 +12,8 @@ class ScriptManager(
 ) {
     val secret: String = UUID.randomUUID().toString()
 
-    fun attach(view: WebView, callbacks: ScriptBridge.Callbacks) {
-        view.addJavascriptInterface(ScriptBridge(this, view, callbacks), "via_gm")
-    }
+    /** The `via_gm` native endpoint for [page]; the backend exposes it to page JavaScript. */
+    fun bridge(page: EnginePage, callbacks: ScriptBridge.Callbacks) = ScriptBridge(this, page, callbacks)
 
     /** Call on a worker after user-approved installation; network never runs during injection. */
     suspend fun ensureDependencies(script: UserScript): Boolean = resources.ensure(script)
@@ -62,8 +61,8 @@ class ScriptManager(
         it.enabled && it.appliesTo(url) && (runAt == null || it.runsAt(runAt))
     }.sortedBy { it.content.length } // p5.b.s orders loaded patterns by LENGTH(content) ASC.
 
-    /** n5.a.b: installation API and every matched userscript are separate WebView evaluations. */
-    fun injectPhase(view: WebView, url: String, runAt: ScriptRunAt): Boolean {
+    /** n5.a.b: installation API and every matched userscript are separate page evaluations. */
+    fun injectPhase(view: EnginePage, url: String, runAt: ScriptRunAt): Boolean {
         if (url.isEmpty() || url.startsWith("file://")) return false
         if (runAt == ScriptRunAt.START || runAt == ScriptRunAt.END) {
             // n5.a.e deliberately takes the network URL authority verbatim, including its port.
@@ -74,7 +73,7 @@ class ScriptManager(
                 url.substring(start, end).lowercase(java.util.Locale.ROOT)
             } else ""
             if (arrayOf("greasyfork.org", "userscript.zone", "openuserjs.org", "sleazyfork.org").any(authority::contains)) {
-                view.evaluateJavascript(GmApiSource.installationApi(secret), null)
+                view.evaluate(GmApiSource.installationApi(secret))
             }
         }
         var injected = false
@@ -88,7 +87,7 @@ class ScriptManager(
                     append(script.content)
                     if (wrap) append("\n})();")
                 }
-                view.evaluateJavascript(source, null)
+                view.evaluate(source)
                 injected = true
             }
         }

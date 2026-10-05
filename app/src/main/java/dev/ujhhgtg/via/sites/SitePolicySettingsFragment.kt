@@ -34,7 +34,7 @@ class SitePolicySettingsFragment : SettingsListFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         // jb.j2.V1 -> z8.b0.U clears Chromium's remembered geolocation decisions.
-        if (policy == Policy.LOCATION) android.webkit.GeolocationPermissions.getInstance().clearAll()
+        if (policy == Policy.LOCATION) dev.ujhhgtg.via.engine.Engines.backend.clearLocationPermissions()
         preferences = BrowserPreferences(requireContext())
         GeneratedDocumentState.initialize(preferences)
         database = BrowserDatabase(requireContext())

@@ -1,7 +1,7 @@
 package dev.ujhhgtg.via.passwords
 
 import android.content.Intent
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 import androidx.fragment.app.FragmentActivity
 import dev.ujhhgtg.via.ui.ViaToast
 import dev.ujhhgtg.via.R
@@ -14,17 +14,17 @@ import java.util.WeakHashMap
 class PasswordFormController(
     private val activity: FragmentActivity,
     launchForResult: (Intent, Int) -> Unit,
-    private val indicator: (WebView, Boolean) -> Unit,
+    private val indicator: (EnginePage, Boolean) -> Unit,
 ) {
     private val repository = PasswordRepository.get(activity)
     private val authentication = PasswordAuthenticator(activity, launchForResult)
-    private val secrets = WeakHashMap<WebView, String>()
+    private val secrets = WeakHashMap<EnginePage, String>()
     private val fill = activity.assets.open("passwords/autofill.js").bufferedReader().use { it.readText() }
     private fun text(key: Int) = activity.getString(key)
 
     /** The host's existing window.via bridge owns authentication and dispatch. */
-    fun attach(webView: WebView, secret: String) { secrets[webView] = secret }
-    fun handleMessage(view: WebView, message: JSONObject): Boolean {
+    fun attach(webView: EnginePage, secret: String) { secrets[webView] = secret }
+    fun handleMessage(view: EnginePage, message: JSONObject): Boolean {
         return secrets.containsKey(view) && when (message.optInt("action")) {
             109 -> {
                 val show = message.optInt("show") > 0
@@ -76,7 +76,7 @@ class PasswordFormController(
         }
     }
 
-    fun choose(webView: WebView) {
+    fun choose(webView: EnginePage) {
         val url = webView.url.orEmpty()
         val fragmentActivity = activity as? androidx.fragment.app.FragmentActivity ?: return
         val manager = fragmentActivity.supportFragmentManager
@@ -88,7 +88,7 @@ class PasswordFormController(
                     if (webView.url != url) return@async
                     val script = fill.replace("\"__USER__\"", JSONObject.quote(record.username))
                         .replace("\"__PASS__\"", JSONObject.quote(record.password.orEmpty()))
-                    webView.evaluateJavascript(script, null)
+                    webView.evaluate(script, null)
                 }
             }
         }

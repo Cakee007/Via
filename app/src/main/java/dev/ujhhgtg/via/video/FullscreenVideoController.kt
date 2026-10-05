@@ -1,12 +1,11 @@
 package dev.ujhhgtg.via.video
 
-import android.webkit.ValueCallback
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 
 /** The c8.pb fullscreen-video bridge. */
 class FullscreenVideoController(
     private val controls: FullscreenVideoControls,
-    private val webView: WebView,
+    private val webView: EnginePage,
     private val gesturesEnabled: Boolean,
     private val toolbarEnabled: Boolean,
     private val systemOrientation: Int,
@@ -14,10 +13,10 @@ class FullscreenVideoController(
     fun bind() {
         controls.setSystemOrientation(systemOrientation)
         controls.setControllerCallback(null)
-        webView.evaluateJavascript(VideoScripts.metadata(), ValueCallback { raw ->
+        webView.evaluate(VideoScripts.metadata()) metadata@{ raw ->
             val metadata = parseMetadata(raw) ?: run {
                 controls.setVideoSize(16, 9)
-                return@ValueCallback
+                return@metadata
             }
 
             if (metadata.duration > 0f && controls.isShown) {
@@ -29,7 +28,7 @@ class FullscreenVideoController(
             controls.setBrightnessGestureEnabled(gesturesEnabled)
             controls.setVideoSize(metadata.width, metadata.height)
             controls.setToolbarEnabled(toolbarEnabled)
-        })
+        }
     }
 
     private data class Metadata(val duration: Float, val rate: Float, val width: Int, val height: Int)

@@ -45,6 +45,7 @@ class WebTextSizeSettingsFragment : SettingsListFragment() {
             // jb.k5.b leaves ib.u unchanged when exception/toggle rows change.
             add(globalSample)
             add(SettingsToggleRow(3, getString(R.string.force_enable_zoom), checked = repository.forceZoom))
+            if (!dev.ujhhgtg.via.engine.Engines.backend.capabilities.perPageTextZoom) return@buildList
             add(AddExceptionRow(getString(R.string.add_site_exception)))
             if (exceptions.isNotEmpty()) {
                 add(SettingsHeadingRow(getString(R.string.exception)))

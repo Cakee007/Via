@@ -5,7 +5,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.SystemClock
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.browser.filter.FilterStore
 import dev.ujhhgtg.via.ui.ViaToast
@@ -16,8 +16,8 @@ import java.util.WeakHashMap
 
 /** i6.a/b, f8.q, c8.s6.q9/u: script selection, original overlay actions, cosmetic rule persistence. */
 class AdMarker(private val activity: Activity, private val onRulesChanged: () -> Unit) {
-    private class Session(view: WebView, val secret: String) { val webView = WeakReference(view) }
-    private val sessions = WeakHashMap<WebView, Session>()
+    private class Session(view: EnginePage, val secret: String) { val webView = WeakReference(view) }
+    private val sessions = WeakHashMap<EnginePage, Session>()
     private var active: Session? = null
     private var panel = WeakReference<AdMarkerFragment>(null)
     private var selection = ""
@@ -27,12 +27,12 @@ class AdMarker(private val activity: Activity, private val onRulesChanged: () ->
     var dismissPanel: (() -> Unit)? = null
     private val script by lazy { activity.assets.open("tools/ad-marker.js").bufferedReader().use { it.readText() } }
 
-    fun attach(view: WebView, secret: String) { if (sessions[view]?.secret != secret) sessions[view] = Session(view, secret) }
-    fun handleMessage(view: WebView, message: JSONObject): Boolean {
+    fun attach(view: EnginePage, secret: String) { if (sessions[view]?.secret != secret) sessions[view] = Session(view, secret) }
+    fun handleMessage(view: EnginePage, message: JSONObject): Boolean {
         val session = sessions[view] ?: return false
         val action = message.optInt("action")
         if (action != 102 && action != 103) return false
-        view.post {
+        view.view.post {
             if (active !== session) return@post
             if (action == 102) { selection = message.optString("filter"); panel.get()?.updateSelection(selection) }
             else {
@@ -44,18 +44,18 @@ class AdMarker(private val activity: Activity, private val onRulesChanged: () ->
         return true
     }
 
-    fun start(view: WebView): Boolean {
+    fun start(view: EnginePage): Boolean {
         val now = SystemClock.elapsedRealtime()
         if (now - lastStart < 300) return false
         lastStart = now
         val url = view.url.orEmpty()
         if (!url.startsWith("http://", true) && !url.startsWith("https://", true)) return reject(R.string.cannot_work)
-        if (!view.settings.javaScriptEnabled) return reject(R.string.cannot_work_javascript_is_blocked)
+        if (!view.javaScriptEnabled) return reject(R.string.cannot_work_javascript_is_blocked)
         val session = sessions[view] ?: return false
         if (active !== session) disableScript()
         active = session; selection = ""
-        view.evaluateJavascript(script.replace("\"__VIA_MARKER_SECRET__\"", JSONObject.quote(session.secret)), null)
-        view.evaluateJavascript("try{window.__setMarkerEnabled(!0)}catch(a){}", null)
+        view.evaluate(script.replace("\"__VIA_MARKER_SECRET__\"", JSONObject.quote(session.secret)), null)
+        view.evaluate("try{window.__setMarkerEnabled(!0)}catch(a){}", null)
         presentPanel?.invoke()
         return true
     }
@@ -72,9 +72,9 @@ class AdMarker(private val activity: Activity, private val onRulesChanged: () ->
         (activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText(null, selection))
         ViaToast.show(activity, R.string.toast_copy_text_successful)
     }
-    private fun evaluate(script: String) { active?.webView?.get()?.evaluateJavascript(script, null) }
+    private fun evaluate(script: String) { active?.webView?.get()?.evaluate(script, null) }
     private fun disableScript() { evaluate("try{window.__setMarkerEnabled(!1)}catch(a){}"); active = null; selection = "" }
-    fun onPageStarted(view: WebView) { if (active?.webView?.get() === view) close() }
+    fun onPageStarted(view: EnginePage) { if (active?.webView?.get() === view) close() }
     fun onBackPressed(): Boolean = if (active == null) false else { close(); true }
     fun close() { if (active == null) return; disableScript(); dismissPanel?.invoke() }
 
@@ -87,7 +87,7 @@ class AdMarker(private val activity: Activity, private val onRulesChanged: () ->
                 val view = session.webView.get()
                 close()
                 val escaped = selector.replace("\"", "\\\"")
-                view?.evaluateJavascript("(function(){var e=document.getElementById(\"__via__marker_temp__\");if(e)e.innerText+=\"" + escaped + "{display:none !important}\";else{(e=document.createElement(\"style\")).type=\"text/css\";e.charset=\"UTF-8\";e.id=\"__via__marker_temp__\";e.appendChild(document.createTextNode(\"" + escaped + "{display:none !important}\"));document.head.appendChild(e)}})();", null)
+                view?.evaluate("(function(){var e=document.getElementById(\"__via__marker_temp__\");if(e)e.innerText+=\"" + escaped + "{display:none !important}\";else{(e=document.createElement(\"style\")).type=\"text/css\";e.charset=\"UTF-8\";e.id=\"__via__marker_temp__\";e.appendChild(document.createTextNode(\"" + escaped + "{display:none !important}\"));document.head.appendChild(e)}})();", null)
             }.show()
     }
     private fun reject(resource: Int): Boolean { ViaToast.show(activity, resource); return false }

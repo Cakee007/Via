@@ -3,7 +3,7 @@ package dev.ujhhgtg.via.browser
 import android.app.Activity
 import android.os.LocaleList
 import android.webkit.URLUtil
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.ui.ViaToast
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
@@ -12,7 +12,7 @@ import java.net.URLEncoder
 /** c8.s6.ob/z5 and c8.ua.a2/b2, with literal injection templates from i6.e0. */
 class PageTranslation(
     private val activity: Activity,
-    private val currentWebView: () -> WebView?,
+    private val currentWebView: () -> EnginePage?,
     private val currentUrl: () -> String?,
     private val bridgeSecret: String,
     private val openPage: (String) -> Unit,
@@ -55,7 +55,7 @@ class PageTranslation(
             .replace("__VIA_FALLBACK__", fallback)
         val translated = if (microsoft) source.replace("__VIA_LANGUAGE__", microsoftLanguage(language))
             else source.replace("__VIA_LANGUAGES__", googleLanguages(language))
-        webView.evaluateJavascript(translated, null)
+        webView.evaluate(translated, null)
         toast(R.string.wait_a_moment)
     }
 

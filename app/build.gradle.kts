@@ -59,8 +59,23 @@ android {
         }
     }
 
+    // The browser engine is chosen at build time. Both flavors share applicationId and signing,
+    // so installing one APK over the other keeps all Via-owned data (history, bookmarks, settings).
+    flavorDimensions += "engine"
+    productFlavors {
+        create("webview") {
+            dimension = "engine"
+            isDefault = true
+        }
+    }
+
     buildFeatures {
         buildConfig = true
+    }
+
+    // JVM unit tests run against stubbed android.jar; unmocked calls return defaults instead of throwing.
+    testOptions {
+        unitTests.isReturnDefaultValues = true
     }
 }
 
@@ -84,6 +99,8 @@ dependencies {
     implementation(libs.tinypinyin)
 
     implementation(libs.aboutlibraries.core)
+
+    testImplementation(libs.junit)
 }
 
 aboutLibraries {

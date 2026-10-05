@@ -27,16 +27,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
-import android.webkit.CookieManager
-import android.webkit.GeolocationPermissions
-import android.webkit.HttpAuthHandler
 import android.webkit.MimeTypeMap
-import android.webkit.PermissionRequest
-import android.webkit.SslErrorHandler
 import android.webkit.URLUtil
-import android.webkit.ValueCallback
-import android.webkit.WebChromeClient
-import android.webkit.WebView
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -109,7 +101,6 @@ import dev.ujhhgtg.via.ui.ViaToast
 import dev.ujhhgtg.via.ui.WebsitePermissions
 import dev.ujhhgtg.via.ui.WindowBackgroundDrawable
 import dev.ujhhgtg.via.ui.behavior.BehaviorPreferences
-import dev.ujhhgtg.via.ui.behavior.GestureWebView
 import dev.ujhhgtg.via.ui.behavior.BrowserActions
 import dev.ujhhgtg.via.ui.behavior.PageGestureController
 import dev.ujhhgtg.via.ui.behavior.ToolbarSwipeLayout
@@ -118,6 +109,7 @@ import dev.ujhhgtg.via.video.FullscreenVideoController
 import dev.ujhhgtg.via.video.FullscreenVideoControls
 import dev.ujhhgtg.via.video.VideoPictureInPicture
 import dev.ujhhgtg.via.video.VideoScripts
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsBytes
@@ -195,7 +187,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     }
     private var searchStrip: SearchStrip? = null
     private var customView: View? = null
-    private var customCallback: WebChromeClient.CustomViewCallback? = null
+    private var customCallback: dev.ujhhgtg.via.engine.FullscreenRequest? = null
     private var videoContainer: FrameLayout? = null
     private var videoControls: FullscreenVideoControls? = null
     /** c8.s6 H0/I0: rapid custom-view transitions reset the stored orientation. */
@@ -205,19 +197,19 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         override fun onReceive(context: Context, intent: Intent) {
             val web = currentWebView() ?: return
             when (intent.action) {
-                ViaIntents.ACTION_MEDIA_PLAY -> web.evaluateJavascript(VideoScripts.togglePlayback()) { raw ->
+                ViaIntents.ACTION_MEDIA_PLAY -> web.evaluate(VideoScripts.togglePlayback()) { raw ->
                     // c8.s6$n/e7 -> g2.f: rebuild PiP actions from the
                     // paused/playing state returned by the page.
                     VideoPictureInPicture.updateActions(host, raw.trim('"').toIntOrNull() ?: 0, true)
                 }
-                ViaIntents.ACTION_MEDIA_REWIND -> web.evaluateJavascript(VideoScripts.seekBy(-15), null)
-                ViaIntents.ACTION_MEDIA_FASTFORWARD -> web.evaluateJavascript(VideoScripts.seekBy(15), null)
+                ViaIntents.ACTION_MEDIA_REWIND -> web.evaluate(VideoScripts.seekBy(-15), null)
+                ViaIntents.ACTION_MEDIA_FASTFORWARD -> web.evaluate(VideoScripts.seekBy(15), null)
             }
         }
     }
     private var originalOrientation = 0
-    private var fileCallback: ValueCallback<Array<Uri>>? = null
-    private var pendingPermission: PermissionRequest? = null
+    private var fileCallback: dev.ujhhgtg.via.engine.FileChooserRequest? = null
+    private var pendingPermission: dev.ujhhgtg.via.engine.MediaPermissionRequest? = null
     private var permissionResult: (() -> Unit)? = null
     private var nightApplied: Boolean? = null
     private var homeDocumentDirty = false
@@ -233,7 +225,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         menuSettings?.onActivityResult(pendingRequest, result.resultCode, result.data)
     }
     private val fileChooser = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        fileCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)); fileCallback = null
+        fileCallback?.complete(result.resultCode, result.data); fileCallback = null
     }
     private val runtimePermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         val result = permissionResult; permissionResult = null; result?.invoke()
@@ -262,7 +254,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     private fun label(value: String, size: Float = 16f) = TextView(host).apply { text = value; textSize = size; gravity = Gravity.CENTER_VERTICAL; setTextColor(ink()); typeface = preferences.selectedTypeface() }
     private fun toast(value: String) = ViaToast.makeText(host, value, ViaToast.LENGTH_SHORT).show()
     private fun current() = if (::tabs.isInitialized) tabs.selected else null
-    private fun currentWebView() = current()?.webView
+    private fun currentWebView() = current()?.page
     private fun isLocal(url: String) = url.startsWith("file://${host.filesDir.path}/") || url.startsWith("about:") || UrlResolver.isInternal(url)
     private fun visibleUrl(tab: BrowserTab?) = tab?.url?.takeUnless { isLocal(it) }.orEmpty()
 
@@ -328,7 +320,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     fun consumeExternalIntentClose(tab: BrowserTab): Boolean {
         val selected = current()
         val shouldReturn = externalIntentReturnToCaller && selected != null && selected.id == tab.id && tabs.size <= 1 &&
-            !dev.ujhhgtg.via.browser.ResourceDocument.isInternalPage(host, selected.webView.url ?: selected.url)
+            !dev.ujhhgtg.via.browser.ResourceDocument.isInternalPage(host, selected.page.url ?: selected.url)
         externalIntentReturnToCaller = false
         return shouldReturn
     }
@@ -425,7 +417,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             host.runOnUiThread {
                 if (!isAdded) return@runOnUiThread
                 val selected = current()
-                if (selected != null && dev.ujhhgtg.via.browser.ResourceDocument.isInternalPage(host, selected.webView.url ?: selected.url)) tabs.navigate(selected, file)
+                if (selected != null && dev.ujhhgtg.via.browser.ResourceDocument.isInternalPage(host, selected.page.url ?: selected.url)) tabs.navigate(selected, file)
                 else tabs.createTab(file, select = true)
                 attachSelected()
             }
@@ -468,7 +460,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 }
                 url.startsWith("v://translator/translate?text=", true) -> showTextTranslation(decoded(query("text=")))
                 url.startsWith("v://tabs", true) -> query("/restore?ids=")?.split(',')?.takeIf { it.isNotEmpty() }?.let { restoreIncomingSessions(it, query("selected=")) }
-                matches("v://home") -> current()?.let { tab -> if (!isHome(tab.webView.url ?: tab.url)) tabs.navigate(tab, preferences.home) }
+                matches("v://home") -> current()?.let { tab -> if (!isHome(tab.page.url ?: tab.url)) tabs.navigate(tab, preferences.home) }
                 matches("v://about") -> openInternalDocument(dev.ujhhgtg.via.browser.InternalDocuments.Kind.ABOUT)
                 matches("v://offline") -> openInternalDocument(dev.ujhhgtg.via.browser.InternalDocuments.Kind.SAVED_PAGES)
                 matches("v://log") -> {
@@ -482,7 +474,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 else -> openInternalDocument(dev.ujhhgtg.via.browser.InternalDocuments.Kind.CATALOG)
             }
             url.startsWith("thunder://") || url.startsWith("qqdl://") || url.startsWith("flashget://") -> {
-                UrlResolver.unwrapDownloadScheme(url)?.let { target -> current()?.let { requestDownload(it, target, it.webView.settings.userAgentString, "attachment", null, -1) } }
+                UrlResolver.unwrapDownloadScheme(url)?.let { target -> current()?.let { requestDownload(it, target, it.page.userAgent, "attachment", null, -1) } }
             }
             url.startsWith("baidubox://") || url.startsWith("baiduboxapp://") || url.startsWith("baiduboxlite://") -> Unit
             url.startsWith("file://", true) && url.substringBefore('?').endsWith(".pdf", true) -> host.navigate(dev.ujhhgtg.via.tools.PdfViewerFragment.newInstance(url.toUri()))
@@ -584,7 +576,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         if (!::tabs.isInitialized) return
         val predictive = resources.getBoolean(R.bool.enable_predictive_back) && !preferences.disablePredictiveBack &&
             listOf(Build.BRAND, Build.MANUFACTURER).none { it.equals("HONOR", true) || it.equals("HUAWEI", true) }
-        val home = current()?.let { isHome(it.webView.url ?: it.url) } == true
+        val home = current()?.let { isHome(it.page.url ?: it.url) } == true
         val systemExit = predictive && isAdded && parentFragmentManager.backStackEntryCount == 0 &&
             childFragmentManager.backStackEntryCount == 0 && customView == null && !appFullscreen &&
             !customMode && tabs.size <= 1 && home
@@ -617,7 +609,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             }
             // c8.s6.N1 calls the selected WebView's onPause on PiP exit so
             // Chromium rebinds its media surface on the next frame.
-            currentWebView()?.onPause()
+            currentWebView()?.pause()
         }
     }
 
@@ -991,7 +983,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     /** ua.w1/x1: regenerate only the internal page kinds that have a source dirty bit. */
     private fun refreshGeneratedDocuments() {
         val pending = tabs.all.mapNotNull { tab ->
-            val type = pageTypeOf(tab.webView.url)
+            val type = pageTypeOf(tab.page.url)
             val bit = when (type) {
                 2, 11 -> GeneratedDocumentState.BOOKMARKS
                 3 -> GeneratedDocumentState.HISTORY
@@ -1009,10 +1001,10 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 4 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.ABOUT
                 else -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.CATALOG
             }
-            val folder = if (type == 11) tab.webView.url!!.toUri().getQueryParameter("folder")
+            val folder = if (type == 11) tab.page.url!!.toUri().getQueryParameter("folder")
                 ?: tab.requestedUrl.takeIf { it.startsWith("folder://") }?.toUri()?.host else null
             dev.ujhhgtg.via.browser.InternalDocuments.write(host, preferences, database, kind, folder)
-            tab.webView.reload()
+            tab.page.reload()
         }
     }
 
@@ -1025,11 +1017,12 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     }
 
     private fun installPageGestures(tab: BrowserTab) {
-        val view = tab.webView as? GestureWebView ?: return
+        val page = tab.page
+        val view = page.view
         val gesture = PageGestureController(gesturePreview,
-            canStart = { !gameMode.enabled && behavior.backForwardGesture && view.edgeGestureReady && !(customMode && appFullscreen && !browserLayout.toolbarsShown) },
+            canStart = { !gameMode.enabled && behavior.backForwardGesture && page.edgeGestureReady && !(customMode && appFullscreen && !browserLayout.toolbarsShown) },
             signal = {
-                val edge = !view.canScrollHorizontally(1) && !view.canScrollHorizontally(-1)
+                val edge = !page.canScrollHorizontally(1) && !page.canScrollHorizontally(-1)
                 12 or (if (edge && (tabs.canGoBack(tab) || !isHome(tab.url))) 1 else 0) or (if (edge && (tabs.canGoForward(tab) || tabs.canRecoverClosedTab)) 2 else 0)
             },
             onGesture = { direction -> when (direction) {
@@ -1041,13 +1034,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             onPreview = { arrow, direction -> (arrow as ImageView).setImageResource(if (direction == 1) R.drawable.chevron_left else R.drawable.chevron_right) })
         pageGesture = gesture
         pageGestureOrientation = resources.configuration.orientation
-        view.setOnTouchListener { target, event ->
-            // s6.E: the element probe only runs outside game mode.
-            if (!gameMode.enabled) {
-                elementProbe?.onTouchEvent(event)
-            }
-            gesture.onTouch(target, event)
-        }
+        view.setOnTouchListener { target, event -> gesture.onTouch(target, event) }
     }
 
     /**
@@ -1057,7 +1044,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
      */
     private fun updateReloadButton(forceLoading: Boolean? = null) {
         val tab = current() ?: return
-        val loading = forceLoading ?: (tab.webView.progress + 20 < 100)
+        val loading = forceLoading ?: (tab.page.progress + 20 < 100)
         when {
             loading -> reloadButton.setSkinImageResource(R.drawable.close, "ic_close")
             isHome(tab.url) -> reloadButton.setSkinImageResource(R.drawable.shortcut_scan_icon, "ic_scan")
@@ -1177,7 +1164,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     private fun attachSelected() {
         if (!::browserHost.isInitialized) return
         val tab = current()
-        val web = tab?.webView
+        val web = tab?.page?.view
         // Detaching a WebView releases its compositor surface, so re-adding the
         // same view paints an empty frame. Keep it attached when the selection is
         // unchanged and add a new page before dropping the old one.
@@ -1199,13 +1186,13 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         if (!::address.isInitialized) return
         val tab = current() ?: return
         address.text = AddressTitleFormatter.format(host, tab.title, tab.url,
-            preferences.urlBoxMode, browserLayout.tabBarEnabled, tab.webView.url)
+            preferences.urlBoxMode, browserLayout.tabBarEnabled, tab.page.url)
         navigationBar.setTabCount(tabs.size)
         reloadButton.setOnClickListener {
             when {
                 isHome(tab.url) -> performMenuAction(25)
-                tab.webView.progress < 100 -> tab.webView.stopLoading()
-                else -> reloadPage(tab.webView)
+                tab.page.progress < 100 -> tab.page.stopLoading()
+                else -> reloadPage(tab.page)
             }
         }
         updateReloadButton()
@@ -1321,13 +1308,13 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     }
 
     /** c8.s6.ka: an explicit refresh invalidates the host color before the next page samples it. */
-    private fun reloadPage(web: WebView) {
+    private fun reloadPage(web: dev.ujhhgtg.via.engine.EnginePage) {
         PageColorCache.remove(web.url)
         web.reload()
     }
 
     /** c8.s6.M7/T2: reader style and exit share the page-color cache. */
-    private fun updateReaderColor(web: WebView, active: Boolean) {
+    private fun updateReaderColor(web: dev.ujhhgtg.via.engine.EnginePage, active: Boolean) {
         if (active) {
             pageColors.setPageAccentColor(web, preferences.readerThemeColor.takeUnless { it == 0 } ?: -1)
         } else {
@@ -1342,7 +1329,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         val web = currentWebView() ?: return
         val reader = ReaderMode(host)
         if (!show) {
-            if (!web.settings.javaScriptEnabled) { toast(getString(R.string.cannot_work_javascript_is_blocked)); return }
+            if (!web.javaScriptEnabled) { toast(getString(R.string.cannot_work_javascript_is_blocked)); return }
             reader.exit(web) { updateReaderColor(web, false); toast(getString(R.string.reader_is_hidden)) }
         } else reader.showFromMenu(web) { result ->
             when (result) {
@@ -1482,7 +1469,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             }
             4 -> BrowserMenuChoices.downloadManager(host)
             6 -> BrowserMenuChoices.external(host, currentWebView()?.url)
-            7 -> current()?.let { dev.ujhhgtg.via.tools.AddToHomeScreen.show(host, it.webView.url, it.title) }
+            7 -> current()?.let { dev.ujhhgtg.via.tools.AddToHomeScreen.show(host, it.page.url, it.title) }
             8 -> BrowserMenuChoices.userAgent(host, currentWebView()?.url) { reload ->
                 reloadTabPreferences()
                 if (reload) currentWebView()?.let { if (it.progress < 100) it.stopLoading() else reloadPage(it) }
@@ -1560,7 +1547,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             }
             20 -> showNetworkLog(false)
             23 -> currentWebView()?.let { adMarker.start(it) }
-            34 -> current()?.let { dev.ujhhgtg.via.tools.AddToHomeScreen.show(host, it.webView.url, it.title) }
+            34 -> current()?.let { dev.ujhhgtg.via.tools.AddToHomeScreen.show(host, it.page.url, it.title) }
             24 -> currentWebView()?.let { if (it.progress < 100) it.stopLoading() else reloadPage(it) }
             25 -> showScanner()
             26 -> openCurrentSiteSettings()
@@ -1590,9 +1577,9 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             37 -> BrowserMenuChoices.external(host, currentWebView()?.url)
             38 -> gameMode.toggle()
             40 -> current()?.let {
-                val url = it.webView.url ?: it.url
+                val url = it.page.url ?: it.url
                 val internal = dev.ujhhgtg.via.browser.ResourceDocument.isInternalPage(host, url)
-                openFavoriteEditor(if (internal) "https://" else url, if (internal) null else it.webView.title)
+                openFavoriteEditor(if (internal) "https://" else url, if (internal) null else it.page.title)
             }
             else -> toast(text(R.string.toast_operation_failed))
         }
@@ -1640,7 +1627,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     }
 
     /** u9.d.o/n: compare the selected document with the configured home, including built-in homes. */
-    private fun isConfiguredHome(tab: BrowserTab): Boolean = isHome(tab.webView.url ?: tab.url)
+    private fun isConfiguredHome(tab: BrowserTab): Boolean = isHome(tab.page.url ?: tab.url)
 
     /** s6.s8/P3: persist the session, and confirm losing private tabs unless the warning was disabled. */
     private fun exitBrowser() {
@@ -1676,15 +1663,15 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
 
     private fun readAloud() {
         val tab = current() ?: return
-        val web = tab.webView
-        if (!web.isShown) return
-        if (!web.settings.javaScriptEnabled) { toast(getString(R.string.cannot_work_javascript_is_blocked)); return }
+        val web = tab.page
+        if (!web.view.isShown) return
+        if (!web.javaScriptEnabled) { toast(getString(R.string.cannot_work_javascript_is_blocked)); return }
         val controller = readAloudController ?: ReadAloudController.get(host).also {
             readAloudController = it; it.addListener(readAloudListener)
         }
         if (controller.initializationFailed) { toast(getString(R.string.tts_failed_to_initialize)); return }
         toast(getString(R.string.wait_a_moment))
-        ReaderMode(host).extractSentences(tab.webView) { sentences ->
+        ReaderMode(host).extractSentences(tab.page) { sentences ->
             if (sentences.isEmpty()) toast(text(R.string.cannot_read_this_page_aloud))
             else controller.start(web.url.orEmpty(), web.title.orEmpty(), sentences)?.let { task ->
                 readAloudTaskId = task.id
@@ -1713,14 +1700,14 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 }
                 childFragmentManager.clearFragmentResult(key)
             }
-            val url = (tab.webView.url ?: tab.url).takeUnless {
+            val url = (tab.page.url ?: tab.url).takeUnless {
                 dev.ujhhgtg.via.browser.ResourceDocument.isInternalPage(host, it)
             }
             PageScriptsDialogFragment.newInstance(url, menus.toString()).show(childFragmentManager, "page_scripts")
         }
     }
 
-    private fun showPasswordAssist(webView: WebView, visible: Boolean) {
+    private fun showPasswordAssist(webView: dev.ujhhgtg.via.engine.EnginePage, visible: Boolean) {
         if (!::browserHost.isInitialized || currentWebView() !== webView) return
         passwordAssist?.let { browserHost.removeView(it) }; passwordAssist = null
         if (visible) {
@@ -1943,7 +1930,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
 
     private fun editBookmark(existing: BookmarkItem? = current()?.let { bookmarks.findByUrl(it.url) }) {
         val tab = current() ?: return
-        val url = tab.webView.url
+        val url = tab.page.url
         val internal = url == null || dev.ujhhgtg.via.browser.ResourceDocument.isInternalPage(host, url)
         parentFragmentManager.setFragmentResultListener("bookmarkDialogResult2", viewLifecycleOwner) { key, result ->
             if (result.getString("id") != null) {
@@ -1986,26 +1973,18 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     }
 
     /**
-     * e8.i.C: the selection toolbar hides the platform "Web search" and "Search in Via" entries
-     * and adds Search and Find, which c8.s6.C routes with the selected text.
+     * e8.i.C: the selection toolbar hides the engine's own web search (see EnginePage.setSelectionActions)
+     * and "Search in Via" entries, and adds Search and Find, which c8.s6.C routes with the selected text.
      */
-    @android.annotation.SuppressLint("DiscouragedApi")
-    private fun installSelectionActions(view: WebView) {
-        val web = view as? GestureWebView ?: return
-        val provider = WebView.getCurrentWebViewPackage()?.packageName
-        var webSearch = if (provider == null) 0 else resources.getIdentifier("websearch", "string", provider)
-        if (provider != null && webSearch <= 0) webSearch = resources.getIdentifier("websearch", "string", "android")
-        val webSearchTitle = if (provider != null && webSearch > 0) runCatching { getString(webSearch) }.getOrDefault("Web search") else "Web search"
-        web.actionItems = listOf(
-            GestureWebView.ActionItem(0, webSearchTitle, 1),
-            GestureWebView.ActionItem(0, getString(R.string.search_in_via), 1),
-            GestureWebView.ActionItem(SELECTION_SEARCH, getString(R.string.search_hint)),
-            GestureWebView.ActionItem(SELECTION_FIND, getString(R.string.find)),
-        )
-        web.onActionItemClick = { action, text ->
-            if (text.isNotEmpty() && isAdded) when (action.id) {
+    private fun installSelectionActions(web: dev.ujhhgtg.via.engine.EnginePage) {
+        web.setSelectionActions(listOf(
+            dev.ujhhgtg.via.engine.SelectionAction(0, getString(R.string.search_in_via), hide = true),
+            dev.ujhhgtg.via.engine.SelectionAction(SELECTION_SEARCH, getString(R.string.search_hint)),
+            dev.ujhhgtg.via.engine.SelectionAction(SELECTION_FIND, getString(R.string.find)),
+        )) { id, text ->
+            if (text.isNotEmpty() && isAdded) when (id) {
                 SELECTION_SEARCH -> if (!dispatchBrowserCommand(text)) searchSelectionInNewTab(text)
-                SELECTION_FIND -> { web.finishActionMode(); showFind(text) }
+                SELECTION_FIND -> { web.finishSelection(); showFind(text) }
             }
         }
     }
@@ -2043,9 +2022,8 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     override fun findPageText(query: String) {
         val web = currentWebView() ?: return
         val pane = childFragmentManager.findFragmentByTag(dev.ujhhgtg.via.ui.FindInPageFragment.TAG) as? dev.ujhhgtg.via.ui.FindInPageFragment
-        if (query.isEmpty()) { web.setFindListener(null); pane?.updateMatches(-1, 0, true) }
-        else web.setFindListener { active, total, done -> pane?.updateMatches(active, total, done) }
-        web.findAllAsync(query)
+        if (query.isEmpty()) { web.find(query, null); pane?.updateMatches(-1, 0, true) }
+        else web.find(query) { active, total, done -> pane?.updateMatches(active, total, done) }
     }
     override fun findPageNext(forward: Boolean) { currentWebView()?.findNext(forward) }
     override fun closePageFind() {
@@ -2059,7 +2037,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
 
     private fun savePage() {
         val tab = current() ?: return
-        dev.ujhhgtg.via.tools.SavedPageTools.show(host, tab.webView, tab.webView.title.orEmpty(), onViewSavedPages = ::showSavedPages)
+        dev.ujhhgtg.via.tools.SavedPageTools.show(host, tab.page, tab.page.title.orEmpty(), onViewSavedPages = ::showSavedPages)
     }
 
     private fun showSavedPages() = showRecordsPage(RecordsBrowserView.Page.SAVED_PAGES)
@@ -2120,7 +2098,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             return
         }
         val tab = current() ?: return
-        val web = tab.webView
+        val web = tab.page
         // c8.s6.mb takes G8()/F8 from the actual document. Navigation aliases such
         // as about:home cannot be used by g8.u's u9.d.m internal-page classifier.
         val sourceUrl = web.url.orEmpty()
@@ -2177,7 +2155,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             .add(R.id.browser_overlay_container, overlay, "site_info")
             .addToBackStack(null).commit()
         // F9 -> U7 -> i6.c0.g starts at state 0, then binds the actual reader state.
-        if (web.isShown) ReaderMode(host).detectPrepared(web, overlay::updateReaderState)
+        if (web.view.isShown) ReaderMode(host).detectPrepared(web, overlay::updateReaderState)
         onBrowserPopupOpened()
     }
 
@@ -2259,49 +2237,20 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     }
 
     /**
-     * e8.i/t4.b/c8.s6$g: the WebView long-press probe. A GestureDetector in
-     * the touch chain captures the press point, requestFocusNodeHref resolves
-     * the element (link url, image src, title) asynchronously, and the o9
-     * element menu opens anchored to the touch point.
+     * e8.i/t4.b/c8.s6$g: the engine resolves the long-pressed element (link url, image src, title)
+     * and the o9 element menu opens anchored to the press point. The probe only runs outside game mode (s6.E).
      */
-    private var elementProbe: GestureDetector? = null
-
     private fun installContextMenu(tab: BrowserTab) {
-        // The gesture detector only records the press point for anchoring;
-        // e8.i's long-click listener arms f2746l1 (c8.s6.Q) once a link/image
-        // hit is resolved, consuming the press so the platform text-selection
-        // action mode only appears for plain text.
-        // s6.N0.onLongPress requests the hit element as soon as the press is long enough; the reply
-        // (xa) arms l1 before Chromium reaches performLongClick, so a link or image long click is
-        // consumed and WebView never starts its own drag-and-drop or selection for it.
-        val probe = GestureDetector(host, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onLongPress(event: MotionEvent) {
-                pendingElementPress = intArrayOf(event.rawX.toInt(), event.rawY.toInt())
-                tab.webView.requestFocusNodeHref(elementHrefHandler.obtainMessage())
+        tab.page.setContextMenuHandler(object : dev.ujhhgtg.via.engine.ContextMenuHandler {
+            override val enabled get() = !gameMode.enabled
+            override fun onContextMenu(target: dev.ujhhgtg.via.engine.ContextTarget) {
+                // n9 unwraps the favorite jump proxy (z8.w2.f) before building
+                // the menu, so the rows operate on the real url.
+                val link = UrlResolver.unwrapErrorJump(target.linkUrl) ?: target.linkUrl ?: ""
+                showElementMenu(target.rawX, target.rawY, link, target.srcUrl, target.title, secondPass = false)
             }
         })
-        elementProbe = probe
-        // e8.i.I -> s6.Q: the long click is handled exactly when the last hit was a link.
-        tab.webView.setOnLongClickListener { elementMenuArmed }
     }
-
-    /** c8.xa: requestFocusNodeHref delivers (url, src, title) on the main looper. */
-    private val elementHrefHandler = object : android.os.Handler(android.os.Looper.getMainLooper()) {
-        override fun handleMessage(message: android.os.Message) {
-            val data = message.data ?: return
-            if (data.isEmpty) return
-            // n9 unwraps the favorite jump proxy (z8.w2.f) before building
-            // the menu, so the rows operate on the real url.
-            val link = UrlResolver.unwrapErrorJump(data.getString("url")) ?: data.getString("url") ?: ""
-            elementMenuArmed = link.isNotEmpty()
-            val press = pendingElementPress ?: return
-            pendingElementPress = null
-            showElementMenu(press[0], press[1], link, data.getString("src"), data.getString("title"), secondPass = false)
-        }
-    }
-
-    private var pendingElementPress: IntArray? = null
-    private var elementMenuArmed = false
 
     /**
      * c8.s6.o9/Z5: the element long-press menu, mirroring the original's
@@ -2317,12 +2266,12 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         val tab = current() ?: return
         // G8() is the WebView url, so the generated homepage (file://…/homepage2.html)
         // resolves to u9.d.d's type 1 even though the tab records about:home.
-        val pageUrl = tab.webView.url ?: tab.url
+        val pageUrl = tab.page.url ?: tab.url
         val pageType = pageTypeOf(pageUrl)
         // No page loaded and an image pressed: the original opens the image
         // download directly (c8.s6.g8) instead of showing the menu.
         if ((pageType == 0 || pageType == 13) && !src.isNullOrEmpty()) {
-            requestDownload(tab, src, tab.webView.settings.userAgentString, "attachment", if (URLUtil.isNetworkUrl(src)) "image/*" else null, -1)
+            requestDownload(tab, src, tab.page.userAgent, "attachment", if (URLUtil.isNetworkUrl(src)) "image/*" else null, -1)
             return
         }
         if (link.isEmpty() && src.isNullOrEmpty() || pageType == 1 && link == pageUrl) return
@@ -2426,12 +2375,13 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
 
     /** c8.s6.qb: pages with their own context menus get a synthetic event at the press point. */
     private fun dispatchElementContextMenu(tab: BrowserTab, rawX: Int, rawY: Int) {
-        val webView = tab.webView
-        if (webView.width <= 0 || webView.height <= 0) return
-        val position = IntArray(2); webView.getLocationOnScreen(position)
-        val rx = (rawX - position[0]).toFloat() / webView.width
-        val ry = (rawY - position[1]).toFloat() / webView.height
-        webView.evaluateJavascript(
+        val webView = tab.page
+        val surface = webView.view
+        if (surface.width <= 0 || surface.height <= 0) return
+        val position = IntArray(2); surface.getLocationOnScreen(position)
+        val rx = (rawX - position[0]).toFloat() / surface.width
+        val ry = (rawY - position[1]).toFloat() / surface.height
+        webView.evaluate(
             "(function(){var a=__RX__,c=__RY__;a=Math.max(0,Math.min(1,a));c=Math.max(0,Math.min(1,c));if(window.visualViewport){var b=window.visualViewport;a=b.offsetLeft+a*b.width;b=b.offsetTop+c*b.height}else a*=window.innerWidth,b=c*window.innerHeight;c=document.elementFromPoint(a,b)||document;a=new MouseEvent(\"contextmenu\",{bubbles:!0,cancelable:!1,view:window,button:2,buttons:0,clientX:a,clientY:b});c.dispatchEvent(a)})();"
                 .replace("__RX__", String.format(java.util.Locale.ROOT, "%.2f", rx))
                 .replace("__RY__", String.format(java.util.Locale.ROOT, "%.2f", ry)),
@@ -2463,14 +2413,17 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 }
                 3 -> { copy(if (pageTypeOf(pageUrl) == 6) link.substring(link.indexOf("://") + 3) else link); ViaToast.makeText(host, text(R.string.toast_copy_url_successful), ViaToast.LENGTH_SHORT).show() }
                 31 -> shareUrl(link)
-                38 -> current()?.let { tab -> requestDownload(tab, src!!, tab.webView.settings.userAgentString, "attachment", if (URLUtil.isNetworkUrl(src)) "image/*" else null, -1) }
+                38 -> current()?.let { tab -> requestDownload(tab, src!!, tab.page.userAgent, "attachment", if (URLUtil.isNetworkUrl(src)) "image/*" else null, -1) }
                 6 -> currentWebView()?.let { resourceImageActions.perform(it, src!!, dev.ujhhgtg.via.browser.ResourceImageActions.SAVE, tabs.bridgeSecret) }
                 33 -> currentWebView()?.let { resourceImageActions.perform(it, src!!, dev.ujhhgtg.via.browser.ResourceImageActions.SHARE, tabs.bridgeSecret) }
                 19, 20, 21, 24, 25, 26, 27 -> resourceDocumentActions.perform(items[which].first, link, current()?.title,
                     download = { url ->
-                        val request = DownloadRequest(url, userAgent = currentWebView()?.settings?.userAgentString,
-                            contentDisposition = "attachment", cookies = CookieManager.getInstance().getCookie(url))
-                        downloadDestinations.show(request, -1)
+                        val userAgent = currentWebView()?.userAgent
+                        lifecycleScope.launch {
+                            val request = DownloadRequest(url, userAgent = userAgent,
+                                contentDisposition = "attachment", cookies = dev.ujhhgtg.via.engine.Engines.backend.cookies.get(url))
+                            downloadDestinations.show(request, -1)
+                        }
                     },
                     clearLog = {
                         tabs.all.firstOrNull { it.id == resourceSourceTabId }?.let { tabs.clearResources(it) }
@@ -2527,7 +2480,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 36 -> showElementMenu(rawX, rawY, link, src, title, secondPass = true)
                 37 -> openSettings("customize_menu")
             }
-        }).onDismiss { currentWebView()?.requestFocus() }
+        }).onDismiss { currentWebView()?.view?.requestFocus() }
             .showAnchored(root, rawX - rootPosition[0], rawY - rootPosition[1])
     }
 
@@ -2625,12 +2578,12 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         current()?.let { tab ->
             // The tab records the logical url (about:home) while the WebView
             // loads the generated file; both identify the home document.
-            if (pageTypeOf(tab.webView.url) == 1 || tab.url == "about:home") {
+            if (pageTypeOf(tab.page.url) == 1 || tab.url == "about:home") {
                 HomeDocument(host, preferences).write(favorites.list(), night(), browserLayout.toolbarsShown)
                 GeneratedDocumentState.clear(GeneratedDocumentState.HOME_CONTENT or GeneratedDocumentState.HOME_STYLE)
-                tab.webView.reload()
+                tab.page.reload()
             } else {
-                val kind = when (pageTypeOf(tab.webView.url)) {
+                val kind = when (pageTypeOf(tab.page.url)) {
                     2 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.BOOKMARKS
                     3 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.HISTORY
                     4 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.ABOUT
@@ -2641,10 +2594,10 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                     else -> null
                 }
                 if (kind != null) {
-                    val folder = if (kind == dev.ujhhgtg.via.browser.InternalDocuments.Kind.FOLDER) tab.webView.url!!.toUri().getQueryParameter("folder") else null
+                    val folder = if (kind == dev.ujhhgtg.via.browser.InternalDocuments.Kind.FOLDER) tab.page.url!!.toUri().getQueryParameter("folder") else null
                     dev.ujhhgtg.via.browser.InternalDocuments.write(host, preferences, database, kind, folder)
                 }
-                if (pageTypeOf(tab.webView.url) > 0) tab.webView.reload()
+                if (pageTypeOf(tab.page.url) > 0) tab.page.reload()
             }
         }
     }
@@ -2652,7 +2605,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     /** c8.s6.R9/X2/S9: measure the homepage's first favorite row, then open the sort sheet below it. */
     private fun openFavoriteSortSheet(@Suppress("UNUSED_PARAMETER") url: String) {
         val webView = currentWebView() ?: return openFavoriteSortSheet(0, 0)
-        webView.evaluateJavascript(
+        webView.evaluate(
             "(function(){var a=document.getElementsByClassName(\"box\"),b=0,c=a.length;if(0<c){var d=a[0].getBoundingClientRect().top;for(i=0;i<c;i++)if(a[i].getBoundingClientRect().top==d)b++;else break;return (d>0?d<<6:0)|b}return b})();",
         ) { value ->
             var count = 0
@@ -2759,16 +2712,16 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     private fun refreshCustomizedHome() {
         val mask = GeneratedDocumentState.HOME_CONTENT or GeneratedDocumentState.HOME_STYLE
         if (!homeDocumentDirty && !GeneratedDocumentState.hasAny(mask)) return
-        val homeTabs = tabs.all.filter { it.url == "about:home" || pageTypeOf(it.webView.url) == 1 }
+        val homeTabs = tabs.all.filter { it.url == "about:home" || pageTypeOf(it.page.url) == 1 }
         if (homeTabs.isEmpty()) return
         val document = HomeDocument(host, preferences)
         document.write(favorites.list(), night(), browserLayout.toolbarsShown)
         GeneratedDocumentState.clear(mask)
         homeDocumentDirty = false
         homeTabs.forEach { tab ->
-            tab.webView.background = null
-            tab.webView.setBackgroundColor(Color.TRANSPARENT)
-            tab.webView.reload()
+            tab.page.view.background = null
+            tab.page.view.setBackgroundColor(Color.TRANSPARENT)
+            tab.page.reload()
         }
     }
 
@@ -2780,7 +2733,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 val document = HomeDocument(host, preferences)
                 val file = document.write(favorites.list(), night(), browserLayout.toolbarsShown)
                 GeneratedDocumentState.clear(GeneratedDocumentState.HOME_CONTENT or GeneratedDocumentState.HOME_STYLE)
-                tab.webView.background = null; tab.webView.setBackgroundColor(Color.TRANSPARENT)
+                tab.page.view.background = null; tab.page.view.setBackgroundColor(Color.TRANSPARENT)
                 tab.title = text(R.string.home); tabs.loadInternalPage(tab, file, "about:home")
             }
             "about:blank" -> {
@@ -2798,7 +2751,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     /** ua.r1/t1/h: retain the source tab while browsing generated pages and reuse the current internal tab. */
     private fun showNetworkLog(mediaOnly: Boolean) {
         val currentTab = current() ?: return
-        val currentUrl = currentTab.webView.url ?: currentTab.url
+        val currentUrl = currentTab.page.url ?: currentTab.url
         if (!dev.ujhhgtg.via.browser.ResourceDocument.isInternalPage(host, currentUrl)) resourceSourceTabId = currentTab.id
         val source = tabs.all.firstOrNull { it.id == resourceSourceTabId }
         val resources = source?.let { tabs.resources(it) }.orEmpty()
@@ -2814,7 +2767,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     }
 
     private inner class BrowserHost : TabController.Host {
-        private val localNetworkErrorChecks = java.util.WeakHashMap<WebView, String>()
+        private val localNetworkErrorChecks = java.util.WeakHashMap<dev.ujhhgtg.via.engine.EnginePage, String>()
 
         private fun requestLocalNavigation(tab: BrowserTab, url: String, deferUntilResumed: Boolean = false,
             proceed: () -> Unit): Boolean {
@@ -2825,7 +2778,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 // buildView creates the selected Intent/home tab before onCreateView returns.
                 // Wait once for that view to be usable instead of starting a blocked TCP request.
                 val owner = viewLifecycleOwner
-                val web = tab.webView
+                val web = tab.page
                 owner.lifecycle.addObserver(object : androidx.lifecycle.LifecycleEventObserver {
                     override fun onStateChanged(source: androidx.lifecycle.LifecycleOwner, event: androidx.lifecycle.Lifecycle.Event) {
                         if (event == androidx.lifecycle.Lifecycle.Event.ON_DESTROY) source.lifecycle.removeObserver(this)
@@ -2835,7 +2788,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                             if (!isAdded) return@post
                             // Restoring several tabs can change the selected tab before RESUME.
                             // Background tabs keep their ordinary load/error path without a prompt.
-                            if (!isVisible || current()?.webView !== web ||
+                            if (!isVisible || current()?.page !== web ||
                                 !requestLocalNavigation(tab, url, proceed = proceed)) proceed()
                         }
                     }
@@ -2858,21 +2811,18 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         override fun onBeforeRestore(tab: BrowserTab, url: String, proceed: () -> Unit): Boolean =
             requestLocalNavigation(tab, url, deferUntilResumed = this@BrowserFragment.view == null, proceed = proceed)
 
-        override fun onError(tab: BrowserTab, request: android.webkit.WebResourceRequest?, error: android.webkit.WebResourceError?) {
-            if (request?.isForMainFrame != true || !request.method.equals("GET", true) ||
-                error?.errorCode !in setOf(android.webkit.WebViewClient.ERROR_HOST_LOOKUP,
-                    android.webkit.WebViewClient.ERROR_CONNECT, android.webkit.WebViewClient.ERROR_IO,
-                    android.webkit.WebViewClient.ERROR_TIMEOUT, android.webkit.WebViewClient.ERROR_UNKNOWN) ||
+        override fun onError(tab: BrowserTab, error: dev.ujhhgtg.via.engine.LoadError) {
+            if (!error.method.equals("GET", true) || !error.mayBeNetworkUnreachable ||
                 LocalNetworkAccess.hasPermission(host) || host.localNetworkPermissionDeclined ||
                 !isVisible || current()?.id != tab.id) return
-            val web = tab.webView
-            val failedUrl = request.url.toString()
+            val web = tab.page
+            val failedUrl = error.url
             if (localNetworkErrorChecks[web] == failedUrl) return
             localNetworkErrorChecks[web] = failedUrl
             LocalNetworkAccess.resolveLocalUrl(host, failedUrl) { local ->
-                if (local && isAdded && isVisible && current()?.webView === web && web.url == failedUrl) {
+                if (local && isAdded && isVisible && current()?.page === web && web.url == failedUrl) {
                     LocalNetworkAccess.request(host) { granted ->
-                        if (granted && isAdded && isVisible && current()?.webView === web && web.url == failedUrl) web.reload()
+                        if (granted && isAdded && isVisible && current()?.page === web && web.url == failedUrl) web.reload()
                     }
                 }
             }
@@ -2881,7 +2831,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         override fun onResourceAvailabilityChanged(tab: BrowserTab, hasMedia: Boolean) {
             if (current()?.id == tab.id) snifferButton.update(preferences.showSnifferButton, hasMedia, true)
         }
-        override fun onCurrentWebViewChanged(tab: BrowserTab) {
+        override fun onCurrentPageChanged(tab: BrowserTab) {
             if (current()?.id == tab.id) attachSelected()
         }
         override fun onReaderCheckRequested() {
@@ -2893,19 +2843,19 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 }
             }
         }
-        override fun onWebViewCreated(tab: BrowserTab) {
-            passwordForms.attach(tab.webView, tabs.bridgeSecret); adMarker.attach(tab.webView, tabs.bridgeSecret)
-            installSelectionActions(tab.webView)
+        override fun onPageCreated(tab: BrowserTab) {
+            passwordForms.attach(tab.page, tabs.bridgeSecret); adMarker.attach(tab.page, tabs.bridgeSecret)
+            installSelectionActions(tab.page)
         }
         override fun onPageStarted(tab: BrowserTab, url: String) {
-            localNetworkErrorChecks.remove(tab.webView)
-            pageColors.onPageStarted(tab.webView, tab.webView.url ?: url)
-            adMarker.onPageStarted(tab.webView)
-            showPasswordAssist(tab.webView, false)
+            localNetworkErrorChecks.remove(tab.page)
+            pageColors.onPageStarted(tab.page, tab.page.url ?: url)
+            adMarker.onPageStarted(tab.page)
+            showPasswordAssist(tab.page, false)
             if (current()?.id == tab.id) updateChrome()
         }
         override fun onPageFinished(tab: BrowserTab, url: String, title: String?) {
-            pageColors.onPageFinished(tab.webView, tab.webView.url ?: url)
+            pageColors.onPageFinished(tab.page, tab.page.url ?: url)
             if (privacyPolicy.mayRecord(url) && !isLocal(url) && history.record(url, title)) {
                 GeneratedDocumentState.mark(GeneratedDocumentState.HISTORY)
             }
@@ -2920,7 +2870,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             // e8.n0.t: publish the WebView icon immediately; rounded disk storage runs afterwards.
             tabs.notifyTabChanged(tab)
             if (icon == null) return
-            val url = tab.webView.url
+            val url = tab.page.url
             applicationIoScope.launch {
                 try { dev.ujhhgtg.via.home.HomeIcons.save(host, url, icon) }
                 catch (error: Exception) { Log.w("Via", "Cannot store page favicon", error) }
@@ -2928,7 +2878,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         }
         override fun onTouchIconChanged(tab: BrowserTab, iconUrl: String) {
             // e8.n0.x: w3's homepage touch icon is independent of y0's favicon cache.
-            val pageUrl = tab.webView.url ?: return
+            val pageUrl = tab.page.url ?: return
             if (iconUrl.contains("favicon.ico") || pageUrl.startsWith("file://", true)) return
             applicationIoScope.launch {
                 try { dev.ujhhgtg.via.home.TouchIconStore.download(host, iconUrl, pageUrl) }
@@ -2937,11 +2887,11 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             }
         }
         override fun onProgressChanged(tab: BrowserTab, progress: Int) {
-            pageColors.onProgressChanged(tab.webView, progress)
+            pageColors.onProgressChanged(tab.page, progress)
             if (current()?.id == tab.id) {
                 // e8.n0.r reports generated pages as complete; c8.s6.A adds 20
                 // before the original progress controller and loading icon consume it.
-                val adjusted = (if (pageTypeOf(tab.webView.url) > 0) 100 else progress) + 20
+                val adjusted = (if (pageTypeOf(tab.page.url) > 0) 100 else progress) + 20
                 this@BrowserFragment.progress.setPageProgress(adjusted)
                 updateReloadButton(adjusted < 100)
             }
@@ -2967,12 +2917,12 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 val actual = mime ?: return@runOnUiThread
                 val filename = dev.ujhhgtg.via.common.TransientState.get("dl")?.getString(url)
                 val disposition = filename?.let { "attachment; filename*=UTF-8''${Uri.encode(it)}" }
-                requestDownload(tab, actual, tab.webView.settings.userAgentString, disposition, null, -1)
+                requestDownload(tab, actual, tab.page.userAgent, disposition, null, -1)
             }
         }
         override fun onBridgeMessage(tab: BrowserTab, token: String, json: String) {
             val message = runCatching { JSONObject(json) }.getOrNull() ?: return
-            if (passwordForms.handleMessage(tab.webView, message) || adMarker.handleMessage(tab.webView, message)) return
+            if (passwordForms.handleMessage(tab.page, message) || adMarker.handleMessage(tab.page, message)) return
             when (message.optInt("action")) {
                 101 -> {
                     val runAt = message.optInt("runAt")
@@ -2988,7 +2938,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 105 -> message.optString("text").takeIf { it.isNotEmpty() }?.let { value -> host.runOnUiThread { navigate(value) } }
                 106 -> host.runOnUiThread { updateHomepageSuggestions(message.optString("text")) }
                 107 -> message.optString("url").takeIf { it.isNotEmpty() }?.let { url ->
-                    host.runOnUiThread { requestDownload(tab, url, tab.webView.settings.userAgentString, null, null, -1) }
+                    host.runOnUiThread { requestDownload(tab, url, tab.page.userAgent, null, null, -1) }
                     // Original smali's action107 falls through to the action108 translation branch.
                     host.runOnUiThread { showTranslation(fallback = true) }
                 }
@@ -3016,7 +2966,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             // c8.s6.g9 / p4.a.E: marking ads swallows navigation before the site policy.
             if (adMarker.isActive) return true
             fun localPermission() = requestLocalNavigation(tab, url) { tabs.navigate(tab, url, localNetworkChecked = true) }
-            val source = tab.webView.url ?: return localPermission()
+            val source = tab.page.url ?: return localPermission()
             if (!URLUtil.isNetworkUrl(source) || !URLUtil.isNetworkUrl(url)) return localPermission()
             if (WebsitePermissions(preferences, siteConfigurations).redirectionAllowed(source)) return localPermission()
             val from = dev.ujhhgtg.via.browser.DocumentPolicy.navigationDomain(source)
@@ -3030,43 +2980,43 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             }
             return true
         }
-        override fun onCreateWindow(tab: BrowserTab, isDialog: Boolean, userGesture: Boolean, message: android.os.Message) {
+        override fun onCreateWindow(tab: BrowserTab, request: dev.ujhhgtg.via.engine.PopupRequest) {
             // c8.s6.K: the transport stays empty until the user permits a blocked popup.
-            if (adMarker.isActive) { message.sendToTarget(); return }
+            if (adMarker.isActive) { request.deny(); return }
             val url = current()?.url.orEmpty()
             val configuration = UrlResolver.siteKey(url)?.let(siteConfigurations::get)?.takeIf { it.isEnabled }
             val redirectionAllowed = configuration?.allowRedirection(preferences.webFlags)
                 ?: (preferences.webFlags and 134217728 == 0)
             val prompt = when {
-                preferences.webFlags and 32768 != 0 && !userGesture -> R.string.block_popup_message
+                preferences.webFlags and 32768 != 0 && !request.userGesture -> R.string.block_popup_message
                 URLUtil.isNetworkUrl(url) && !redirectionAllowed -> R.string.allow_page_redirection_msg
                 else -> null
             }
-            if (prompt == null) { tabs.createPopupWindow(message); return }
-            if (!isVisible) { message.sendToTarget(); return }
+            if (prompt == null) { tabs.createPopupWindow(request); return }
+            if (!isVisible) { request.deny(); return }
             ViaToast.show(host, prompt, actionText = R.string.allow_popup,
-                onCancel = { message.sendToTarget() }) { tabs.createPopupWindow(message) }
+                onCancel = { request.deny() }) { tabs.createPopupWindow(request) }
         }
         override fun onPopupCreated(opener: BrowserTab, popup: BrowserTab) { attachSelected() }
         override fun onWindowClosed(tab: BrowserTab) { if (!restoring) attachSelected() }
         /** e8.b0.f: a hidden page declines immediately; the dialog is not dismissed by outside taps. */
-        override fun onFormResubmission(tab: BrowserTab, dontResend: android.os.Message, resend: android.os.Message) {
-            if (!tab.webView.isShown) { dontResend.sendToTarget(); return }
+        override fun onFormResubmission(tab: BrowserTab, request: dev.ujhhgtg.via.engine.FormResubmissionRequest) {
+            if (!tab.page.view.isShown) { request.cancel(); return }
             ViaDialog(host).title(R.string.title_form_resubmission).message(R.string.message_form_resubmission)
                 .cancelable(true).canceledOnTouchOutside(false)
-                .onCancel { dontResend.sendToTarget() }
-                .positive(android.R.string.ok) { _, _ -> resend.sendToTarget() }
-                .negative(android.R.string.cancel) { dontResend.sendToTarget() }.show()
+                .onCancel { request.cancel() }
+                .positive(android.R.string.ok) { _, _ -> request.resend() }
+                .negative(android.R.string.cancel) { request.cancel() }.show()
         }
-        override fun onHttpAuth(tab: BrowserTab, handler: HttpAuthHandler, host: String, realm: String?) { showHttpAuth(handler, host, realm) }
-        override fun onSslError(tab: BrowserTab, handler: SslErrorHandler, error: android.net.http.SslError) =
-            dev.ujhhgtg.via.browser.SslErrorDialogs.show(host, tab.webView, preferences, handler, error)
-        override fun onFileChooser(tab: BrowserTab, callback: ValueCallback<Array<Uri>>, params: WebChromeClient.FileChooserParams): Boolean = chooseFile(callback, params)
-        override fun onGeolocationPrompt(tab: BrowserTab, origin: String, callback: GeolocationPermissions.Callback) = requestLocation(origin, callback)
-        override fun onPermissionRequest(tab: BrowserTab, request: PermissionRequest) { requestMediaPermission(request) }
-        override fun onPermissionRequestCanceled(tab: BrowserTab, request: PermissionRequest) { if (pendingPermission === request) pendingPermission = null }
-        override fun onShowCustomView(tab: BrowserTab, view: View, callback: WebChromeClient.CustomViewCallback) { showVideo(view, callback) }
-        override fun onHideCustomView(tab: BrowserTab) { hideVideo() }
+        override fun onHttpAuth(tab: BrowserTab, request: dev.ujhhgtg.via.engine.HttpAuthRequest) { showHttpAuth(request) }
+        override fun onSslError(tab: BrowserTab, request: dev.ujhhgtg.via.engine.SslErrorRequest) =
+            dev.ujhhgtg.via.browser.SslErrorDialogs.show(host, tab.page.url, preferences, request)
+        override fun onFileChooser(tab: BrowserTab, request: dev.ujhhgtg.via.engine.FileChooserRequest): Boolean = chooseFile(request)
+        override fun onGeolocationPrompt(tab: BrowserTab, request: dev.ujhhgtg.via.engine.LocationRequest) = requestLocation(request)
+        override fun onPermissionRequest(tab: BrowserTab, request: dev.ujhhgtg.via.engine.MediaPermissionRequest) { requestMediaPermission(request) }
+        override fun onPermissionRequestCanceled(tab: BrowserTab, request: dev.ujhhgtg.via.engine.MediaPermissionRequest) { if (pendingPermission == request) pendingPermission = null }
+        override fun onShowFullscreen(tab: BrowserTab, request: dev.ujhhgtg.via.engine.FullscreenRequest) { showVideo(request) }
+        override fun onHideFullscreen(tab: BrowserTab) { hideVideo() }
         override fun onUserScript(tab: BrowserTab, url: String) { installScript(url) }
     }
 
@@ -3083,7 +3033,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             else remoteHomepageSuggestions.query(query, provider, flags and 16 != 0, language)
         }, { suggestions ->
                 val values = suggestions.joinToString(",") { "'$it'" }
-                currentWebView()?.evaluateJavascript("javascript:try{OpenSuggestion.pushSuggestions([$values]);}catch(e){}", null)
+                currentWebView()?.evaluate("javascript:try{OpenSuggestion.pushSuggestions([$values]);}catch(e){}", null)
             }, { error -> Log.w("ViaSuggestions", "Suggestion request failed", error) })
     }
 
@@ -3132,26 +3082,30 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         toast(text(R.string.processing_blob_data))
         val secret = tabs.bridgeSecret
         if (blob) {
-            web.evaluateJavascript("javascript:(function(){function d(a,b){var c=new FileReader;c.readAsDataURL(b);c.onloadend=function(){window.via.download(\"__SECRET__\",a,c.result)}}function e(a){var b=new XMLHttpRequest;b.open(\"GET\",a,!0);b.responseType=\"blob\";b.onload=function(c){200==this.status&&d(a,this.response)};b.send()}key=\"via-blob-test\";(function(a){window[key]&&window[key][a]?d(a,window[key][a]):e(a)})(\"__BLOB_URL__\")})();"
+            web.evaluate("javascript:(function(){function d(a,b){var c=new FileReader;c.readAsDataURL(b);c.onloadend=function(){window.via.download(\"__SECRET__\",a,c.result)}}function e(a){var b=new XMLHttpRequest;b.open(\"GET\",a,!0);b.responseType=\"blob\";b.onload=function(c){200==this.status&&d(a,this.response)};b.send()}key=\"via-blob-test\";(function(a){window[key]&&window[key][a]?d(a,window[key][a]):e(a)})(\"__BLOB_URL__\")})();"
                 .replace("__SECRET__", secret).replace("__BLOB_URL__", url), null)
             return true
         }
         val name = dev.ujhhgtg.via.downloads.DownloadFiles.name(url, request.contentDisposition, request.mimeType)
         if (name.isNotEmpty()) dev.ujhhgtg.via.common.TransientState.builder().name("dl").expiresAfter(60).putString(url, name).save()
-        web.evaluateJavascript("javascript:(function(){(function(a){return fetch(a).then(function(c){return c.blob()}).then(function(c){return new Promise(function(d,e){var b=new FileReader;b.onloadend=function(){return d(b.result)};b.onerror=e;b.readAsDataURL(c)})})})(\"__URL__\").then(function(a){window.via.download(\"__SECRET__\",\"__URL__\",a)}).catch(function(a){})})();"
+        web.evaluate("javascript:(function(){(function(a){return fetch(a).then(function(c){return c.blob()}).then(function(c){return new Promise(function(d,e){var b=new FileReader;b.onloadend=function(){return d(b.result)};b.onerror=e;b.readAsDataURL(c)})})})(\"__URL__\").then(function(a){window.via.download(\"__SECRET__\",\"__URL__\",a)}).catch(function(a){})})();"
             .replace("__URL__", url).replace("__SECRET__", secret), null)
         return true
     }
 
     private fun requestDownload(tab: BrowserTab, url: String, userAgent: String?, disposition: String?, mime: String?, size: Long) {
-        val request = DownloadRequest(url, userAgent = userAgent,
-            contentDisposition = disposition, referrer = tab.url, cookies = CookieManager.getInstance().getCookie(url),
-            mimeType = mime, headers = url.toUri().host?.let { httpAuthorization[it] }?.let { mapOf("Authorization" to it) } ?: emptyMap())
-        downloadDestinations.show(request, size)
+        val referrer = tab.url
+        val headers = url.toUri().host?.let { httpAuthorization[it] }?.let { mapOf("Authorization" to it) } ?: emptyMap()
+        lifecycleScope.launch {
+            val request = DownloadRequest(url, userAgent = userAgent, contentDisposition = disposition, referrer = referrer,
+                cookies = dev.ujhhgtg.via.engine.Engines.backend.cookies.get(url), mimeType = mime, headers = headers)
+            downloadDestinations.show(request, size)
+        }
     }
 
     /** c8.s6.cb/h4 delegates to the original c8.gb custom sign-in fragment. */
-    private fun showHttpAuth(handler: HttpAuthHandler, host: String, realm: String?) {
+    private fun showHttpAuth(handler: dev.ujhhgtg.via.engine.HttpAuthRequest) {
+        val host = handler.host
         val key = dev.ujhhgtg.via.passwords.HttpAuthDialogFragment.RESULT
         parentFragmentManager.setFragmentResultListener(key, viewLifecycleOwner) { _, result ->
             val username = result.getString("username").orEmpty()
@@ -3168,12 +3122,12 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             .show(parentFragmentManager, "HttpAuthDialog")
     }
 
-    private fun chooseFile(callback: ValueCallback<Array<Uri>>, params: WebChromeClient.FileChooserParams): Boolean {
-        fileCallback?.onReceiveValue(null); fileCallback = callback
+    private fun chooseFile(params: dev.ujhhgtg.via.engine.FileChooserRequest): Boolean {
+        fileCallback?.cancel(); fileCallback = params
         // c8.s6.X normalizes extension accept types before launching the Android chooser.
         val types = params.acceptTypes.flatMap { it.split(',') }.mapNotNull { value -> value.trim().takeIf(String::isNotEmpty)?.let { if (it.startsWith('.')) MimeTypeMap.getSingleton().getMimeTypeFromExtension(it.drop(1).lowercase()) else it } }.distinct()
         val intent = params.createIntent().apply { type = types.singleOrNull() ?: "*/*"; if (types.size > 1) putExtra(Intent.EXTRA_MIME_TYPES, types.toTypedArray()) }
-        return try { fileChooser.launch(Intent.createChooser(intent, params.title?.takeIf { it.isNotEmpty() } ?: getString(R.string.title_file_chooser))); true } catch (_: android.content.ActivityNotFoundException) { fileCallback?.onReceiveValue(null); fileCallback = null; true }
+        return try { fileChooser.launch(Intent.createChooser(intent, params.title?.takeIf { it.isNotEmpty() } ?: getString(R.string.title_file_chooser))); true } catch (_: android.content.ActivityNotFoundException) { fileCallback?.cancel(); fileCallback = null; true }
     }
 
     private fun hasPermission(permission: String) = host.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
@@ -3182,13 +3136,14 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         if (missing.isEmpty()) result() else { permissionResult = result; runtimePermissions.launch(missing.toTypedArray()) }
     }
 
-    private fun requestLocation(origin: String, callback: GeolocationPermissions.Callback) {
+    private fun requestLocation(callback: dev.ujhhgtg.via.engine.LocationRequest) {
+        val origin = callback.origin
         val policy = WebsitePermissions(preferences, siteConfigurations)
         val domain = policy.domain(origin)
-        if (domain.isEmpty()) { callback.invoke(origin, false, false); return }
+        if (domain.isEmpty()) { callback.respond(allow = false, retain = false); return }
         fun grant(remember: Boolean, saveChoice: Boolean = false) {
             // e8.y0.h/I grants the WebView callback before requesting Android permissions.
-            callback.invoke(origin, true, remember)
+            callback.respond(allow = true, retain = remember)
             if (saveChoice) policy.remember(origin, WebsitePermissions.Kind.LOCATION, true)
             requestRuntimePermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) {
                 if (hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) || hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION))
@@ -3197,7 +3152,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         }
         when (policy.mode(origin, WebsitePermissions.Kind.LOCATION)) {
             1 -> grant(true)
-            2 -> callback.invoke(origin, false, false)
+            2 -> callback.respond(allow = false, retain = false)
             else -> {
                 ViaDialog(host).title(R.string.location)
                     .message(getString(R.string.site_request_location_permission, policy.domain(origin)))
@@ -3205,33 +3160,36 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                     .positive(R.string.allow) { _, result ->
                         grant(result.checked, result.checked)
                     }.negativeResult(R.string.action_dont_allow) { _, result ->
-                        callback.invoke(origin, false, result.checked)
+                        callback.respond(allow = false, retain = result.checked)
                         if (result.checked) policy.remember(origin, WebsitePermissions.Kind.LOCATION, false)
-                    }.onCancel { callback.invoke(origin, false, false) }.show()
+                    }.onCancel { callback.respond(allow = false, retain = false) }.show()
             }
         }
     }
 
-    private fun requestMediaPermission(request: PermissionRequest) {
+    private fun requestMediaPermission(request: dev.ujhhgtg.via.engine.MediaPermissionRequest) {
         pendingPermission = request
         val policy = WebsitePermissions(preferences, siteConfigurations)
-        val origin = request.origin.toString()
-        val kinds = mapOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE to WebsitePermissions.Kind.MICROPHONE, PermissionRequest.RESOURCE_VIDEO_CAPTURE to WebsitePermissions.Kind.CAMERA)
-        val alreadyAllowed = request.resources.filter { it == PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID || kinds[it]?.let { kind -> policy.mode(origin, kind) == 1 } == true }.toHashSet()
+        val origin = request.origin
+        val audio = dev.ujhhgtg.via.engine.MediaPermissionRequest.Resource.AUDIO_CAPTURE
+        val video = dev.ujhhgtg.via.engine.MediaPermissionRequest.Resource.VIDEO_CAPTURE
+        val kinds = mapOf(audio to WebsitePermissions.Kind.MICROPHONE, video to WebsitePermissions.Kind.CAMERA)
+        val alreadyAllowed = request.resources.filter { it == dev.ujhhgtg.via.engine.MediaPermissionRequest.Resource.PROTECTED_MEDIA || kinds[it]?.let { kind -> policy.mode(origin, kind) == 1 } == true }.toHashSet()
         val asking = request.resources.filter { kinds[it]?.let { kind -> policy.mode(origin, kind) == 3 } == true }.toHashSet()
-        fun grant(selected: Collection<String>) {
+        fun grant(selected: Collection<dev.ujhhgtg.via.engine.MediaPermissionRequest.Resource>) {
             val androidPermissions = HashSet<String>()
             selected.forEach { when (it) {
-                PermissionRequest.RESOURCE_VIDEO_CAPTURE -> androidPermissions += Manifest.permission.CAMERA
-                PermissionRequest.RESOURCE_AUDIO_CAPTURE -> {
+                video -> androidPermissions += Manifest.permission.CAMERA
+                audio -> {
                     androidPermissions += Manifest.permission.RECORD_AUDIO
                     androidPermissions += Manifest.permission.MODIFY_AUDIO_SETTINGS
                 }
+                else -> Unit
             } }
             requestRuntimePermissions(androidPermissions.toTypedArray()) {
-                if (pendingPermission === request) {
-                    val allowed = selected.filter { when (it) { PermissionRequest.RESOURCE_VIDEO_CAPTURE -> hasPermission(Manifest.permission.CAMERA); PermissionRequest.RESOURCE_AUDIO_CAPTURE -> hasPermission(Manifest.permission.RECORD_AUDIO) || hasPermission(Manifest.permission.MODIFY_AUDIO_SETTINGS); else -> true } }
-                    if (allowed.isEmpty()) request.deny() else request.grant(allowed.toTypedArray())
+                if (pendingPermission == request) {
+                    val allowed = selected.filter { when (it) { video -> hasPermission(Manifest.permission.CAMERA); audio -> hasPermission(Manifest.permission.RECORD_AUDIO) || hasPermission(Manifest.permission.MODIFY_AUDIO_SETTINGS); else -> true } }
+                    if (allowed.isEmpty()) request.deny() else request.grant(allowed.toSet())
                     pendingPermission = null
                 }
             }
@@ -3240,7 +3198,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         // c8.s6.qa: the site prompt lists requested permissions and allows/refuses
         // the set; it is not a platform multi-choice selector.
         val labels = asking.map {
-            if (it == PermissionRequest.RESOURCE_VIDEO_CAPTURE) getString(R.string.permission_summary, text(R.string.permission_camera), text(R.string.permission_camera_description))
+            if (it == video) getString(R.string.permission_summary, text(R.string.permission_camera), text(R.string.permission_camera_description))
             else getString(R.string.permission_summary, text(R.string.permission_microphone), text(R.string.permission_microphone_description))
         }
         ViaDialog(host)
@@ -3284,9 +3242,10 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         childFragmentManager.beginTransaction().add(R.id.browser_overlay_container, pane, tag).addToBackStack(null).commit()
     }
 
-    private fun showVideo(view: View, callback: WebChromeClient.CustomViewCallback) {
+    private fun showVideo(callback: dev.ujhhgtg.via.engine.FullscreenRequest) {
+        val view = callback.view
         if (customView != null && customCallback != null) {
-            runCatching { callback.onCustomViewHidden() }
+            runCatching { callback.exited() }
             return
         }
         videoShownAt = android.os.SystemClock.elapsedRealtime()
@@ -3314,7 +3273,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         val view = customView
         val callback = customCallback
         if (view == null || callback == null) {
-            runCatching { callback?.onCustomViewHidden() }
+            runCatching { callback?.exited() }
             customCallback = null
             return
         }
@@ -3331,7 +3290,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         videoContainer = null
         customView = null
         customCallback = null
-        runCatching { callback.onCustomViewHidden() }
+        runCatching { callback.exited() }
         host.requestedOrientation = originalOrientation; shell.visibility = View.VISIBLE
         showFloatingToolbarButton()
         WindowInsetsHelper.setFullscreen(host.window, appFullscreen || preferences.appFlags and 1 != 0)
@@ -3526,7 +3485,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         if (readAloudTaskId != null) readAloudController?.stop()
         if (::toolbarColors.isInitialized) toolbarColors.cancelAnimation()
         menuSettings?.close(); adMarker.close(); passwordForms.dispose()
-        fileCallback?.onReceiveValue(null); fileCallback = null
+        fileCallback?.cancel(); fileCallback = null
         pendingPermission?.deny(); pendingPermission = null
         if (::tabs.isInitialized) tabs.destroy()
         // Captured Parcel state no longer needs a WebView; finish queued writes before releasing its database.
@@ -3603,10 +3562,10 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             }
             return
         }
-        if (tab != null && !isHome(tab.webView.url ?: tab.url)) {
+        if (tab != null && !isHome(tab.page.url ?: tab.url)) {
             // s6.I8: a loading page is stopped before stepping back; otherwise the tab closes.
             if (tabs.canGoBack(tab)) {
-                if (tab.webView.progress < 100) tab.webView.stopLoading()
+                if (tab.page.progress < 100) tab.page.stopLoading()
                 tabs.goBack(tab)
             } else closeTab(tab)
             return

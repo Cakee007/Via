@@ -3,18 +3,18 @@ package dev.ujhhgtg.via.tools
 import android.os.ParcelFileDescriptor
 import android.print.PrintAttributes
 import android.print.PrintCallbacks
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 import java.io.File
 
-/** z8.v1 + a.a: write the WebView adapter directly to the selected offline file. */
+/** z8.v1 + a.a: write the EnginePage adapter directly to the selected offline file. */
 object PdfExporter {
-    fun write(view: WebView, file: File, completed: (Boolean) -> Unit) {
+    fun write(view: EnginePage, file: File, completed: (Boolean) -> Unit) {
         val attributes = PrintAttributes.Builder()
             .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
             .setResolution(PrintAttributes.Resolution("pdf", "pdf", 600, 600))
             .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
             .build()
-        val adapter = view.createPrintDocumentAdapter("Via Document")
+        val adapter = view.createPrintAdapter("Via Document") ?: run { completed(false); return }
         try {
             PrintCallbacks.layout(adapter, attributes, onFinished = {
                 val descriptor = try {

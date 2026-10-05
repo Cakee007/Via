@@ -157,7 +157,7 @@ class SiteSettingsView(private val activity: Activity, private val toolbar: Sett
                 .message(context.getString(R.string.message_reset_site_conf, site.domain))
                 .positive(R.string.action_reset) { _, _ ->
                     // jb.u4.h3 also removes WebView's cached location decisions.
-                    android.webkit.GeolocationPermissions.getInstance().clearAll()
+                    dev.ujhhgtg.via.engine.Engines.backend.clearLocationPermissions()
                     update(SiteConfiguration(site.domain, "{\"flags\":0}"))
                 }
                 .negative(android.R.string.cancel).show()
@@ -166,7 +166,7 @@ class SiteSettingsView(private val activity: Activity, private val toolbar: Sett
         rowClicks[1] = { update(site.withEnabled(!site.isEnabled)) }
         section(text(R.string.category_content))
         val zoom = site.textZoomOverride.takeIf { it > 0 } ?: preferences.textSize
-        row(text(R.string.size), if (site.textZoomOverride > 0) "$zoom%" else default("$zoom%"), site.isEnabled) { textSizePicker() }
+        if (dev.ujhhgtg.via.engine.Engines.backend.capabilities.perPageTextZoom) row(text(R.string.size), if (site.textZoomOverride > 0) "$zoom%" else default("$zoom%"), site.isEnabled) { textSizePicker() }
         val agent = site.userAgentChoice.takeIf { it != -1000 } ?: preferences.userAgentChoice
         row(text(R.string.agent), (if (site.userAgentChoice == -1000) default(agentLabel(agent)) else if (agent == -999) site.customUserAgent else agentLabel(agent)), site.isEnabled) { agentPicker() }
         booleanRow(R.string.action_pcview, 8, flags and 2048 != 0)
@@ -184,8 +184,10 @@ class SiteSettingsView(private val activity: Activity, private val toolbar: Sett
         booleanRow(R.string.page_redirection, 1024, flags and 134217728 == 0, permission = true, inverted = true,
             offLabel = text(R.string.page_redirection_ask_first_description_short))
         permissionRow(R.string.location1, 65536, 32768, if (flags and 2 != 0) 3 else 2)
-        section(text(R.string.settings_advanced))
-        booleanRow(R.string.quick_back, 131072, flags and 512 != 0)
+        if (dev.ujhhgtg.via.engine.Engines.backend.capabilities.quickBackSegments) {
+            section(text(R.string.settings_advanced))
+            booleanRow(R.string.quick_back, 131072, flags and 512 != 0)
+        }
         rows.submit(modelRows.toList())
     }
 
@@ -210,7 +212,7 @@ class SiteSettingsView(private val activity: Activity, private val toolbar: Sett
             val labels = arrayOf(default(permissionLabel(global)), text(R.string.allow), text(R.string.block), text(R.string.ask_first))
             ViaDialog(activity).title(text(key)).singleChoice(labels, mode) { value ->
                 // jb.u4.r3 applies this to every location choice, including Default.
-                if (key == R.string.location1) android.webkit.GeolocationPermissions.getInstance().clearAll()
+                if (key == R.string.location1) dev.ujhhgtg.via.engine.Engines.backend.clearLocationPermissions()
                 update(site.withPermission(decisionBit, askBit, value))
             }.positive(android.R.string.ok).show()
         }

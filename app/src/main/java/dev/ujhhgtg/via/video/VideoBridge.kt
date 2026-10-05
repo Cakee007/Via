@@ -1,15 +1,15 @@
 package dev.ujhhgtg.via.video
 
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 
 /** c8.pb.a: immutable metadata plus page-side video operations. */
 class VideoBridge(
-    private val webView: WebView,
+    private val webView: EnginePage,
     override val duration: Float,
     override val playbackRate: Float,
 ) : FullscreenVideoControls.Controller {
     override fun playbackState(callback: (Int) -> Unit) {
-        webView.evaluateJavascript(VideoScripts.playbackState()) { raw -> callback(parseInt(raw)) }
+        webView.evaluate(VideoScripts.playbackState()) { raw -> callback(parseInt(raw)) }
     }
 
     override fun seekBy(seconds: Int) {
@@ -23,7 +23,7 @@ class VideoBridge(
     private fun evaluate(script: String) {
         if (script.isEmpty()) return
         try {
-            webView.evaluateJavascript(script, null)
+            webView.evaluate(script, null)
         } catch (_: Exception) {
         }
     }

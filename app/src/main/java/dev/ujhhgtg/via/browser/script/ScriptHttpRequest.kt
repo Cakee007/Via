@@ -1,8 +1,7 @@
 package dev.ujhhgtg.via.browser.script
 
 import android.util.Base64
-import android.webkit.WebSettings
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 import dev.ujhhgtg.via.common.FINAL_URL_HEADER
 import dev.ujhhgtg.via.common.applicationIoScope
 import dev.ujhhgtg.via.common.finalUrl
@@ -32,9 +31,9 @@ import java.net.SocketTimeoutException
 import java.util.Locale
 
 /** o5.b/c GM request transport; callbacks use the original i6.j0 conversion code. */
-class ScriptHttpRequest(private val view: WebView, details: String) {
+class ScriptHttpRequest(private val view: EnginePage, details: String) {
     private val request = runCatching { JSONObject(details) }.getOrNull()
-    private val defaultAgent = WebSettings.getDefaultUserAgent(view.context)
+    private val defaultAgent = dev.ujhhgtg.via.engine.Engines.backend.defaultUserAgent(view.view.context)
 
     fun start() {
         val details = request ?: return
@@ -169,7 +168,7 @@ class ScriptHttpRequest(private val view: WebView, details: String) {
     private fun deliver(callbacks: Array<String>, response: JSONObject?) {
         if (callbacks.isEmpty()) return
         val script = GmApiSource.deliverCallbacks(callbacks, response?.let { JSONObject.quote(it.toString()) }) ?: return
-        view.post { view.evaluateJavascript(script, null) }
+        view.view.post { view.evaluate(script) }
     }
 
     private class ResponseTooLarge : Exception()

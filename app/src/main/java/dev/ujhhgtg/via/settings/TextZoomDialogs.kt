@@ -6,7 +6,7 @@ import android.content.DialogInterface
 import android.graphics.Color
 import android.util.TypedValue
 import android.view.Gravity
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -55,16 +55,16 @@ object TextZoomDialogs {
 
     /**
      * Ordinary menu action 29 passes siteOnly=false. Existing enabled exceptions select the site
-     * automatically. Progress previews only the WebView captured when dragging starts; stopping
+     * automatically. Progress previews only the EnginePage captured when dragging starts; stopping
      * persists the choice and applies browser preferences, with no confirmation or rollback.
      */
-    fun showBrowser(activity: Activity, currentWebView: () -> WebView?, siteOnly: Boolean = false,
+    fun showBrowser(activity: Activity, currentWebView: () -> EnginePage?, siteOnly: Boolean = false,
         onChanged: () -> Unit, onCancelled: (() -> Unit)? = null) {
         val repository = TextZoomRepository(activity)
         val url = currentWebView()?.url.orEmpty()
         val siteOverride = repository.overrideForUrl(url)
         val global = repository.global
-        val forSite = siteOverride > 0 || siteOnly
+        val forSite = (siteOverride > 0 || siteOnly) && dev.ujhhgtg.via.engine.Engines.backend.capabilities.perPageTextZoom
         val initial = if (forSite && siteOverride != 0) siteOverride else global
         val body = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
@@ -78,11 +78,11 @@ object TextZoomDialogs {
             progress = (initial - 50) / 5
             highlightProgress = ((if (forSite) global else 100) - 50) / 5
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                private var preview: WeakReference<WebView>? = null
+                private var preview: WeakReference<EnginePage>? = null
                 override fun onProgressChanged(bar: SeekBar, progress: Int, fromUser: Boolean) {
                     val percent = progress * 5 + 50
                     value.text = String.format(Locale.ROOT, "%d%%", percent)
-                    preview?.get()?.settings?.textZoom = percent
+                    preview?.get()?.setTextZoom(percent)
                 }
                 override fun onStartTrackingTouch(bar: SeekBar) {
                     preview = currentWebView()?.takeUnless { it.url.orEmpty().startsWith("file://", true) }?.let(::WeakReference)

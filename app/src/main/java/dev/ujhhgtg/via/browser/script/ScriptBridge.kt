@@ -4,15 +4,17 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.util.Log
-import android.webkit.JavascriptInterface
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 import java.lang.ref.WeakReference
 import org.json.JSONObject
 
-/** o5.a: both call secrets and each native operation's original grant mask are checked. */
+/**
+ * o5.a: both call secrets and each native operation's original grant mask are checked.
+ * Engine-neutral: backends expose [call] to page JavaScript as `via_gm.call`. Calls may arrive on a background thread.
+ */
 class ScriptBridge(
     private val manager: ScriptManager,
-    view: WebView,
+    view: EnginePage,
     private val callbacks: Callbacks,
 ) {
     private val webView = WeakReference(view)
@@ -23,7 +25,6 @@ class ScriptBridge(
         fun onCopy(text: String, mimeType: String) = Unit
     }
 
-    @JavascriptInterface
     fun call(message: String?, secret: String?): String? {
         if (secret.isNullOrEmpty() || secret != manager.secret || message.isNullOrEmpty()) return null
         return runCatching {
@@ -45,22 +46,22 @@ class ScriptBridge(
                 "getResourceURL" -> if (allowed(67108880)) manager.resourceUrl(script!!, args.optString("resource")) ?: "undefined" else null
                 "log" -> { if (allowed(512)) Log.d("ViaUserscript", "$id: ${args.optString("message")}"); null }
                 "setClipboard" -> {
-                    if (allowed(1073742848)) webView.get()?.post {
+                    if (allowed(1073742848)) webView.get()?.view?.post {
                         val text = args.optString("data")
                         val type = args.optString("type").takeUnless { it.isEmpty() || it == "undefined" || it == "null" } ?: "text/plain"
                         if (!type.startsWith("text/") && !type.equals("text", true)) return@post
-                        val context = webView.get()?.context ?: return@post
+                        val context = webView.get()?.view?.context ?: return@post
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         clipboard.setPrimaryClip(ClipData.newPlainText("Via", text))
                         callbacks.onCopy(text, type)
                     }
                     null
                 }
-                "download" -> { if (allowed(2048)) webView.get()?.post { callbacks.onDownload(args.optString("url"), args.optString("name")) }; null }
+                "download" -> { if (allowed(2048)) webView.get()?.view?.post { callbacks.onDownload(args.optString("url"), args.optString("name")) }; null }
                 "openInTab" -> {
                     if (allowed(268468224)) {
                         val options = runCatching { JSONObject(args.optString("options")) }.getOrDefault(JSONObject())
-                        webView.get()?.post { callbacks.onOpenTab(args.optString("url"), options.optBoolean("active", false), options.optInt("insert", -1)) }
+                        webView.get()?.view?.post { callbacks.onOpenTab(args.optString("url"), options.optBoolean("active", false), options.optInt("insert", -1)) }
                     }
                     null
                 }

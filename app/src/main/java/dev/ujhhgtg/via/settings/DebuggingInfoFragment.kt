@@ -6,7 +6,6 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.TextView
 import dev.ujhhgtg.via.BuildConfig
@@ -31,11 +30,7 @@ class DebuggingInfoFragment : SettingsPageFragment() {
             append("Display Size: ${metrics.heightPixels}x${metrics.widthPixels}\n")
             append("Android Version: ${Build.VERSION.RELEASE} API${Build.VERSION.SDK_INT}\n")
             append("Language: ${Locale.getDefault().toLanguageTag()}\n")
-            WebView.getCurrentWebViewPackage()?.let {
-                append("WebView Impl: ${it.packageName}\n")
-                val version = it.longVersionCode
-                append("WebView Version: ${it.versionName}($version)\n")
-            }
+            dev.ujhhgtg.via.engine.Engines.backend.versionInfo().forEach { (label, value) -> append("$label: $value\n") }
         }.trim()
         return FastScrollView(context).apply {
             isFillViewport = true

@@ -2,7 +2,6 @@ package dev.ujhhgtg.via.downloads
 
 import android.content.Context
 import android.os.SystemClock
-import android.webkit.CookieManager
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.prepareGet
@@ -301,9 +300,10 @@ internal class DownloadTransfer(
             // Assigned only when the hop is a redirect; otherwise the block's result is returned below.
             var next: String? = null
             try {
+                val cookie = dev.ujhhgtg.via.engine.Engines.backend.cookies.get(url)
                 val result = DownloadNetwork.client.prepareGet(url) {
                     this.headers["Accept-Encoding"] = "identity"
-                    runCatching { CookieManager.getInstance().getCookie(url) }.getOrNull()?.let { this.headers["Cookie"] = it }
+                    cookie?.let { this.headers["Cookie"] = it }
                     headers(this)
                 }.execute { http ->
                     when (http.status.value) {

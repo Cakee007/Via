@@ -1,23 +1,24 @@
 package dev.ujhhgtg.via.browser
 
 import android.os.Bundle
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 import java.util.UUID
 
-/** A tab's WebView plus the small amount of shell metadata that survives process recreation. */
+/** A tab's current page plus the small amount of shell metadata that survives process recreation. */
 class BrowserTab(
     val id: Long,
-    var webView: WebView,
+    /** The current QuickBack segment; replaced when the tab moves between segments. */
+    var page: EnginePage,
     var requestedUrl: String = UrlResolver.HOME,
     var title: String = "",
     var sessionId: String = UUID.randomUUID().toString(),
 ) {
-    /** r4.d.u reads the current history segment's WebView, without a second favicon snapshot. */
-    val favicon: android.graphics.Bitmap? get() = webView.favicon
+    /** r4.d.u reads the current history segment's page, without a second favicon snapshot. */
+    val favicon: android.graphics.Bitmap? get() = page.favicon
     internal var internalDocumentUrl: String? = null
 
     val url: String
-        get() = webView.url?.takeIf { it.isNotBlank() }?.let(::displayUrl) ?: requestedUrl
+        get() = page.url?.takeIf { it.isNotBlank() }?.let(::displayUrl) ?: requestedUrl
 
     fun displayUrl(pageUrl: String): String = if (pageUrl == internalDocumentUrl) requestedUrl else pageUrl
 
@@ -29,16 +30,16 @@ class BrowserTab(
         if (title != null) this.title = title
     }
 
-    /** Saves both WebView back-forward state and shell metadata into a caller-owned Bundle. */
+    /** Saves both the engine's back-forward state and shell metadata into a caller-owned Bundle. */
     fun saveState(): Bundle = Bundle().apply {
         putLong(KEY_ID, id)
         putString(KEY_SESSION_ID, sessionId)
         putString(KEY_REQUESTED_URL, requestedUrl)
         putString(KEY_TITLE, title)
         putString(KEY_INTERNAL_DOCUMENT, internalDocumentUrl)
-        putInt(KEY_SCROLL_X, webView.scrollX)
-        putInt(KEY_SCROLL_Y, webView.scrollY)
-        putBundle(KEY_WEBVIEW, Bundle().also { webView.saveState(it) })
+        putInt(KEY_SCROLL_X, page.scrollX)
+        putInt(KEY_SCROLL_Y, page.scrollY)
+        putBundle(KEY_WEBVIEW, Bundle().also { page.saveState(it) })
     }
 
     fun restoreState(state: Bundle): Boolean {
@@ -47,15 +48,16 @@ class BrowserTab(
         title = state.getString(KEY_TITLE, title)
         internalDocumentUrl = state.getString(KEY_INTERNAL_DOCUMENT)
         val webState = state.getBundle(KEY_WEBVIEW) ?: return false
-        return webView.restoreState(webState) != null
+        return page.restoreState(webState) != null
     }
 
     /** t4.c restores scroll separately because Chromium's state does not always retain it. */
     fun restoreScroll(state: Bundle, afterReload: Boolean) {
         val x = state.getInt(KEY_SCROLL_X)
         val y = state.getInt(KEY_SCROLL_Y)
-        if (x != 0 || y != 0) webView.postDelayed({
-            if (webView.scrollY <= 1000) webView.scrollTo(x, y)
+        val target = page
+        if (x != 0 || y != 0) target.view.postDelayed({
+            if (target.scrollY <= 1000) target.scrollTo(x, y)
         }, if (afterReload) 500L else 100L)
     }
 
@@ -69,7 +71,7 @@ class BrowserTab(
         private const val KEY_SCROLL_X = "scroll_x"
         private const val KEY_SCROLL_Y = "scroll_y"
 
-        // Tab creation/restoration runs on the WebView UI thread, including popup callbacks.
+        // Tab creation/restoration runs on the UI thread, including popup callbacks.
         private var nextId = 1L
         fun nextId(): Long = nextId++
         fun observeId(id: Long) { nextId = maxOf(nextId, id + 1) }

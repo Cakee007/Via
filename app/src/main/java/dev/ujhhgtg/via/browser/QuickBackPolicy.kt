@@ -4,17 +4,19 @@ import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.data.SiteConfiguration
 import dev.ujhhgtg.via.search.UrlInputText
 
-/** e8.i.K/N: decide whether navigation gets a separately retained WebView. */
+/** e8.i.K/N: decide whether navigation gets a separately retained page. */
 internal class QuickBackPolicy(
     private val filesPath: String,
     private val preferences: BrowserPreferences,
     private val siteConfiguration: (String) -> SiteConfiguration?,
+    private val segmentsSupported: Boolean = dev.ujhhgtg.via.engine.Engines.backend.capabilities.quickBackSegments,
 ) {
     fun shouldRetain(source: String?, target: String, automatic: Boolean): Boolean {
+        if (!segmentsSupported) return false
         val targetInternal = UrlInputText.isInternalDocument(target, filesPath)
         val sourceInternal = source?.let { UrlInputText.isInternalDocument(it, filesPath) } == true
         // The generated-document boundary precedes the redirect and preference
-        // tests in N; it remains a separate WebView even with Quick back off.
+        // tests in N; it remains a separate page even with Quick back off.
         if (targetInternal != sourceInternal) return true
         if (targetInternal || automatic) return false
         if (source != null) {

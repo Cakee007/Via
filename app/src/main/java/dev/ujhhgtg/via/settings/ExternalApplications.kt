@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.os.Environment
-import android.webkit.CookieManager
 import androidx.core.net.toUri
 import dev.ujhhgtg.via.R
 
@@ -55,16 +54,21 @@ object ExternalDownloadManagers {
     }
 
     /** j1.c deliberately uses public Download and the URL itself as Referer. */
-    fun downloadWithSystem(context: Context, url: String, name: String, userAgent: String?, mimeType: String?): Long = runCatching {
+    suspend fun downloadWithSystem(context: Context, url: String, name: String, userAgent: String?, mimeType: String?): Long {
         if (url.isEmpty() || name.isEmpty()) return 0L
+        val cookies = dev.ujhhgtg.via.engine.Engines.backend.cookies.get(url)
+        return runCatching { downloadWithSystem(context, url, name, userAgent, mimeType, cookies) }.getOrDefault(0L)
+    }
+
+    private fun downloadWithSystem(context: Context, url: String, name: String, userAgent: String?, mimeType: String?, cookies: String?): Long {
         val request = DownloadManager.Request(url.toUri()).setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             .setTitle(name).setDescription(url).setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
         if (mimeType != null) request.setMimeType(mimeType)
-        request.addRequestHeader("Cookie", CookieManager.getInstance().getCookie(url))
+        request.addRequestHeader("Cookie", cookies)
         request.addRequestHeader("Referer", url)
         if (userAgent != null) request.addRequestHeader("User-Agent", userAgent)
-        (context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
-    }.getOrDefault(0L)
+        return (context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
+    }
 
     fun openDownloads(context: Context, managerId: String?): Boolean {
         val manager = managers.firstOrNull { it.packageName == managerId } ?: return false

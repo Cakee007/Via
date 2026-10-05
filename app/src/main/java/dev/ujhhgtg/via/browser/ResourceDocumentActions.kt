@@ -1,5 +1,6 @@
 package dev.ujhhgtg.via.browser
 
+import dev.ujhhgtg.via.engine.EnginePage
 import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -128,7 +129,7 @@ class ResourceImageActions(
     private val cached = HashMap<String, java.io.File>()
     private val pending = HashMap<String, Request>()
 
-    fun perform(webView: android.webkit.WebView, url: String, flags: Int, secret: String) {
+    fun perform(webView: EnginePage, url: String, flags: Int, secret: String) {
         if (url.isEmpty()) return
         val request = Request(url, webView.url, flags)
         if (url.startsWith("data:")) { acquire(request, url); return }
@@ -139,10 +140,10 @@ class ResourceImageActions(
         cached[url]?.takeIf { it.isFile && it.lastModified() >= System.currentTimeMillis() - 86_400_000L }?.let {
             complete(request, it); return
         }
-        if (webView.settings.javaScriptEnabled) {
+        if (webView.javaScriptEnabled) {
             pending[url] = request.copy(flags = flags or (pending[url]?.flags ?: 0))
             // Original page-context XHR retains cookies, headers and blob support; failure falls back to the native request.
-            webView.evaluateJavascript(
+            webView.evaluate(
                 "(function(){var a=new XMLHttpRequest;a.open(\"GET\",__URL__,!0);a.responseType=\"blob\";a.onload=function(){if(200===a.status){var b=new FileReader;b.onloadend=function(){window.via.download(__SECRET__,__URL__,b.result)};b.readAsDataURL(a.response)}else window.via.download(__SECRET__,__URL__,\"\")};a.onerror=function(){window.via.download(__SECRET__,__URL__,\"\")};a.send()})();"
                     .replace("__URL__", org.json.JSONObject.quote(url)).replace("__SECRET__", org.json.JSONObject.quote(secret)), null)
         } else acquire(request, null)

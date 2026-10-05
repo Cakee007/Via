@@ -1,0 +1,33 @@
+package dev.ujhhgtg.via.engine.webview
+
+import android.webkit.JavascriptInterface
+import android.webkit.WebView
+import dev.ujhhgtg.via.browser.ViaBridge
+import dev.ujhhgtg.via.browser.script.ScriptBridge
+
+/** Exposes the engine-neutral page bridges to WebView JavaScript through addJavascriptInterface. */
+internal object WebViewBridges {
+    private class Via(private val bridge: ViaBridge) {
+        @JavascriptInterface fun cmd(command: Int): Int = bridge.cmd(command)
+        @JavascriptInterface fun download(token: String?, url: String?, data: String?) = bridge.download(token, url, data)
+        @JavascriptInterface fun postMessage(token: String?, json: String?) = bridge.postMessage(token, json)
+        @JavascriptInterface fun record(url: String?, selector: String?) = bridge.record(url, selector)
+        @JavascriptInterface fun addon(id: String?) = bridge.addon(id)
+        @JavascriptInterface fun getInstalledAddonID(): String = bridge.getInstalledAddonID()
+        @JavascriptInterface fun toast(text: String?) = bridge.toast(text)
+    }
+
+    private class Gm(private val bridge: ScriptBridge) {
+        @JavascriptInterface fun call(message: String?, secret: String?): String? = bridge.call(message, secret)
+    }
+
+    fun install(webView: WebView, via: ViaBridge, scripts: ScriptBridge?) {
+        webView.removeJavascriptInterface("searchBoxJavaBridge_")
+        webView.removeJavascriptInterface("accessibility")
+        webView.removeJavascriptInterface("accessibilityTraversal")
+        scripts?.let { webView.addJavascriptInterface(Gm(it), "via_gm") }
+        val page = Via(via)
+        webView.addJavascriptInterface(page, "via")
+        webView.addJavascriptInterface(page, "via_page")
+    }
+}

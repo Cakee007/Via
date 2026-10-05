@@ -14,7 +14,6 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.WebView
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.net.toUri
@@ -24,7 +23,7 @@ import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.Shell
 import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.settings.settingsColor
-import java.util.Locale
+import kotlin.system.exitProcess
 
 /** ra.h: the full-screen notice shown instead of the browser when no WebView provider is loaded. */
 class WebViewMissingFragment : Fragment() {
@@ -97,7 +96,7 @@ class WebViewMissingFragment : Fragment() {
     private fun restart() {
         val context = requireContext()
         context.startActivity(Intent.makeRestartActivityTask(ComponentName(context, Shell::class.java)).setPackage(context.packageName))
-        System.exit(0)
+        exitProcess(0)
     }
 
     companion object {
@@ -108,6 +107,6 @@ class WebViewMissingFragment : Fragment() {
         fun newInstance(code: Int) = WebViewMissingFragment().apply { arguments = bundleOf(KEY_CODE to code) }
 
         /** w9.r.f: the loaded WebView package is missing or has no name. */
-        fun webViewMissing(): Boolean = WebView.getCurrentWebViewPackage()?.packageName.isNullOrEmpty()
+        fun webViewMissing(): Boolean = !dev.ujhhgtg.via.engine.Engines.backend.isAvailable()
     }
 }

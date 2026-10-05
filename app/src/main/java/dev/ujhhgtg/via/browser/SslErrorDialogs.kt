@@ -1,18 +1,17 @@
 package dev.ujhhgtg.via.browser
 
 import android.app.Activity
-import android.net.http.SslError
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ClickableSpan
 import android.text.style.ForegroundColorSpan
 import android.view.View
-import android.webkit.SslErrorHandler
-import android.webkit.WebView
 import android.widget.ScrollView
 import android.widget.TextView
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.data.BrowserPreferences
+import dev.ujhhgtg.via.engine.SslErrorRequest
+import dev.ujhhgtg.via.engine.SslErrorRequest.Kind
 import dev.ujhhgtg.via.reader.PageSecurityDialogs
 import dev.ujhhgtg.via.settings.settingsColor
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
@@ -21,32 +20,35 @@ import java.util.Locale
 /** e8.h0 and process-wide d8.f: error-mask policy and a single decision per host/mask. */
 internal object SslErrorDialogs {
     private val choices = HashMap<String, Boolean>()
-    private val pending = HashMap<String, MutableList<SslErrorHandler>>()
+    private val pending = HashMap<String, MutableList<SslErrorRequest>>()
     private val errors = listOf(
-        SslError.SSL_UNTRUSTED to R.string.ssl_warning_certificate_untrusted,
-        SslError.SSL_DATE_INVALID to R.string.ssl_warning_certificate_date_invalid,
-        SslError.SSL_EXPIRED to R.string.ssl_warning_certificate_expired,
-        SslError.SSL_IDMISMATCH to R.string.ssl_warning_certificate_domain_mismatch,
-        SslError.SSL_NOTYETVALID to R.string.ssl_warning_certificate_not_yet_valid,
-        SslError.SSL_INVALID to R.string.ssl_warning_certificate_invalid,
+        Kind.UNTRUSTED to R.string.ssl_warning_certificate_untrusted,
+        Kind.DATE_INVALID to R.string.ssl_warning_certificate_date_invalid,
+        Kind.EXPIRED to R.string.ssl_warning_certificate_expired,
+        Kind.ID_MISMATCH to R.string.ssl_warning_certificate_domain_mismatch,
+        Kind.NOT_YET_VALID to R.string.ssl_warning_certificate_not_yet_valid,
+        Kind.INVALID to R.string.ssl_warning_certificate_invalid,
     )
 
-    fun show(activity: Activity, webView: WebView, preferences: BrowserPreferences, handler: SslErrorHandler, error: SslError) {
-        val mask = errors.foldIndexed(0) { index, flags, (kind, _) -> if (error.hasError(kind)) flags or (1 shl index) else flags }
+    fun show(activity: Activity, pageUrl: String?, preferences: BrowserPreferences, handler: SslErrorRequest) {
+        val error = handler
+        // Without a way to proceed there is nothing to ask; the engine shows its own error page.
+        if (!dev.ujhhgtg.via.engine.Engines.backend.capabilities.sslProceed) { handler.cancel(); return }
+        val mask = errors.foldIndexed(0) { index, flags, (kind, _) -> if (kind in error.errors) flags or (1 shl index) else flags }
         val ignored = preferences.ignoredSslWarning
         if (ignored != 0 && ignored and mask == mask) { handler.proceed(); return }
-        val errorHost = DocumentPolicy.host(error.url.orEmpty())
-        val pageHost = DocumentPolicy.host(webView.url.orEmpty())
+        val errorHost = DocumentPolicy.host(error.url)
+        val pageHost = DocumentPolicy.host(pageUrl.orEmpty())
         val host = errorHost.ifEmpty { pageHost }
         choices[host]?.let { allow -> if (allow) handler.proceed() else handler.cancel(); return }
-        if (errorHost.isNotEmpty() && pageHost.isNotEmpty() && errorHost != pageHost && error.primaryError != SslError.SSL_UNTRUSTED) {
+        if (errorHost.isNotEmpty() && pageHost.isNotEmpty() && errorHost != pageHost && error.primaryError != Kind.UNTRUSTED) {
             handler.cancel(); return
         }
         val key = "$host:$mask"
         pending[key]?.let { it += handler; return }
         pending[key] = mutableListOf(handler)
 
-        val descriptions = errors.filter { (kind, _) -> error.hasError(kind) }
+        val descriptions = errors.filter { (kind, _) -> kind in error.errors }
             .joinToString("") { (_, label) -> "- ${activity.getString(label)}\n" }
         val message = activity.getString(R.string.ssl_warning_insecure_connection_message,
             host.ifEmpty { activity.getString(R.string.the_site).lowercase(Locale.ROOT) }, descriptions)

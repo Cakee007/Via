@@ -2,7 +2,7 @@ package dev.ujhhgtg.via.tools
 
 import android.app.Activity
 import android.content.Context
-import android.webkit.WebView
+import dev.ujhhgtg.via.engine.EnginePage
 import dev.ujhhgtg.via.ui.ViaToast
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.data.BrowserPreferences
@@ -13,21 +13,24 @@ import java.util.UUID
 
 /** c8.ua.P1/X, c8.s6.k0/C4, z8.c1.n/L and z8.v1: MHTML or A4 PDF to app offline storage. */
 object SavedPageTools {
-    fun show(activity: Activity, view: WebView, title: String = view.title.orEmpty(), onViewSavedPages: (() -> Unit)? = null) {
+    fun show(activity: Activity, view: EnginePage, title: String = view.title.orEmpty(), onViewSavedPages: (() -> Unit)? = null) {
         if (view.url.orEmpty().startsWith("file://", true)) { ViaToast.makeText(activity, R.string.cannot_work, ViaToast.LENGTH_SHORT).show(); return }
         val preferences = BrowserPreferences(activity)
+        // Without MHT support the page can only be saved as PDF, so the choice is not offered.
+        val archive = dev.ujhhgtg.via.engine.Engines.backend.capabilities.mhtArchive
         val initial = title.ifEmpty { UUID.randomUUID().toString().uppercase(Locale.ROOT) }
         ViaDialog(activity).title(R.string.action_save_web_page)
             .input(initial, activity.getString(R.string.hint_title), 1)
-            .check(R.string.save_as_pdf, preferences.appFlags and 16384 != 0)
+            .apply { if (archive) check(R.string.save_as_pdf, preferences.appFlags and 16384 != 0) }
             .positive(android.R.string.ok) { _, result ->
                 val name = result.edit?.firstOrNull()?.takeIf(String::isNotEmpty) ?: return@positive
-                preferences.appFlags = if (result.checked) preferences.appFlags or 16384 else preferences.appFlags and 16384.inv()
-                val target = uniqueFile(directory(activity), sanitize(name), if (result.checked) ".pdf" else ".mht")
-                // ua.X returns true as soon as the WebView write is initiated. Z3's
+                val pdf = !archive || result.checked
+                if (archive) preferences.appFlags = if (pdf) preferences.appFlags or 16384 else preferences.appFlags and 16384.inv()
+                val target = uniqueFile(directory(activity), sanitize(name), if (pdf) ".pdf" else ".mht")
+                // ua.X returns true as soon as the EnginePage write is initiated. Z3's
                 // View action opens Y9 (saved pages); it does not wait for a write callback.
-                if (result.checked) PdfExporter.write(view, target) {}
-                else view.saveWebArchive(target.absolutePath)
+                if (pdf) PdfExporter.write(view, target) {}
+                else view.saveArchive(target.absolutePath) {}
                 ViaToast.show(activity, activity.getString(R.string.saved_page_successfully), ViaToast.LENGTH_SHORT,
                     activity.getString(R.string.view_downloads), action = onViewSavedPages)
             }.negative(android.R.string.cancel).show()

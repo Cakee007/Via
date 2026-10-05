@@ -6,11 +6,6 @@ import dev.ujhhgtg.via.common.GeneratedDocumentState
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import android.webkit.CookieManager
-import android.webkit.CookieSyncManager
-import android.webkit.WebStorage
-import android.webkit.WebView
-import android.webkit.WebViewDatabase
 import dev.ujhhgtg.via.browser.script.ScriptResources
 import dev.ujhhgtg.via.browser.script.ScriptStore
 import dev.ujhhgtg.via.data.BrowserDatabase
@@ -25,10 +20,10 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 /** z8.h0/b0/o0: exact browsing-data categories and the original startup cleanup policy. */
-@Suppress("DEPRECATION")
 class BrowserDataCleaner(context: Context, private val database: BrowserDatabase = BrowserDatabase.shared(context)) {
     private val context = context.applicationContext
     private val preferences = BrowserPreferences(context)
+    private val engine = dev.ujhhgtg.via.engine.Engines.backend
 
     /**
      * c8.s6.V1 -> W8 -> ua.r0 -> h0.c. Called on the UI thread as the browser view is
@@ -54,16 +49,12 @@ class BrowserDataCleaner(context: Context, private val database: BrowserDatabase
 
     private fun clear(mask: Int, manual: Boolean, now: Long) {
         if (mask and CACHE != 0) {
-            WebView(context).apply { clearCache(true); clearSslPreferences(); destroy() }
-            arrayOf("app_webview/Default/Service Worker/CacheStorage", "app_webview/Default/Service Worker/ScriptCache",
-                "app_webview/Default/GPUCache", "app_webview/BrowserMetrics").forEach { relative ->
-                File(context.dataDir, relative).deleteRecursively()
-            }
+            engine.clearCache(context)
             preferences.putLong("lastcleantime", now)
             // h0.c receives a null monkey repository at startup; h0.a receives it from both manual entry points.
             if (manual) ScriptStore(context).use { ScriptResources(context).cleanup(it.list()) }
         }
-        if (mask and FORM_DATA != 0) WebViewDatabase.getInstance(context).clearFormData()
+        if (mask and FORM_DATA != 0) engine.clearFormData(context)
         if (mask and HISTORY != 0) background {
             HistoryRepository(database).clear()
             externalDirectory("favicons").deleteRecursively()
@@ -71,12 +62,8 @@ class BrowserDataCleaner(context: Context, private val database: BrowserDatabase
             HomeIcons.clearMemory()
         }
         if (mask and CLOSED_TABS != 0) background { clearClosedTabs() }
-        if (mask and STORAGE != 0) WebStorage.getInstance().deleteAllData()
-        if (mask and COOKIES != 0) background {
-            WebViewDatabase.getInstance(context).apply { clearFormData(); clearHttpAuthUsernamePassword() }
-            CookieSyncManager.createInstance(context)
-            CookieManager.getInstance().apply { removeAllCookies(null); flush() }
-        }
+        if (mask and STORAGE != 0) engine.clearStorage(context)
+        if (mask and COOKIES != 0) background { engine.clearCookies(context) }
         if (mask and APP_CACHE != 0) {
             background {
                 listOfNotNull(context.cacheDir, context.externalCacheDir, context.codeCacheDir,
