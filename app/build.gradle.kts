@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.aboutlibraries.android)
 }
 
 android {
@@ -64,13 +65,13 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.dynamicanimation)
-    implementation(libs.androidx.customview)
-    implementation(libs.androidx.fragment)
     implementation(libs.androidx.activity)
-    implementation(libs.androidx.webkit)
+    implementation(libs.androidx.fragment)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.viewpager2)
+    implementation(libs.androidx.customview)
+    implementation(libs.androidx.dynamicanimation)
+    implementation(libs.androidx.webkit)
     implementation(libs.androidx.biometric)
 
     implementation(libs.okhttp)
@@ -78,4 +79,13 @@ dependencies {
     implementation(libs.zxing.core)
     implementation(libs.zxing.embedded)
     implementation(libs.tinypinyin)
+
+    implementation(libs.aboutlibraries.core)
+}
+
+aboutLibraries {
+    collect {
+        // Custom definitions for bundled web assets that are not Gradle dependencies
+        configPath = file("config")
+    }
 }

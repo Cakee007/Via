@@ -1,0 +1,8 @@
+{
+  "uniqueId": "com.github.promeg:tinypinyin",
+  "name": "TinyPinyin",
+  "developers": [{ "name": "promeG" }],
+  "website": "https://github.com/promeG/TinyPinyin",
+  "scm": { "url": "https://github.com/promeG/TinyPinyin" },
+  "licenses": ["Apache-2.0"]
+}

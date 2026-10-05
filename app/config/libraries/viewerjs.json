@@ -1,0 +1,8 @@
+{
+  "uniqueId": "com.github.fengyuanchen:viewerjs",
+  "name": "Viewer.js",
+  "developers": [{ "name": "Chen Fengyuan" }],
+  "website": "https://github.com/fengyuanchen/viewerjs",
+  "scm": { "url": "https://github.com/fengyuanchen/viewerjs" },
+  "licenses": ["MIT"]
+}

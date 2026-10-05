@@ -1,0 +1,8 @@
+{
+  "uniqueId": "com.github.airbashx:autounfold",
+  "name": "AutoUnfold",
+  "developers": [{ "name": "AirBashX" }],
+  "website": "https://github.com/AirBashX/UserScript",
+  "scm": { "url": "https://github.com/AirBashX/UserScript" },
+  "licenses": ["Apache-2.0"]
+}

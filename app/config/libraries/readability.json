@@ -1,0 +1,8 @@
+{
+  "uniqueId": "org.mozilla:readability",
+  "name": "readability",
+  "developers": [{ "name": "Mozilla" }],
+  "website": "https://github.com/mozilla/readability",
+  "scm": { "url": "https://github.com/mozilla/readability" },
+  "licenses": ["Apache-2.0"]
+}
