@@ -1,7 +1,5 @@
 package dev.ujhhgtg.via.tools
 
-import android.app.Activity
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Typeface
@@ -13,7 +11,6 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.home.HomeFavoriteIcons
@@ -29,7 +26,7 @@ class AddToHomeScreenFragment : ViaDialogFragment() {
     private lateinit var url: EditText
     private lateinit var icon: ImageView
     private var chosen: Bitmap? = null
-    private val picker = registerForActivityResult(dev.ujhhgtg.via.common.OriginalImagePickerContract()) { uri ->
+    private val picker = registerForActivityResult(dev.ujhhgtg.via.common.ImagePickerContract()) { uri ->
         if (uri != null) {
             val context = requireContext().applicationContext
             viewLifecycleOwner.launchIo(load@{

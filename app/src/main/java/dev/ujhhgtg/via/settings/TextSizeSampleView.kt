@@ -36,7 +36,7 @@ class TextSizeSampleView(context: Context, private val changed: (Int) -> Unit) :
         setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimensionPixelSize(R.dimen.settings_row_title_size).toFloat())
         ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER; typeface = BrowserPreferences(context).selectedTypeface()
     }
-    private val seek = SeekBar(ContextThemeWrapper(context, R.style.OriginalSeekbar)).apply {
+    private val seek = SeekBar(ContextThemeWrapper(context, R.style.Seekbar)).apply {
         ReaderControls.styleSeekBar(this)
     }
     private val sample = TextView(context).apply {

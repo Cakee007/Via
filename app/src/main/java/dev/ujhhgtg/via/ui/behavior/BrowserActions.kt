@@ -5,7 +5,7 @@ import android.view.KeyEvent
 import dev.ujhhgtg.via.R
 
 /** hb.v4 IDs and hb.l6 picker order; these are distinct from i8.l menu IDs. */
-object OriginalActions {
+object BrowserActions {
     data class Entry(val id: Int, val labelRes: Int) {
         fun title(context: Context) = context.getString(labelRes)
     }

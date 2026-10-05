@@ -103,7 +103,7 @@ class FontRepository(private val directory: File) {
 
         /** z8.c1.n: replace reserved characters and cap the full UTF-8 filename at 200 bytes. */
         internal fun cleanName(name: String): String {
-            val safe = name.trim { it <= ' ' }.replace(Regex("[/\\\\:*?\"<>|]"), "-").take(200)
+            val safe = name.trim().replace(Regex("[/\\\\:*?\"<>|]"), "-").take(200)
             if (safe.toByteArray(Charsets.UTF_8).size <= 200) return safe
             var low = 0
             var high = safe.length

@@ -195,7 +195,7 @@ class TextTranslationFragment : BrowserOverlayFragment() {
 
     private fun requestTranslation() {
         request?.cancel()
-        val query = source.text.toString().trim { it <= ' ' }
+        val query = source.text.toString().trim()
         if (query.isEmpty()) {
             progress.update(100); result = null; showMode(INPUT)
             return

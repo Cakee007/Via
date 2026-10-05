@@ -19,7 +19,7 @@ class ReaderTextSizeControl(context: Context, textSize: Int, private val onChang
     init {
         layoutParams = android.view.ViewGroup.LayoutParams(-1, context.dp(48f))
         setPaddingRelative(units(8), units(4), units(8), units(4))
-        slider = SeekBar(ContextThemeWrapper(context, R.style.OriginalSeekbar)).apply {
+        slider = SeekBar(ContextThemeWrapper(context, R.style.Seekbar)).apply {
             max = 20; progress = (textSize - 10).coerceIn(0, 20); ReaderControls.styleSeekBar(this)
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) = Unit

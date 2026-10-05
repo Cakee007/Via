@@ -144,12 +144,12 @@ class BrowserMenuDialog : ViaDialogFragment() {
 
     private fun updateItems() {
         items.clear()
-        val displayed = preferences.displayedMenus?.let { if (it.isEmpty()) emptyList() else it.split(',').mapNotNull(String::toIntOrNull) } ?: OriginalMenu.defaults
+        val displayed = preferences.displayedMenus?.let { if (it.isEmpty()) emptyList() else it.split(',').mapNotNull(String::toIntOrNull) } ?: BrowserMenu.defaults
         val seen = HashSet<Int>()
         for (id in displayed) {
             if (!seen.add(id)) return
-            if (id in OriginalMenu.removed) continue
-            val entry = OriginalMenu.entries[id]
+            if (id in BrowserMenu.removed) continue
+            val entry = BrowserMenu.entries[id]
             items += if (entry == null) Item(22) else Item(id, entry.icon, getString(entry.titleRes))
         }
         val runtime = (parentFragment as? Host)?.menuRuntimeState() ?: (activity as? Host)?.menuRuntimeState()

@@ -10,7 +10,7 @@ import dev.ujhhgtg.via.reader.ReaderControls
 import dev.ujhhgtg.via.ui.dp
 
 /** mark.via.common.widget.w0: the global/default zoom marker is drawn behind the normal slider. */
-internal class TextZoomSeekBar(context: Context) : SeekBar(ContextThemeWrapper(context, R.style.OriginalSeekbar)) {
+internal class TextZoomSeekBar(context: Context) : SeekBar(ContextThemeWrapper(context, R.style.Seekbar)) {
     var highlightProgress: Int = -1
         set(value) { field = value; invalidate() }
     private val marker = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }

@@ -13,8 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.ui.behavior.BehaviorPreferences
-import dev.ujhhgtg.via.ui.behavior.OriginalActions
-import dev.ujhhgtg.via.ui.dialog.ViaDialog
+import dev.ujhhgtg.via.ui.behavior.BrowserActions
 import dev.ujhhgtg.via.ui.behavior.ToolbarSwipeLayout
 import dev.ujhhgtg.via.ui.NavigationBar
 import dev.ujhhgtg.via.ui.dp
@@ -65,7 +64,7 @@ class GesturesSettingsFragment : SettingsListFragment() {
             onItemClick = ::chooseAction
             // hb.u4.k3: the current action's name, with a "Modify" action that opens the picker (l3).
             onItemLongClick = { slot ->
-                ViaToast.show(context, OriginalActions.entries[behavior.longPressAction(slot)]?.title(context).orEmpty(),
+                ViaToast.show(context, BrowserActions.entries[behavior.longPressAction(slot)]?.title(context).orEmpty(),
                     actionText = getString(R.string.action_modify)) { chooseAction(slot) }
                 true
             }

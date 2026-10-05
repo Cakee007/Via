@@ -49,9 +49,6 @@
     <issue id="IconDuplicates" severity="ignore" />
     <issue id="IconXmlAndPng" severity="ignore" />
 
-    <!-- trim { it <= ' ' } reproduces Java's String.trim(); Kotlin's trim() strips Unicode whitespace instead. -->
-    <issue id="TrimLambda" severity="ignore" />
-
     <!-- Original API usage and build choices. -->
     <issue id="WebViewApiAvailability" severity="ignore" />
     <issue id="AppBundleLocaleChanges" severity="ignore" />

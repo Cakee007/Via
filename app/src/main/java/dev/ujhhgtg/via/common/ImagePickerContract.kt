@@ -10,7 +10,7 @@ import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 
 /** x5.e: Android 36 uses PickVisualMedia, including its ClipData result fallback; older uses PICK. */
-class OriginalImagePickerContract : ActivityResultContract<Unit?, Uri?>() {
+class ImagePickerContract : ActivityResultContract<Unit?, Uri?>() {
     private val picker = if (Build.VERSION.SDK_INT >= 36) ActivityResultContracts.PickVisualMedia() else null
     override fun createIntent(context: Context, input: Unit?): Intent = picker?.createIntent(context,
         PickVisualMediaRequest.Builder().setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly).build())

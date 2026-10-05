@@ -110,7 +110,7 @@ import dev.ujhhgtg.via.ui.WebsitePermissions
 import dev.ujhhgtg.via.ui.WindowBackgroundDrawable
 import dev.ujhhgtg.via.ui.behavior.BehaviorPreferences
 import dev.ujhhgtg.via.ui.behavior.GestureWebView
-import dev.ujhhgtg.via.ui.behavior.OriginalActions
+import dev.ujhhgtg.via.ui.behavior.BrowserActions
 import dev.ujhhgtg.via.ui.behavior.PageGestureController
 import dev.ujhhgtg.via.ui.behavior.ToolbarSwipeLayout
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
@@ -398,7 +398,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     /** ua.F1 restores requested session IDs by appending; it does not replace current tabs. */
     private fun restoreIncomingSessions(ids: List<String>, selected: String?) {
         worker.execute {
-            val entries = ids.mapNotNull { id -> sessions.find(id)?.let { it to dev.ujhhgtg.via.browser.OriginalSessionState.read(it.filePath) } }
+            val entries = ids.mapNotNull { id -> sessions.find(id)?.let { it to dev.ujhhgtg.via.browser.SessionState.read(it.filePath) } }
             host.runOnUiThread {
                 if (!isAdded || entries.isEmpty()) return@runOnUiThread
                 val shouldSelect = tabs.size == 0 || current() == null || entries.any { it.first.id == selected }
@@ -902,7 +902,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         worker.execute { sessions.replaceOpen(snapshot.writeFiles()) }
     }
 
-    private fun isRestorableSessionUrl(url: String?): Boolean = dev.ujhhgtg.via.browser.OriginalSessionState.acceptsUrl(host, url)
+    private fun isRestorableSessionUrl(url: String?): Boolean = dev.ujhhgtg.via.browser.SessionState.acceptsUrl(host, url)
 
     private fun configureBrowserLayout() {
         if (!::browserLayout.isInitialized) return
@@ -1917,7 +1917,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     private fun restoreClosedTab(id: String, select: Boolean) {
         worker.execute {
             val row = sessions.find(id) ?: return@execute
-            val state = dev.ujhhgtg.via.browser.OriginalSessionState.read(row.filePath)
+            val state = dev.ujhhgtg.via.browser.SessionState.read(row.filePath)
             host.runOnUiThread {
                 if (!isAdded || view == null) return@runOnUiThread
                 tabs.restoreSessionTab(row, select, state)
@@ -2084,7 +2084,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     fun openClosedTabFromRecords(id: String, mode: Int) {
         worker.execute {
             val row = sessions.find(id) ?: return@execute
-            val state = dev.ujhhgtg.via.browser.OriginalSessionState.read(row.filePath)
+            val state = dev.ujhhgtg.via.browser.SessionState.read(row.filePath)
             host.runOnUiThread {
                 if (!isAdded) return@runOnUiThread
                 val restored = tabs.restoreSessionTab(row, select = mode != 2, original = state)
@@ -3546,12 +3546,12 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (!::tabs.isInitialized) return false
         val allowed = customView == null && !appFullscreen && childFragmentManager.backStackEntryCount == 0
-        when (val command = OriginalActions.keyCommand(event, behavior.volumeScroll, allowed) ?: return false) {
-            is OriginalActions.KeyCommand.Action -> performBrowserAction(command.id)
-            is OriginalActions.KeyCommand.SelectTab -> tabs.selectAt(if (command.index < 0) tabs.size - 1 else command.index)?.also { attachSelected() }
-            OriginalActions.KeyCommand.Menu -> showMenu()
-            OriginalActions.KeyCommand.Home -> navigate(preferences.home)
-            OriginalActions.KeyCommand.Dismiss -> { if (customView != null) hideVideo() else return false }
+        when (val command = BrowserActions.keyCommand(event, behavior.volumeScroll, allowed) ?: return false) {
+            is BrowserActions.KeyCommand.Action -> performBrowserAction(command.id)
+            is BrowserActions.KeyCommand.SelectTab -> tabs.selectAt(if (command.index < 0) tabs.size - 1 else command.index)?.also { attachSelected() }
+            BrowserActions.KeyCommand.Menu -> showMenu()
+            BrowserActions.KeyCommand.Home -> navigate(preferences.home)
+            BrowserActions.KeyCommand.Dismiss -> { if (customView != null) hideVideo() else return false }
         }
         return true
     }

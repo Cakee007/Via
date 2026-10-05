@@ -18,7 +18,7 @@ import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.data.Favorite
 import dev.ujhhgtg.via.data.FavoritesRepository
 import dev.ujhhgtg.via.common.GeneratedDocumentState
-import dev.ujhhgtg.via.common.OriginalImagePickerContract
+import dev.ujhhgtg.via.common.ImagePickerContract
 import dev.ujhhgtg.via.ui.ViaToast
 import dev.ujhhgtg.via.ui.dialog.ViaDialogFragment
 import dev.ujhhgtg.via.ui.dp
@@ -40,7 +40,7 @@ class FavoriteEditorFragment : ViaDialogFragment() {
     private var pickedIcon: String? = null
     private var lastSave = 0L
     private val worker = Executors.newSingleThreadExecutor()
-    private val picker = registerForActivityResult(OriginalImagePickerContract()) { uri ->
+    private val picker = registerForActivityResult(ImagePickerContract()) { uri ->
         if (uri == null || uri.authority == null) return@registerForActivityResult
         val host = requireActivity()
         worker.execute {

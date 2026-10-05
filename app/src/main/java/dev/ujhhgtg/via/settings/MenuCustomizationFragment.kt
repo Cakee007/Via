@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.data.BrowserPreferences
-import dev.ujhhgtg.via.ui.OriginalMenu
+import dev.ujhhgtg.via.ui.BrowserMenu
 import dev.ujhhgtg.via.ui.behavior.BehaviorPreferences
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
 import dev.ujhhgtg.via.ui.dp
@@ -52,8 +52,8 @@ class MenuCustomizationFragment : SettingsListFragment() {
         hidden.clear()
         // i8.s.u3 consumes the known IDs in displayed order first, then hidden
         // order, and finally appends any remaining actions by their numeric ID.
-        val available = OriginalMenu.entries.keys.toMutableSet()
-        val shown = preferences.displayedMenus?.split(',')?.mapNotNull(String::toIntOrNull) ?: OriginalMenu.defaults
+        val available = BrowserMenu.entries.keys.toMutableSet()
+        val shown = preferences.displayedMenus?.split(',')?.mapNotNull(String::toIntOrNull) ?: BrowserMenu.defaults
         for (id in shown) if (available.remove(id)) displayed.add(id)
         for (id in preferences.hiddenMenus.orEmpty().split(',').mapNotNull(String::toIntOrNull)) {
             if (available.remove(id)) hidden.add(id)
@@ -135,9 +135,9 @@ private class MenuGridAdapter(
     fun submit(displayed: List<Int>, hidden: List<Int>, moved: Pair<Int, Int>? = null) {
         rows = buildList {
             add(Row(true, context.getString(R.string.hold_and_drag_to_rearrange_items)))
-            displayed.forEach { id -> OriginalMenu.entries[id]?.let { add(Row(false, it.title(context), id)) } }
+            displayed.forEach { id -> BrowserMenu.entries[id]?.let { add(Row(false, it.title(context), id)) } }
             add(Row(true, context.getString(R.string.hold_and_drag_or_tap_to_add_item)))
-            hidden.forEach { id -> OriginalMenu.entries[id]?.let { add(Row(false, it.title(context), id)) } }
+            hidden.forEach { id -> BrowserMenu.entries[id]?.let { add(Row(false, it.title(context), id)) } }
         }
         if (moved == null) notifyDataSetChanged() else notifyItemMoved(moved.first, moved.second)
     }
@@ -187,7 +187,7 @@ private class MenuGridAdapter(
                 if (position != RecyclerView.NO_POSITION) onClick(position)
             }
         }
-        val entry = OriginalMenu.entries[row.id] ?: return
+        val entry = BrowserMenu.entries[row.id] ?: return
         val icon = entry.drawable(context)?.mutate()?.apply {
             val size = context.resources.getDimensionPixelSize(R.dimen.menu_icon_size)
             setBounds(0, 0, size, size)

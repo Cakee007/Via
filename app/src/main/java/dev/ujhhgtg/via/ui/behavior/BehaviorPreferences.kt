@@ -1,7 +1,7 @@
 package dev.ujhhgtg.via.ui.behavior
 
 import dev.ujhhgtg.via.data.BrowserPreferences
-import dev.ujhhgtg.via.ui.OriginalMenu
+import dev.ujhhgtg.via.ui.BrowserMenu
 
 /** hb.u4/l7 and i8.s/w state. UI and browser dispatch share these original keys. */
 class BehaviorPreferences(private val preferences: BrowserPreferences) {
@@ -23,7 +23,7 @@ class BehaviorPreferences(private val preferences: BrowserPreferences) {
         else -> 0
     }
     fun setLongPressAction(slot: Int, id: Int) {
-        if (id !in OriginalActions.entries) return
+        if (id !in BrowserActions.entries) return
         when (slot) {
             0 -> preferences.backShortcut = id; 1 -> preferences.forwardShortcut = id; 2 -> preferences.homeShortcut = id
             3 -> preferences.tabShortcut = id; 4 -> preferences.menuShortcut = id
@@ -35,9 +35,9 @@ class BehaviorPreferences(private val preferences: BrowserPreferences) {
 
     /** i8.s.x3: persist the two ordered menu groups after a grid drag. */
     fun reorderMenus(displayed: List<Int>, hidden: List<Int>) {
-        val shown = displayed.filter { it in OriginalMenu.entries }.distinct().toMutableList()
+        val shown = displayed.filter { it in BrowserMenu.entries }.distinct().toMutableList()
         if (10 !in shown) shown.add(10)
-        val concealed = hidden.filter { it in OriginalMenu.entries && it !in shown }.distinct()
+        val concealed = hidden.filter { it in BrowserMenu.entries && it !in shown }.distinct()
         preferences.displayedMenus = shown.joinToString(",")
         preferences.hiddenMenus = concealed.joinToString(",")
     }

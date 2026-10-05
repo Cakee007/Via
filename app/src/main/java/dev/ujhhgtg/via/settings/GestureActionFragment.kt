@@ -3,7 +3,7 @@ package dev.ujhhgtg.via.settings
 import android.os.Bundle
 import android.view.View
 import dev.ujhhgtg.via.R
-import dev.ujhhgtg.via.ui.behavior.OriginalActions
+import dev.ujhhgtg.via.ui.behavior.BrowserActions
 
 /** hb.l6, disposable action selector used by hb.u4's five controls and two swipes. */
 class GestureActionFragment : SettingsListFragment() {
@@ -16,7 +16,7 @@ class GestureActionFragment : SettingsListFragment() {
             onToolbarBack()
         }
         val values = buildList {
-            fun action(id: Int) { add(SettingsChoiceRow(id, OriginalActions.entries.getValue(id).title(requireContext()), id == selected)) }
+            fun action(id: Int) { add(SettingsChoiceRow(id, BrowserActions.entries.getValue(id).title(requireContext()), id == selected)) }
             action(0)
             add(SettingsHeadingRow(getString(R.string.tab_actions)))
             intArrayOf(5, 10, 11, 12, 13, 9, 16, 27).forEach(::action)

@@ -430,7 +430,7 @@ class TabController(
 
     /** Capture on the UI thread, then call writeFiles on the persistence worker (c8.ua.N1). */
     fun captureSessionSnapshot(now: Long = System.currentTimeMillis()): PendingSessionSnapshot = PendingSessionSnapshot(
-        OriginalSessionState.directory(appContext), all.filter { OriginalSessionState.acceptsUrl(appContext, it.url) }.map { tab ->
+        SessionState.directory(appContext), all.filter { SessionState.acceptsUrl(appContext, it.url) }.map { tab ->
             val saved = histories.getValue(tab.id).saved
             PendingSessionSnapshot.Entry(SessionTab(tab.sessionId, tab.url, tab.title, saved.value?.filePath,
                 privacyPolicy.openSessionFlags(tab.url, tab.id == selectedId), now), captureOriginalState(tab), saved)
@@ -438,11 +438,11 @@ class TabController(
 
     /** c8.ua.K1: a closed row is retained only for a recordable, non-generated URL. */
     fun captureClosedSession(tab: BrowserTab, now: Long = System.currentTimeMillis()): PendingSessionSnapshot? {
-        if (!OriginalSessionState.acceptsUrl(appContext, tab.url) || !privacyPolicy.mayRecord(tab.url)) return null
+        if (!SessionState.acceptsUrl(appContext, tab.url) || !privacyPolicy.mayRecord(tab.url)) return null
         val saved = histories.getValue(tab.id).saved
         val row = SessionTab(tab.sessionId, tab.url, tab.title, saved.value?.filePath,
             (saved.value?.flags ?: 0) and 7.inv(), now)
-        return PendingSessionSnapshot(OriginalSessionState.directory(appContext),
+        return PendingSessionSnapshot(SessionState.directory(appContext),
             listOf(PendingSessionSnapshot.Entry(row, captureOriginalState(tab), saved)))
     }
 
@@ -457,7 +457,7 @@ class TabController(
     }
 
     /** ua.F1/na.g: append a selected closed session without replacing the remaining tabs. */
-    fun restoreSessionTab(row: SessionTab, select: Boolean = true, original: Bundle? = OriginalSessionState.read(row.filePath)): BrowserTab {
+    fun restoreSessionTab(row: SessionTab, select: Boolean = true, original: Bundle? = SessionState.read(row.filePath)): BrowserTab {
         // Row bit 1 records the policy at save time; ua.o0 recomputes it on restore.
         val tab = createTab(row.url ?: preferences.home, select = select, loadInitialUrl = false,
             clearClosedTabRecovery = false)
@@ -561,7 +561,7 @@ class TabController(
         val engine = page.engine ?: return
         val sourceUrl = page.state.getString("url") ?: tab.requestedUrl
         tab.update(url = sourceUrl)
-        val restored = OriginalSessionState.restore(tab.webView, page.state) { engine.load(tab.webView, it) }
+        val restored = SessionState.restore(tab.webView, page.state) { engine.load(tab.webView, it) }
         // t4.c.k -> r4.d.U -> e8.i.B uses the actual restored history URL.
         if (!restored.isNullOrEmpty()) engine.reloadPreferences(tab.webView, restored)
         tab.update(tab.webView.url, tab.webView.title.orEmpty())
@@ -587,7 +587,7 @@ class TabController(
         val start = maxOf(0, history.current - 6)
         val end = minOf(history.current + 4, history.pages.size)
         val pages = history.pages.subList(start, end).map { page ->
-            page.view?.let { page.state = OriginalSessionState.capture(it, PageColorSampler.colorOf(it)) }
+            page.view?.let { page.state = SessionState.capture(it, PageColorSampler.colorOf(it)) }
             Bundle(page.state)
         }
         return Bundle().apply {
@@ -613,7 +613,7 @@ class TabController(
             if (index == history.current) return@forEachIndexed
             val view = page.view ?: return@forEachIndexed
             if (index in history.current - 3..history.current + 2 && now - page.lastActiveAt <= 300_000L) return@forEachIndexed
-            page.state = OriginalSessionState.capture(view, PageColorSampler.colorOf(view))
+            page.state = SessionState.capture(view, PageColorSampler.colorOf(view))
             page.engine?.destroy(view) ?: view.destroy()
             page.view = null
             page.engine = null

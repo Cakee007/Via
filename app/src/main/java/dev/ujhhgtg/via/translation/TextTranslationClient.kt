@@ -25,7 +25,7 @@ internal class TextTranslationClient(private val locale: Locale) {
     fun targetLanguage(code: String?): TranslationLanguage = targetLanguages.firstOrNull { it.code == code } ?: targetLanguages[0]
 
     suspend fun translate(query: String, source: String?, target: String): TranslationResult? {
-        val text = query.trim { it <= ' ' }
+        val text = query.trim()
         if (text.isEmpty() || target.isEmpty()) return null
         // oa.c.g deliberately does not include source language in its cache lookup.
         results.firstOrNull { it.source == text && it.to == target }?.let { return it }
@@ -37,7 +37,7 @@ internal class TextTranslationClient(private val locale: Locale) {
             val response = httpClient.get(requestUrl(query, source, target)) { header("User-Agent", USER_AGENT) }
             if (response.status != HttpStatusCode.OK) return null
             val body = response.bodyAsBytes().toString(Charsets.UTF_8).lineSequence()
-                .joinToString("") { it.trim { char -> char <= ' ' } }
+                .joinToString("") { it.trim() }
             parseResponse(query, source, target, body)
         } catch (error: CancellationException) { throw error }
         catch (error: Exception) {

@@ -18,7 +18,7 @@ object ReaderSentences {
         val array = runCatching { JSONArray(normalized) }.getOrNull() ?: return emptyList()
         return buildList {
             for (index in 0 until array.length()) {
-                val paragraph = array.optString(index).trim { it <= ' ' }
+                val paragraph = array.optString(index).trim()
                 if (paragraph.isEmpty()) continue
                 if (paragraph.length < 256) add(paragraph) else addAll(split(paragraph))
             }
@@ -28,7 +28,7 @@ object ReaderSentences {
     fun split(text: String): List<String> {
         if (text.isEmpty()) return emptyList()
         val delimiter = delimiters.firstOrNull(text::contains) ?: return text.chunked(256)
-            .map { it.trim { c -> c <= ' ' } }
+            .map { it.trim() }
         val result = mutableListOf<String>()
         var scan = 0
         var start = 0
@@ -37,18 +37,18 @@ object ReaderSentences {
             if (next < 0) {
                 while (start < text.length) {
                     val end = minOf(start + 256, text.length)
-                    result.add(text.substring(start, end).trim { it <= ' ' })
+                    result.add(text.substring(start, end).trim())
                     start = end
                 }
                 break
             }
             if (next - start >= 256) {
                 scan = start + 256
-                result.add(text.substring(start, scan).trim { it <= ' ' })
+                result.add(text.substring(start, scan).trim())
                 start = scan
             } else if (next - start >= 64) {
                 scan = next + delimiter.length
-                result.add(text.substring(start, scan).trim { it <= ' ' })
+                result.add(text.substring(start, scan).trim())
                 start = scan
             } else {
                 scan = next + delimiter.length

@@ -105,7 +105,7 @@ class ReadAloudDialogFragment : ViaDialogFragment() {
             try { startActivity(Intent("com.android.settings.TTS_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
             catch (_: Exception) { ViaToast.show(context, R.string.toast_operation_failed) }
         }
-        val slider = SeekBar(ContextThemeWrapper(context, R.style.OriginalSeekbar)).apply {
+        val slider = SeekBar(ContextThemeWrapper(context, R.style.Seekbar)).apply {
             max = 13; progress = maxOf(0, (controller.speed / .25f).toInt() - 1); visibility = View.GONE
             ReaderControls.styleSeekBar(this)
         }

@@ -5,7 +5,7 @@ import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.skins.SkinResources
 
 /** Browser menu actions and their application resources. */
-object OriginalMenu {
+object BrowserMenu {
     data class Entry(val id: Int, val titleRes: Int, val icon: Int) {
         fun title(context: Context) = context.getString(titleRes)
         /** i8.l.b resolves the menu's ic_menu_* key before applying its active-state tint. */

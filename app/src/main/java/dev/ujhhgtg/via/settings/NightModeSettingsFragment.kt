@@ -65,7 +65,7 @@ class NightModeSettingsFragment : SettingsListFragment() {
         }
         shade.addView(text, ViewGroup.LayoutParams(-1, -2))
         body.addView(shade, LinearLayout.LayoutParams(-1, -2).apply { setMargins(units(22), units(16), units(22), units(16)) })
-        val slider = SeekBar(ContextThemeWrapper(requireActivity(), R.style.OriginalSeekbar)).apply {
+        val slider = SeekBar(ContextThemeWrapper(requireActivity(), R.style.Seekbar)).apply {
             max = 154; minimumHeight = context.dp(2f)
             setPaddingRelative(units(16), 0, units(16), 0)
             val track = GradientDrawable().apply { cornerRadius = context.dp(5f).toFloat(); setColor(0x40808080); setSize(0, context.dp(2f)) }

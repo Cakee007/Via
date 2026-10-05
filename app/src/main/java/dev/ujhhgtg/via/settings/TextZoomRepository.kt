@@ -67,7 +67,7 @@ class TextZoomRepository(context: Context) {
     }
 
     companion object {
-        private fun normalize(value: String) = value.trim { it <= ' ' }.lowercase(Locale.ROOT)
+        private fun normalize(value: String) = value.trim().lowercase(Locale.ROOT)
         private fun legacySize(value: Int) = intArrayOf(130, 115, 100, 85, 70)[(if (value in 1..5) value else 3) - 1]
 
         /** k8.p: compare labels from the domain suffix, retaining the original case order. */

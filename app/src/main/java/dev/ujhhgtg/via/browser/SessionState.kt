@@ -7,16 +7,17 @@ import android.os.Parcel
 import android.util.Log
 import android.webkit.WebView
 import dev.ujhhgtg.via.data.SessionTab
+import dev.ujhhgtg.via.search.UrlInputText
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 
 /** na.j.c/d and r4.d.b: the original Parcel-of-Bundle session file, with no alternate encoding. */
-internal object OriginalSessionState {
+internal object SessionState {
     /** c8.ua.f1 / i6.i0.i: exclude built-in documents and about: pages, not other URL schemes. */
     fun acceptsUrl(context: Context, url: String?): Boolean = !url.isNullOrEmpty() &&
-        !dev.ujhhgtg.via.search.UrlInputText.isInternalDocument(url, context.filesDir.path) &&
+        !UrlInputText.isInternalDocument(url, context.filesDir.path) &&
         !(url.length > 6 && url.startsWith("about:", true))
 
     fun directory(context: Context): File = (context.getExternalFilesDir("tabs") ?: File(context.filesDir, "tabs")).apply { mkdirs() }
@@ -87,7 +88,7 @@ class PendingSessionSnapshot internal constructor(
 
     fun writeFiles(): List<SessionTab> = entries.map { (row, state, saved) ->
         val target = File(directory, row.id)
-        val result = if (!state.isEmpty && OriginalSessionState.write(state, target)) row.copy(filePath = target.path)
+        val result = if (!state.isEmpty && SessionState.write(state, target)) row.copy(filePath = target.path)
             else row.copy(filePath = saved.value?.filePath, lastVisitedAt = saved.value?.lastVisitedAt ?: 0L)
         // ua.C/c updates the file reference and timestamp only when the Parcel write succeeds.
         saved.value = result
