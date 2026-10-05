@@ -47,7 +47,7 @@ class PageController(
     private val scripts: ScriptManager? = null,
     private val userAgentForId: (Int) -> String? = { null },
     private val pageBridgeSecret: String = java.util.UUID.randomUUID().toString(),
-    private val allowBlockedPage: (String) -> Boolean = { false },
+    allowBlockedPage: (String) -> Boolean = { false },
     initialUrl: String? = null,
 ) {
     private var defaultUserAgent: String? = null
@@ -182,7 +182,7 @@ class PageController(
         if (!url.isNullOrEmpty() && !url.startsWith("file://", true) && page.progress >= 100) {
             // w9.k.x1 uses the CSS fallback only below API 29. The other
             // path removes stale injected CSS, retaining the document and JS state.
-            if (dev.ujhhgtg.via.engine.Engines.backend.capabilities.algorithmicDarkening) injection.removeNightCss(page)
+            if (Engines.backend.capabilities.algorithmicDarkening) injection.removeNightCss(page)
             else injection.applyNightCss(page, dark && preferences.nightCss)
         }
     }
@@ -213,7 +213,6 @@ class PageController(
 
     /** r4.d.S pauses a tab's media and restores only the elements it paused on reselection. */
     fun deactivate() {
-        if (page.progress < 100) page.stopLoading()
         page.evaluate("(function(){for(var c=document.querySelectorAll(\"video, audio\"),a,b=0;b<c.length;b++)a=c[b],a.paused||(a.pause(),a.setAttribute(\"via-data-playing\",\"true\"))})();")
         mediaPaused = true
         pause()
@@ -379,7 +378,7 @@ class PageController(
                 choice, if (choice > 0) userAgentForId(choice) else site.customUserAgent ?: globalAgent,
                 defaultUserAgent, siteFlag(8, flags and 2048 != 0),
                 preferences.duaChoice, preferences.duaString, preferences.webFlags2 and 1 != 0),
-            textZoom = if (!dev.ujhhgtg.via.engine.Engines.backend.capabilities.perPageTextZoom) preferences.textSize
+            textZoom = if (!Engines.backend.capabilities.perPageTextZoom) preferences.textSize
                 else if (file) 100 else site?.textZoomOverride?.takeIf { it > 0 } ?: preferences.textSize,
             desktop = !file && siteFlag(8, flags and 2048 != 0),
         ))
