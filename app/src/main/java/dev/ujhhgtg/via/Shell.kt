@@ -5,11 +5,13 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.KeyEvent
+import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
 import dev.ujhhgtg.via.common.SoftInputAssistObserver
 import dev.ujhhgtg.via.common.WindowInsetsHelper
 import dev.ujhhgtg.via.data.BrowserPreferences
+import dev.ujhhgtg.via.engine.Engines
 import dev.ujhhgtg.via.settings.SettingsFragment
 import dev.ujhhgtg.via.ui.ViaActivity
 import dev.ujhhgtg.via.ui.WelcomeFragment
@@ -26,7 +28,23 @@ open class Shell : ViaActivity() {
         if (!intent.getBooleanExtra("CUSTOM_TAB", false)) WindowInsetsHelper.enableEdgeToEdge(this)
         super.onCreate(savedInstanceState)
         window.attributes = window.attributes.apply {
-            layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+
+            if (Engines.backend.id == "gecko") {
+                @Suppress("DEPRECATION")
+                val targetDisplay = windowManager.defaultDisplay
+                val currentMode = targetDisplay.mode
+
+                preferredDisplayModeId = 0
+                preferredRefreshRate = targetDisplay.supportedModes
+                    .filter {
+                        it.physicalWidth == currentMode.physicalWidth &&
+                                it.physicalHeight == currentMode.physicalHeight
+                    }
+                    .maxOfOrNull { it.refreshRate }
+                    ?: currentMode.refreshRate
+            }
         }
         setContentView(FrameLayout(this).apply {
             id = R.id.fragment_container
