@@ -6,7 +6,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.LocaleList
 import dev.ujhhgtg.via.browser.filter.FilterEngine
-import dev.ujhhgtg.via.browser.filter.FilterRequest
+import dev.ujhhgtg.via.browser.filter.toFilterRequest
 import dev.ujhhgtg.via.browser.script.ScriptBridge
 import dev.ujhhgtg.via.browser.script.ScriptManager
 import dev.ujhhgtg.via.data.BrowserPreferences
@@ -26,6 +26,7 @@ import dev.ujhhgtg.via.engine.MediaPermissionRequest
 import dev.ujhhgtg.via.engine.PageEvents
 import dev.ujhhgtg.via.engine.PageSettings
 import dev.ujhhgtg.via.engine.PopupRequest
+import dev.ujhhgtg.via.engine.ResourceRequest
 import dev.ujhhgtg.via.engine.SslErrorRequest
 import java.util.Locale
 
@@ -255,14 +256,15 @@ class PageController(
         override fun onReceivedIcon(icon: Bitmap?) = callbacks.onReceivedIcon(page, icon)
         override fun onReceivedTouchIconUrl(url: String) = callbacks.onReceivedTouchIconUrl(page, url)
 
-        override fun onRequest(url: String, rangeFromStart: Boolean, request: (topUrl: String?) -> FilterRequest): InterceptDecision {
+        override fun onRequest(request: ResourceRequest): InterceptDecision {
             // p4.j.b seeds the first interception from the popup's referer until onPageStarted.
             if (!requestContextInitialized) {
                 requestContextInitialized = true
                 currentPageUrl = popupReferer
             }
             val topUrl = currentPageUrl
-            return interceptor.intercept(url, topUrl, rangeFromStart) { request(topUrl) }
+            val rangeFromStart = request.headers["Range"]?.startsWith("bytes=0-") == true
+            return interceptor.intercept(request.url, topUrl, rangeFromStart) { request.toFilterRequest(topUrl) }
         }
 
         override fun onUrlRequest(url: String): InterceptDecision? = interceptor.injectedResource(url)

@@ -11,13 +11,13 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.get
-import dev.ujhhgtg.via.R
-import dev.ujhhgtg.via.browser.ViaBridge
-import dev.ujhhgtg.via.browser.script.ScriptBridge
+import dev.ujhhgtg.via.engine.webview.R
 import dev.ujhhgtg.via.engine.ContextMenuHandler
 import dev.ujhhgtg.via.engine.ContextTarget
 import dev.ujhhgtg.via.engine.EngineConfig
 import dev.ujhhgtg.via.engine.EnginePage
+import dev.ujhhgtg.via.engine.PageBridge
+import dev.ujhhgtg.via.engine.ScriptChannel
 import dev.ujhhgtg.via.engine.PageSettings
 import dev.ujhhgtg.via.engine.SelectionAction
 
@@ -60,7 +60,7 @@ class WebViewPage private constructor(val webView: WebView) : EnginePage {
 
     override fun setDarkening(enabled: Boolean) = WebViewCapabilities.applyNightTheme(webView, enabled)
 
-    override fun installBridges(via: ViaBridge, scripts: ScriptBridge?) = WebViewBridges.install(webView, via, scripts)
+    override fun installBridges(via: PageBridge, scripts: ScriptChannel?) = WebViewBridges.install(webView, via, scripts)
 
     override fun load(url: String, headers: Map<String, String>) =
         if (headers.isEmpty()) webView.loadUrl(url) else webView.loadUrl(url, headers)

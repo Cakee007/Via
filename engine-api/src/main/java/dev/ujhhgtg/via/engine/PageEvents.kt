@@ -1,7 +1,6 @@
 package dev.ujhhgtg.via.engine
 
 import android.graphics.Bitmap
-import dev.ujhhgtg.via.browser.filter.FilterRequest
 
 /**
  * What an [EnginePage] reports to the app. Each backend translates its own client/delegate
@@ -19,11 +18,8 @@ interface PageEvents {
     /** A navigation is about to start; true cancels it. */
     fun onNavigation(url: String, mainFrame: Boolean, isRedirect: Boolean): Boolean
 
-    /**
-     * Decides a network request. Called on the engine's network thread. [request] builds the filter
-     * request for the top document URL the app tracks.
-     */
-    fun onRequest(url: String, rangeFromStart: Boolean, request: (topUrl: String?) -> FilterRequest): InterceptDecision
+    /** Decides a network request. Called on the engine's network thread. */
+    fun onRequest(request: ResourceRequest): InterceptDecision
     /** Requests that only expose a URL (WebView's legacy interception path); only virtual resources are served. */
     fun onUrlRequest(url: String): InterceptDecision?
 

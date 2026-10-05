@@ -36,9 +36,7 @@ internal class PageWebViewClient(private val events: PageEvents) : WebViewClient
     }
 
     override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
-        val decision = events.onRequest(request.url.toString(), request.requestHeaders?.get("Range")?.startsWith("bytes=0-") == true) { topUrl ->
-            WebViewInterception.filterRequest(request, topUrl)
-        }
+        val decision = events.onRequest(WebViewInterception.resourceRequest(request))
         return WebViewInterception.response(decision) ?: super.shouldInterceptRequest(view, request)
     }
 

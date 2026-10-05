@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.util.Log
 import dev.ujhhgtg.via.engine.EnginePage
+import dev.ujhhgtg.via.engine.ScriptChannel
 import java.lang.ref.WeakReference
 import org.json.JSONObject
 
@@ -16,7 +17,7 @@ class ScriptBridge(
     private val manager: ScriptManager,
     view: EnginePage,
     private val callbacks: Callbacks,
-) {
+) : ScriptChannel {
     private val webView = WeakReference(view)
 
     interface Callbacks {
@@ -25,7 +26,7 @@ class ScriptBridge(
         fun onCopy(text: String, mimeType: String) = Unit
     }
 
-    fun call(message: String?, secret: String?): String? {
+    override fun call(message: String?, secret: String?): String? {
         if (secret.isNullOrEmpty() || secret != manager.secret || message.isNullOrEmpty()) return null
         return runCatching {
             val request = JSONObject(message)

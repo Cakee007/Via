@@ -1,6 +1,7 @@
 package dev.ujhhgtg.via.browser
 
 import dev.ujhhgtg.via.engine.EnginePage
+import dev.ujhhgtg.via.engine.PageBridge
 import java.util.UUID
 
 /**
@@ -8,7 +9,7 @@ import java.util.UUID
  * methods to page JavaScript under the names `via` and `via_page`, and forwards calls here.
  * Calls may arrive on a background thread.
  */
-class ViaBridge(private val page: EnginePage, private val callbacks: Callbacks, val secret: String = UUID.randomUUID().toString()) {
+class ViaBridge(private val page: EnginePage, private val callbacks: Callbacks, val secret: String = UUID.randomUUID().toString()) : PageBridge {
     interface Callbacks {
         fun command(page: EnginePage, command: Int): Int = 0
         fun download(page: EnginePage, url: String, name: String?, mime: String?) = Unit
@@ -18,14 +19,14 @@ class ViaBridge(private val page: EnginePage, private val callbacks: Callbacks, 
         fun addon(page: EnginePage, id: String) = Unit
         fun installedAddonIds(page: EnginePage): String = "[]"
     }
-    fun cmd(command: Int): Int = callbacks.command(page, command)
+    override fun cmd(command: Int): Int = callbacks.command(page, command)
     /** c8.s6.u.download(secret, sourceUrl, downloadedData), not (url, filename, MIME). */
-    fun download(token: String?, url: String?, data: String?) {
+    override fun download(token: String?, url: String?, data: String?) {
         if (token == secret && !url.isNullOrEmpty()) callbacks.download(page, url, null, data)
     }
-    fun postMessage(token: String?, json: String?) { if (token == secret && !json.isNullOrBlank()) callbacks.message(page, token, json) }
-    fun record(url: String?, selector: String?) { if (!url.isNullOrEmpty() && !url.startsWith("file://")) callbacks.record(page, url, selector) }
-    fun addon(id: String?) { if (!id.isNullOrBlank()) callbacks.addon(page, id) }
-    fun getInstalledAddonID(): String = callbacks.installedAddonIds(page)
-    fun toast(text: String?) { if (!text.isNullOrBlank()) callbacks.toast(page, text) }
+    override fun postMessage(token: String?, json: String?) { if (token == secret && !json.isNullOrBlank()) callbacks.message(page, token, json) }
+    override fun record(url: String?, selector: String?) { if (!url.isNullOrEmpty() && !url.startsWith("file://")) callbacks.record(page, url, selector) }
+    override fun addon(id: String?) { if (!id.isNullOrBlank()) callbacks.addon(page, id) }
+    override fun getInstalledAddonID(): String = callbacks.installedAddonIds(page)
+    override fun toast(text: String?) { if (!text.isNullOrBlank()) callbacks.toast(page, text) }
 }

@@ -20,4 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Via"
-include(":app")
+include(":app", ":engine-api", ":engine-webview")

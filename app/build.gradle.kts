@@ -80,13 +80,15 @@ android {
 }
 
 dependencies {
+    implementation(project(":engine-api"))
+    "webviewImplementation"(project(":engine-webview"))
+
     implementation(libs.androidx.activity)
     implementation(libs.androidx.fragment)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.viewpager2)
     implementation(libs.androidx.customview)
     implementation(libs.androidx.dynamicanimation)
-    implementation(libs.androidx.webkit)
     implementation(libs.androidx.biometric)
 
     implementation(libs.okhttp)

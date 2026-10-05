@@ -5,8 +5,6 @@ import android.net.http.SslCertificate
 import android.os.Bundle
 import android.print.PrintDocumentAdapter
 import android.view.View
-import dev.ujhhgtg.via.browser.ViaBridge
-import dev.ujhhgtg.via.browser.script.ScriptBridge
 
 /**
  * One rendered page (a QuickBack segment) as the UI sees it. Backends wrap their native view;
@@ -34,7 +32,7 @@ interface EnginePage {
     fun setDarkening(enabled: Boolean)
 
     /** Exposes the page bridges to the document's JavaScript. Called once, before the first load. */
-    fun installBridges(via: ViaBridge, scripts: ScriptBridge?)
+    fun installBridges(via: PageBridge, scripts: ScriptChannel?)
 
     /** Also accepts `javascript:` URLs. */
     fun load(url: String, headers: Map<String, String> = emptyMap())
