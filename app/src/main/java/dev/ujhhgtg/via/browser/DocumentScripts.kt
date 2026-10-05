@@ -27,16 +27,29 @@ internal class DocumentScripts(private val context: Context) {
     fun night(enabled: Boolean): String = if (enabled) source("night") else
         "(function(){if(document.getElementById(\"via_inject_css_night\")){var night_e=document.getElementById(\"via_inject_css_night\");night_e.parentNode.removeChild(night_e)};})();"
     fun blockerLink(host: String) = "(function(){if(!document.getElementById('via_inject_css_blocker')){var css=document.createElement('link');css.id='via_inject_css_blocker';css.type='text/css';css.rel=\"stylesheet\";css.href='https://$host/via_inject_blocker.css';var o=document.getElementsByTagName('head');if(o.length>0&&o[0].appendChild(css)){}}})();"
-    /** m8.b.a's escaping preserves numeric CSS escapes after backslashes. */
     fun blockerStyle(css: String?): String {
         if (css.isNullOrEmpty()) return ""
-        return buildString {
-            append("javascript:(function(){function updateStyle(style){var css=document.getElementById('__via_blocker_css__');if(css){css.innerText+=style;return}css=document.createElement('style');css.type='text/css';css.charset='UTF-8';css.id='__via_blocker_css__';css.appendChild(document.createTextNode(style));document.head.appendChild(css)}updateStyle(\"")
-            for (character in css) {
-                if (character == '"' || character in '0'..'9' && last() == '\\') append('\\')
-                append(character)
+        return "javascript:(function(){function updateStyle(style){var css=document.getElementById('__via_blocker_css__');if(css){css.innerText+=style;return}css=document.createElement('style');css.type='text/css';css.charset='UTF-8';css.id='__via_blocker_css__';css.appendChild(document.createTextNode(style));document.head.appendChild(css)}updateStyle(" +
+            jsString(css) + ")})();"
+    }
+
+    companion object {
+        /**
+         * A double-quoted JavaScript string literal for [value]. m8.b.a escaped only quotes and
+         * backslash-digit pairs, so CSS with line breaks became an unterminated literal.
+         */
+        fun jsString(value: String): String = buildString(value.length + 16) {
+            append('"')
+            for (character in value) when (character) {
+                '\\' -> append("\\\\")
+                '"' -> append("\\\"")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\u2028' -> append("\\u2028")
+                '\u2029' -> append("\\u2029")
+                else -> append(character)
             }
-            append("\")})();")
+            append('"')
         }
     }
 }
