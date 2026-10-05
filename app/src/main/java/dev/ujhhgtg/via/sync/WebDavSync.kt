@@ -2,10 +2,11 @@ package dev.ujhhgtg.via.sync
 
 import android.content.Context
 import dev.ujhhgtg.via.data.BrowserDatabase
+import kotlinx.coroutines.CancellationException
 import org.json.JSONObject
 import java.io.File
 
-/** pb.a/rb.* coordination. Call only on a worker; no network occurs merely by opening settings. */
+/** pb.a/rb.* coordination. Runs on an IO dispatcher; no network occurs merely by opening settings. */
 class WebDavSync(context: Context, database: BrowserDatabase) {
     enum class Operation { SYNC, PUSH, MERGE, PULL }
     data class Failure(val file: String, val code: Int, val message: String) {
@@ -40,7 +41,7 @@ class WebDavSync(context: Context, database: BrowserDatabase) {
         return current
     }
 
-    fun run(operation: Operation, forced: Boolean = true): List<Failure> {
+    suspend fun run(operation: Operation, forced: Boolean = true): List<Failure> {
         val config = configuration() ?: return emptyList()
         if (!config.isConfigured || config.sections == 0) return emptyList()
         if (!forced && (!config.autoSync || System.currentTimeMillis() - lastRun < 180_000)) return emptyList()
@@ -51,7 +52,10 @@ class WebDavSync(context: Context, database: BrowserDatabase) {
             val state = states.getOrPut(path) { Timestamp(path) }
             var action = 101
             try {
-                val remote = if (operation == Operation.SYNC) runCatching { client.modified(path) }.onSuccess { state.modified = it }.getOrDefault(0L) else state.modified
+                val remote = if (operation == Operation.SYNC) {
+                    try { client.modified(path).also { state.modified = it } }
+                    catch (error: CancellationException) { throw error } catch (_: Exception) { 0L }
+                } else state.modified
                 if (operation == Operation.SYNC && remote > state.synced || operation == Operation.MERGE || operation == Operation.PULL) {
                     action = if (operation == Operation.PULL) 301 else 101
                     val content = client.get(path)
@@ -74,7 +78,8 @@ class WebDavSync(context: Context, database: BrowserDatabase) {
                         state.synced = state.modified
                     }
                 }
-            } catch (error: Exception) { errors += Failure(name, action, error.message ?: "No message") }
+            } catch (error: CancellationException) { throw error }
+            catch (error: Exception) { errors += Failure(name, action, error.message ?: "No message") }
         }
         if (errors.isEmpty()) {
             timestamps.writeText(states.values.filter { it.modified != 0L && it.synced != 0L }.joinToString("\n", postfix = "\n") {

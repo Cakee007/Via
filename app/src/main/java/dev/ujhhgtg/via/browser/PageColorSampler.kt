@@ -46,7 +46,7 @@ internal class PageColorSampler(
 
     /** e8.k0.r: the original threshold is strictly greater than 70 and at most 100. */
     fun onProgressChanged(view: WebView, progress: Int) {
-        if (progress > 70 && progress <= 100) {
+        if (progress in 71..100) {
             val url = view.url
             if (!isInternalDocument(view, url) && PageColorCache.get(url, 0) == 0) scheduleSample(view, url)
         }

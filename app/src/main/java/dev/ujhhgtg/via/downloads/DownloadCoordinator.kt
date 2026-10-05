@@ -5,13 +5,12 @@ import android.content.Context
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import dev.ujhhgtg.via.common.applicationIoScope
 import dev.ujhhgtg.via.data.BrowserPreferences
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.SynchronousQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 
 
 data class DownloadRequest(
@@ -32,7 +31,6 @@ data class DownloadRequest(
 
 /** c5.b/m5.i: process-owned three-task queue; each HTTP task retains its original range chunks. */
 class DownloadCoordinator(private val context: Context, private val repository: DownloadRepository = DownloadRepository(context)) {
-    private val executor = ThreadPoolExecutor(0, Int.MAX_VALUE, 0L, TimeUnit.MILLISECONDS, SynchronousQueue()) // e5.d services task orchestrators and their chunk workers.
     private val running = linkedMapOf<Long, DownloadControl>()
     private val volatileData = HashMap<Long, String>() // m5.c: data URI bodies are never written to tasks.url.
     private val main = Handler(Looper.getMainLooper())
@@ -126,8 +124,9 @@ class DownloadCoordinator(private val context: Context, private val repository: 
             if (!network && data == null) continue
             val control = DownloadControl(pausable = network)
             running[record.id] = control
-            val transfer = if (data == null) DownloadTransfer(context, record, repository, executor, control, ::publishTransfer) else null
-            executor.execute {
+            val transfer = if (data == null) DownloadTransfer(context, record, repository, control, ::publishTransfer) else null
+            // e5.d serviced task orchestrators and chunk workers; the IO dispatcher now does.
+            applicationIoScope.launch {
                 if (data != null) transferData(record, data, control) else transfer?.run()
                 if (control.deleted) main.post { running.remove(record.id); dispatch() }
             }
@@ -161,8 +160,8 @@ class DownloadCoordinator(private val context: Context, private val repository: 
     }
 
     /** c5.b.l -> m5.f.b: a caller-owned transfer with h5.b's empty observer, outside the task queue. */
-    internal fun downloadTransient(record: DownloadRecord): DownloadRecord = DownloadTransfer(
-        context, record, repository, executor, DownloadControl(), update = { _, _ -> }, observeProgress = false,
+    internal suspend fun downloadTransient(record: DownloadRecord): DownloadRecord = DownloadTransfer(
+        context, record, repository, DownloadControl(), update = { _, _ -> }, observeProgress = false,
     ).run()
 
     fun saveDestination(record: DownloadRecord) { persist(record) }

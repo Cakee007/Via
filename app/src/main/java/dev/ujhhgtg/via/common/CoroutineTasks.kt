@@ -13,7 +13,7 @@ import kotlinx.coroutines.withContext
 internal val applicationIoScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
 internal fun <T> LifecycleOwner.launchIo(
-    work: () -> T,
+    work: suspend () -> T,
     onSuccess: (T) -> Unit,
     onError: (Throwable) -> Unit = {},
 ) = lifecycleScope.launch {

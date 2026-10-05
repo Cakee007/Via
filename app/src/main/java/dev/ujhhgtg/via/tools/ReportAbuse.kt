@@ -7,29 +7,31 @@ import dev.ujhhgtg.via.browser.PageTranslation
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
 import dev.ujhhgtg.via.common.applicationIoScope
 import kotlinx.coroutines.launch
+import dev.ujhhgtg.via.common.httpClient
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.ByteArrayContent
+import io.ktor.http.withCharset
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 
 /** c8.s6.ma/T3 and z8.h2: report reasons are the original 1/2/4 bit values. */
 class ReportAbuseClient(
     private val endpoint: String = "https://ra.viayoo.com/report_abuse",
     private val authorization: String = "Bearer tk_o4s4ghe1tqu60mj0ljy5im762ebrr",
 ) {
-    fun submit(url: String, title: String?, reason: Int, note: String?, locale: String = PageTranslation.systemLanguage()): Boolean {
+    suspend fun submit(url: String, title: String?, reason: Int, note: String?, locale: String = PageTranslation.systemLanguage()): Boolean {
         if (url.isEmpty()) return false
         val body = JSONObject().apply {
             put("url", url); put("reason", reason); if (!title.isNullOrEmpty()) put("title", title)
             if (!note.isNullOrEmpty()) put("note", note); put("locale", locale)
         }.toString().toByteArray(Charsets.UTF_8)
-        val connection = (URL(endpoint).openConnection() as HttpURLConnection)
-        return try {
-            connection.requestMethod = "POST"; connection.doOutput = true
-            connection.setRequestProperty("Authorization", authorization)
-            connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
-            connection.outputStream.use { it.write(body) }
-            connection.responseCode == HttpURLConnection.HTTP_OK
-        } finally { connection.disconnect() }
+        return httpClient.post(endpoint) {
+            header("Authorization", authorization)
+            setBody(ByteArrayContent(body, ContentType.Application.Json.withCharset(Charsets.UTF_8)))
+        }.status == HttpStatusCode.OK
     }
 }
 
@@ -49,6 +51,7 @@ object ReportAbuse {
                 if (reason == 0 && remarks.isNullOrEmpty()) return@positive
                 applicationIoScope.launch {
                     try { client.submit(page, title, reason, remarks) }
+                    catch (error: kotlinx.coroutines.CancellationException) { throw error }
                     catch (error: Exception) { android.util.Log.w("Via", "Cannot submit abuse report", error) }
                 }
                 ViaToast.makeText(activity, R.string.report_submitted, ViaToast.LENGTH_SHORT).show()

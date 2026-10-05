@@ -20,6 +20,9 @@ import org.json.JSONObject
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.Executors
+import dev.ujhhgtg.via.common.applicationIoScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 /** ta.u / ta.b0: editable user overrides alongside the script's immutable metadata rules. */
 class ScriptDetailsFragment : SettingsListFragment() {
@@ -116,7 +119,7 @@ class ScriptDetailsFragment : SettingsListFragment() {
             val id = result.getInt("id")
             parentFragmentManager.setFragmentResult(RESULT, Bundle().apply { putInt("id", id) })
             loadScript()
-            worker.execute { store.find(id)?.let(resourcesCache::ensure) }
+            worker.execute { runBlocking { store.find(id)?.let { resourcesCache.ensure(it) } } }
         }
         (requireActivity() as Shell).navigate(ScriptEditorFragment.newInstance(current.id))
     }
@@ -192,7 +195,7 @@ class ScriptDetailsFragment : SettingsListFragment() {
     }
     private fun downloadResource(url: String) {
         ViaToast.show(requireContext(), R.string.download_pending)
-        worker.execute {
+        applicationIoScope.launch {
             val complete = resourcesCache.ensure(url)
             onUi {
                 bindRows()

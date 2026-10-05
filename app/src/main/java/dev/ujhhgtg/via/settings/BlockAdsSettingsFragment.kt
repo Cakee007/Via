@@ -23,6 +23,9 @@ import java.io.File
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.Executors
+import dev.ujhhgtg.via.common.applicationIoScope
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 /** z7.d: filtering switches and the two filter settings pages. */
 class BlockAdsSettingsFragment : SettingsListFragment() {
@@ -215,10 +218,12 @@ class FilterSubscriptionsFragment : SettingsListFragment() {
         }
         toast(if (all) R.string.download_pending else R.string.update_pending)
         val host = requireActivity()
-        worker.execute {
+        // Continues after the page closes, as the former worker's queued task did; results apply only while shown.
+        applicationIoScope.launch {
             var updated = false
             for (item in selected) {
-                val result = runCatching { FilterSubscriptionUpdater.update(store, item) }.getOrNull() ?: continue
+                val result = try { FilterSubscriptionUpdater.update(store, item) }
+                    catch (error: CancellationException) { throw error } catch (_: Exception) { continue }
                 host.runOnUiThread {
                     if (!isAdded || view == null) return@runOnUiThread
                     val index = records.indexOfFirst { it.url.equals(item.url, true) }

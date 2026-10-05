@@ -75,6 +75,9 @@ dependencies {
     implementation(libs.androidx.biometric)
 
     implementation(libs.okhttp)
+    implementation(platform(libs.ktor.bom))
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
 
     implementation(libs.zxing.core)
     implementation(libs.zxing.embedded)

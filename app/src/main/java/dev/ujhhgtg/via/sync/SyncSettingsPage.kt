@@ -18,6 +18,7 @@ import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
 import dev.ujhhgtg.via.sync.WebDavSync.Operation
 import java.util.concurrent.Executors
+import kotlinx.coroutines.runBlocking
 
 /** hb.a7/u/a8 and nb.n/ob.i/d account and WebDAV settings flows. */
 class SyncSettingsPage(private val activity: Activity,
@@ -235,7 +236,7 @@ class SyncSettingsPage(private val activity: Activity,
      * z8.u0 (GET, [requiresNetwork] false) / z8.a4 (POST): a4 does nothing without a network, u0 reports a timeout;
      * a non-200 answer is "Service unavailable" and any other failure is reported as a timeout.
      */
-    private fun work(requiresNetwork: Boolean = true, task: () -> Feedback) {
+    private fun work(requiresNetwork: Boolean = true, task: suspend () -> Feedback) {
         if (busy) return
         if (!dev.ujhhgtg.via.downloads.DownloadNetwork.isAvailable(this)) {
             if (!requiresNetwork) message(getString(R.string.dialog_message), getString(R.string.conn_timeout))
@@ -249,7 +250,7 @@ class SyncSettingsPage(private val activity: Activity,
         cloudProgress = progress
         progress.show()
         worker.execute {
-            val result = runCatching(task)
+            val result = runBlocking { runCatching { task() } }
             activity.runOnUiThread {
                 busy = false
                 progress.dismiss()

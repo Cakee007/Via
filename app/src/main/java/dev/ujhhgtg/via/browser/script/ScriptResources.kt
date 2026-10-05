@@ -3,38 +3,47 @@ package dev.ujhhgtg.via.browser.script
 import android.content.Context
 import android.util.Base64
 import android.webkit.MimeTypeMap
+import dev.ujhhgtg.via.common.httpClient
+import io.ktor.client.plugins.timeout
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.prepareGet
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.HttpStatusCode
+import io.ktor.utils.io.jvm.javaio.copyTo
+import kotlinx.coroutines.CancellationException
 import java.io.File
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.PushbackInputStream
-import java.net.HttpURLConnection
-import java.net.URL
 import java.net.URLDecoder
 import java.nio.charset.Charset
 import java.security.MessageDigest
 import java.util.Locale
 
-/** p5.a/p5.b resource cache. Network methods are synchronous and must run on a worker thread. */
+/** p5.a/p5.b resource cache. Network methods suspend; cancelling the caller aborts the transfer. */
 class ScriptResources(private val directory: File) {
     constructor(context: Context) : this(File(context.applicationContext.getExternalFilesDir("gm")
         ?: File(context.applicationContext.filesDir, "gm"), "resources"))
 
     init { if (!directory.exists()) directory.mkdirs() }
 
-    fun ensure(script: UserScript): Boolean {
+    suspend fun ensure(script: UserScript): Boolean {
         var complete = true
         for (url in script.requires + script.resources.values) if (!ensure(url)) complete = false
         return complete
     }
 
     /** p5.a.K only downloads HTTP resources; inline data requires no cache file. */
-    fun ensure(url: String): Boolean {
+    suspend fun ensure(url: String): Boolean {
         if (!url.startsWith("http", true)) return true
         val target = cacheFile(url) ?: return false
         // Confirmed in smali p5/b.W: this is intentionally the original '<' comparison.
         if (target.exists() && target.length() > 0 && target.lastModified() < System.currentTimeMillis() - FIFTEEN_DAYS) return true
         val temporary = File(directory, target.name + ".tmp")
-        val downloaded = download(url, temporary) || download(fallbackUrl(url) ?: url, temporary)
+        val downloaded = try { download(url, temporary) || download(fallbackUrl(url) ?: url, temporary) }
+            catch (error: CancellationException) { temporary.delete(); throw error }
         if (!downloaded) { temporary.delete(); return false }
         if (target.exists() && !target.deleteRecursively()) return false
         return temporary.renameTo(target)
@@ -94,41 +103,33 @@ class ScriptResources(private val directory: File) {
     }
 
     /** s5.b.d/e: download a script source for installation/update, with CDN fallback. */
-    fun fetchSource(url: String): String? {
+    suspend fun fetchSource(url: String): String? {
         val result = fetchText(url)
         if (!result.isNullOrEmpty()) return result
-        return fallbackUrl(url)?.let(::fetchText)
+        return fallbackUrl(url)?.let { fetchText(it) }
     }
 
     private fun cacheFile(url: String): File? = url.takeIf { it.isNotEmpty() }?.let { File(directory, cacheName(it)) }
 
-    private fun download(url: String, target: File): Boolean {
+    private suspend fun download(url: String, target: File): Boolean {
         if (!directory.exists() && !directory.mkdirs()) return false
-        var connection: HttpURLConnection? = null
         return try {
-            connection = URL(url).openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("User-Agent", RESOURCE_USER_AGENT)
-            connection.connectTimeout = 10_000
-            connection.readTimeout = 30_000
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) false
-            else {
-                connection.inputStream.buffered().use { input -> target.outputStream().use { output -> input.copyTo(output, 8192) } }
-                true
+            httpClient.prepareGet(url) {
+                header("User-Agent", RESOURCE_USER_AGENT)
+                timeout { connectTimeoutMillis = 10_000; socketTimeoutMillis = 30_000 }
+            }.execute { response ->
+                if (response.status != HttpStatusCode.OK) false
+                else { target.outputStream().use { output -> response.bodyAsChannel().copyTo(output) }; true }
             }
-        } catch (_: Exception) { false } finally { connection?.disconnect() }
+        } catch (error: CancellationException) { throw error } catch (_: Exception) { false }
     }
 
-    private fun fetchText(url: String): String? {
-        var connection: HttpURLConnection? = null
-        return try {
-            connection = URL(url).openConnection() as HttpURLConnection
-            connection.readTimeout = 5_000
-            connection.requestMethod = "GET"
-            connection.useCaches = false
-            connection.inputStream.use { input -> bomReader(input, connection.contentEncoding).use { it.readText() } }
-        } catch (_: Exception) { null } finally { connection?.disconnect() }
-    }
+    private suspend fun fetchText(url: String): String? = try {
+        val response = httpClient.get(url) { timeout { socketTimeoutMillis = 5_000 } }
+        // HttpURLConnection.getInputStream threw for error statuses.
+        if (response.status.value >= 400) null
+        else bomReader(response.bodyAsBytes().inputStream(), response.headers["Content-Encoding"]).use { it.readText() }
+    } catch (error: CancellationException) { throw error } catch (_: Exception) { null }
 
 
     companion object {

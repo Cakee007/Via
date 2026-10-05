@@ -1,8 +1,12 @@
 package dev.ujhhgtg.via.translation
 
+import dev.ujhhgtg.via.common.httpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.CancellationException
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 import java.net.URLEncoder
 import java.util.Locale
 
@@ -20,7 +24,7 @@ internal class TextTranslationClient(private val locale: Locale) {
     fun sourceLanguage(code: String?): TranslationLanguage = sourceLanguages.firstOrNull { it.code == code } ?: sourceLanguages[0]
     fun targetLanguage(code: String?): TranslationLanguage = targetLanguages.firstOrNull { it.code == code } ?: targetLanguages[0]
 
-    fun translate(query: String, source: String?, target: String): TranslationResult? {
+    suspend fun translate(query: String, source: String?, target: String): TranslationResult? {
         val text = query.trim { it <= ' ' }
         if (text.isEmpty() || target.isEmpty()) return null
         // oa.c.g deliberately does not include source language in its cache lookup.
@@ -28,21 +32,18 @@ internal class TextTranslationClient(private val locale: Locale) {
         return request(text, source?.takeIf(String::isNotEmpty) ?: "auto", target)?.also(results::add)
     }
 
-    private fun request(query: String, source: String, target: String): TranslationResult? {
-        var connection: HttpURLConnection? = null
+    private suspend fun request(query: String, source: String, target: String): TranslationResult? {
         return try {
-            connection = URL(requestUrl(query, source, target)).openConnection() as HttpURLConnection
-            connection.setRequestProperty("User-Agent", USER_AGENT)
-            connection.requestMethod = "GET"
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) return null
-            val body = connection.inputStream.bufferedReader(Charsets.UTF_8).use { reader ->
-                buildString { reader.forEachLine { append(it.trim { char -> char <= ' ' }) } }
-            }
+            val response = httpClient.get(requestUrl(query, source, target)) { header("User-Agent", USER_AGENT) }
+            if (response.status != HttpStatusCode.OK) return null
+            val body = response.bodyAsBytes().toString(Charsets.UTF_8).lineSequence()
+                .joinToString("") { it.trim { char -> char <= ' ' } }
             parseResponse(query, source, target, body)
-        } catch (error: Exception) {
+        } catch (error: CancellationException) { throw error }
+        catch (error: Exception) {
             error.printStackTrace()
             null
-        } finally { connection?.disconnect() }
+        }
     }
 
     private fun language(code: String, fallback: String): TranslationLanguage {

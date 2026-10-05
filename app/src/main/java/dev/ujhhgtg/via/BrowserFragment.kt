@@ -119,6 +119,9 @@ import dev.ujhhgtg.via.video.FullscreenVideoControls
 import dev.ujhhgtg.via.video.VideoPictureInPicture
 import dev.ujhhgtg.via.video.VideoScripts
 import kotlinx.coroutines.launch
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.http.isSuccess
 import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.Executors
@@ -563,11 +566,14 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         val appContext = host.applicationContext
         worker.execute {
             dev.ujhhgtg.via.data.LegacyBookmarkMigration.migrate(database, preferences)
-            val filterStore = dev.ujhhgtg.via.browser.filter.FilterStore(appContext)
-            val filtersUpdated = dev.ujhhgtg.via.browser.filter.FilterSubscriptionUpdater.updateDue(filterStore, preferences)
-            val manager = ScriptManager(ScriptStore(appContext))
-            try { manager.updateDue(preferences) } finally { manager.close() }
-            if (filtersUpdated > 0) host.runOnUiThread { if (this.view != null) reloadTabPreferences() }
+            // Network updates outlive the browser view, as the former worker's queued task did.
+            applicationIoScope.launch {
+                val filterStore = dev.ujhhgtg.via.browser.filter.FilterStore(appContext)
+                val filtersUpdated = dev.ujhhgtg.via.browser.filter.FilterSubscriptionUpdater.updateDue(filterStore, preferences)
+                val manager = ScriptManager(ScriptStore(appContext))
+                try { manager.updateDue(preferences) } finally { manager.close() }
+                if (filtersUpdated > 0) host.runOnUiThread { if (this@BrowserFragment.view != null) reloadTabPreferences() }
+            }
         }
     }
 
@@ -2690,8 +2696,8 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
 
     /** c8.s6.sa/Aa/F3: download the image to cache, decode its QR code, offer open/search. */
     private fun decodeImageQrCode(src: String) {
-        worker.execute {
-            val result = runCatching {
+        viewLifecycleOwner.launchIo({
+            runCatching {
                 val bitmap: android.graphics.Bitmap? = when {
                     src.startsWith("file://") -> BitmapFactory.decodeFile(src.removePrefix("file://"))
                     src.startsWith("data:") -> {
@@ -2700,21 +2706,18 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                     }
                     src.startsWith("content://") -> host.contentResolver.openInputStream(src.toUri())?.use { BitmapFactory.decodeStream(it) }
                     else -> {
-                        val request = okhttp3.Request.Builder().url(src).build()
-                        okhttp3.OkHttpClient().newCall(request).execute().use { response ->
-                            if (!response.isSuccessful) null else response.body.byteStream().use { BitmapFactory.decodeStream(it) }
-                        }
+                        val response = dev.ujhhgtg.via.common.httpClient.get(src)
+                        if (!response.status.isSuccess()) null
+                        else response.bodyAsBytes().let { BitmapFactory.decodeByteArray(it, 0, it.size) }
                     }
                 }
                 bitmap?.let { image -> dev.ujhhgtg.via.tools.QrBitmaps.decode(image).also { image.recycle() } }
-            }.getOrNull()
-            host.runOnUiThread {
-                if (!isAdded || view == null) return@runOnUiThread
-                dev.ujhhgtg.via.tools.QrResults.showImageResult(host, result) { value ->
-                    newTab(UrlResolver.resolveInput(value, preferences.effectiveSearchUrl()) ?: value)
-                }
+            }.onFailure { if (it is kotlinx.coroutines.CancellationException) throw it }.getOrNull()
+        }, { result ->
+            dev.ujhhgtg.via.tools.QrResults.showImageResult(host, result) { value ->
+                newTab(UrlResolver.resolveInput(value, preferences.effectiveSearchUrl()) ?: value)
             }
-        }
+        })
     }
 
     /** c8.s6 case 16: delete the history entry behind the pressed row, then reload the document. */
@@ -2930,6 +2933,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             if (iconUrl.contains("favicon.ico") || pageUrl.startsWith("file://", true)) return
             applicationIoScope.launch {
                 try { dev.ujhhgtg.via.home.TouchIconStore.download(host, iconUrl, pageUrl) }
+                catch (error: kotlinx.coroutines.CancellationException) { throw error }
                 catch (error: Exception) { Log.w("Via", "Cannot store page touch icon", error) }
             }
         }
@@ -3156,7 +3160,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             if (username.isEmpty() || password.isEmpty()) handler.cancel()
             else {
                 handler.proceed(username, password)
-                httpAuthorization[host] = okhttp3.Credentials.basic(username, password)
+                httpAuthorization[host] = dev.ujhhgtg.via.common.basicAuthorization(username, password)
                 passwordForms.offer("https://$host", username, password)
             }
             parentFragmentManager.clearFragmentResultListener(key)

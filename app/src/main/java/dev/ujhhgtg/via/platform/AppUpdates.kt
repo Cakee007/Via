@@ -13,11 +13,14 @@ import dev.ujhhgtg.via.downloads.DownloadRequest
 import dev.ujhhgtg.via.downloads.DownloadState
 import dev.ujhhgtg.via.ui.ViaToast
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
+import dev.ujhhgtg.via.common.httpClient
 import dev.ujhhgtg.via.common.launchIo
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.statement.bodyAsBytes
+import kotlinx.coroutines.CancellationException
 import org.json.JSONObject
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
 import java.security.MessageDigest
 
 /** mark.via.Shell.c0 and y8.h: CN update metadata, downloads and checksum gate. */
@@ -35,14 +38,12 @@ object AppUpdates {
     @SuppressLint("RequestInstallPackagesPolicy")
     fun check(activity: Shell) {
         activity.launchIo({
-            val connection = URL("https://res.viayoo.com/v1/latest_cn.json").openConnection() as HttpURLConnection
             val update = try {
-                connection.requestMethod = "GET"
-                connection.setRequestProperty("Accept", "*/*")
-                connection.setRequestProperty("Charset", "UTF-8")
-                connection.setRequestProperty("Connection", "Keep-Alive")
-                if (connection.responseCode == 200) connection.inputStream.bufferedReader(Charsets.UTF_8).use { decode(it.readLines().joinToString("")) } else Update()
-            } catch (_: Exception) { Update() } finally { connection.disconnect() }
+                val response = httpClient.get("https://res.viayoo.com/v1/latest_cn.json") {
+                    header("Accept", "*/*"); header("Charset", "UTF-8"); header("Connection", "Keep-Alive")
+                }
+                if (response.status.value == 200) decode(response.bodyAsBytes().toString(Charsets.UTF_8).lines().joinToString("")) else Update()
+            } catch (error: CancellationException) { throw error } catch (_: Exception) { Update() }
             update to completed(activity, update)
         }, { (update, uri) ->
                 if (!update.available) ViaToast.makeText(activity, R.string.latest_version_already_installed, ViaToast.LENGTH_SHORT).show()

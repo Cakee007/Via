@@ -17,8 +17,8 @@ class ScriptManager(
     }
 
     /** Call on a worker after user-approved installation; network never runs during injection. */
-    fun ensureDependencies(script: UserScript): Boolean = resources.ensure(script)
-    fun fetchSource(url: String): String? = resources.fetchSource(url)
+    suspend fun ensureDependencies(script: UserScript): Boolean = resources.ensure(script)
+    suspend fun fetchSource(url: String): String? = resources.fetchSource(url)
     fun update(script: UserScript): UserScript = store.find(store.save(script)) ?: script
     fun remove(id: Int): Boolean {
         val script = store.find(id)
@@ -37,7 +37,7 @@ class ScriptManager(
     fun cleanupResources(): Boolean = resources.cleanup(all())
 
     /** sa.d1.j4: refresh saved source/metadata, preserving enabled state and user overrides. Worker-only. */
-    fun updateFromNetwork(id: Int): UserScript? {
+    suspend fun updateFromNetwork(id: Int): UserScript? {
         val current = store.find(id) ?: return null
         val url = current.downloadUrl?.takeIf(String::isNotEmpty) ?: return null
         val source = resources.fetchSource(url) ?: return null
@@ -48,7 +48,7 @@ class ScriptManager(
     }
 
     /** sb.q: call during the app's update pass on a worker; interval 0 disables checks. */
-    fun updateDue(preferences: BrowserPreferences, now: Long = System.currentTimeMillis()): Int {
+    suspend fun updateDue(preferences: BrowserPreferences, now: Long = System.currentTimeMillis()): Int {
         val interval = preferences.scriptUpdateInterval
         val before = now - interval
         if (interval < 3_600_000L || preferences.getLong("updated_scripts", 0L) >= before) return 0

@@ -1,5 +1,20 @@
 package dev.ujhhgtg.via.sync
 
+import dev.ujhhgtg.via.common.basicAuthorization
+import dev.ujhhgtg.via.common.finalUrl
+import dev.ujhhgtg.via.common.httpClient
+import io.ktor.client.request.header
+import io.ktor.client.request.request
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.client.statement.request
+import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.ByteArrayContent
+import io.ktor.http.isSuccess
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.net.URI
@@ -7,14 +22,6 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 import javax.xml.parsers.DocumentBuilderFactory
-import okhttp3.Authenticator
-import okhttp3.Credentials
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import okhttp3.Route
 import org.w3c.dom.Element
 import org.xml.sax.InputSource
 import java.io.StringReader
@@ -25,46 +32,54 @@ class WebDavClient(private val configuration: SyncConfiguration) {
     private var lastNonce: String? = null
     private var nonceCount = 0
     private var clientNonce: String? = null
-    private val client = OkHttpClient.Builder().authenticator(object : Authenticator {
-        override fun authenticate(route: Route?, response: Response): Request? {
-            val request = response.request
-            if (!configuration.digestAuth) {
-                if (request.header("Authorization")?.startsWith("Basic") == true) return null
-                return request.newBuilder().header("Authorization", Credentials.basic(configuration.username, configuration.password)).build()
-            }
-            val challenges = response.headers("WWW-Authenticate")
-            val challenge = challenges.firstOrNull { it.startsWith("Digest") }
-                ?: throw IllegalArgumentException("unsupported auth scheme: $challenges")
-            val parts = WebDavAuthentication.challenge(challenge).toMutableMap().apply {
-                // DigestAuthenticator.c retains exact header names and lets matching fields override the challenge.
-                val headers = response.headers
-                for (index in 0 until headers.size) put(headers.name(index), headers.value(index))
-            }
-            val nonce = parts["nonce"] ?: throw IllegalArgumentException("missing nonce in challenge header: $challenge")
-            if (parts["realm"] == null) return null
-            // n() checks whether a Digest attempt already failed; only stale=true permits another retry.
-            if (request.header("Authorization")?.startsWith("Digest") == true && !parts["stale"].equals("true", true)) return null
-            if (lastNonce == nonce) nonceCount++ else {
-                nonceCount = 1; lastNonce = nonce; clientNonce = WebDavAuthentication.randomNonce()
-            }
-            val url = request.url
-            val path = url.encodedPath + (url.encodedQuery?.let { "?$it" } ?: "")
-            val authorization = WebDavAuthentication.digestHeader(request.method, path, configuration.username, configuration.password,
-                parts, nonceCount, requireNotNull(clientNonce), request.header("http.auth.credential-charset"), request.body != null)
-            return request.newBuilder().header("Authorization", authorization).build()
-        }
-    }).build()
 
-    private fun url(path: String): String = configuration.baseUrl + path.removePrefix("/")
-    private fun request(method: String, path: String, body: ByteArray? = null, type: String? = null, headers: Map<String, String> = emptyMap()): Response {
-        val payload = body?.let { it.toRequestBody(type?.toMediaTypeOrNull()) }
-        val builder = Request.Builder().url(url(path)).method(method, payload)
-        headers.forEach { (key, value) -> builder.header(key, value) }
-        return client.newCall(builder.build()).execute()
+    /** Former OkHttp Authenticator: returns the Authorization header for a retry, or null to give up. */
+    private fun authenticate(method: String, path: String, previous: String?, hasBody: Boolean, credentialCharset: String?, response: HttpResponse): String? {
+        if (!configuration.digestAuth) {
+            if (previous?.startsWith("Basic") == true) return null
+            return basicAuthorization(configuration.username, configuration.password)
+        }
+        val challenges = response.headers.getAll("WWW-Authenticate").orEmpty()
+        val challenge = challenges.firstOrNull { it.startsWith("Digest") }
+            ?: throw IllegalArgumentException("unsupported auth scheme: $challenges")
+        val parts = WebDavAuthentication.challenge(challenge).toMutableMap().apply {
+            // DigestAuthenticator.c retains exact header names and lets matching fields override the challenge.
+            response.headers.forEach { name, values -> values.forEach { put(name, it) } }
+        }
+        val nonce = parts["nonce"] ?: throw IllegalArgumentException("missing nonce in challenge header: $challenge")
+        if (parts["realm"] == null) return null
+        // n() checks whether a Digest attempt already failed; only stale=true permits another retry.
+        if (previous?.startsWith("Digest") == true && !parts["stale"].equals("true", true)) return null
+        if (lastNonce == nonce) nonceCount++ else {
+            nonceCount = 1; lastNonce = nonce; clientNonce = WebDavAuthentication.randomNonce()
+        }
+        return WebDavAuthentication.digestHeader(method, path, configuration.username, configuration.password,
+            parts, nonceCount, requireNotNull(clientNonce), credentialCharset, hasBody)
     }
 
-    fun exists(path: String, directory: Boolean = false): Boolean = request("HEAD", path).use { response ->
-        when (response.code) {
+    private fun endpoint(path: String): String = configuration.baseUrl + path.removePrefix("/")
+    private suspend fun request(method: String, path: String, body: ByteArray? = null, type: String? = null, headers: Map<String, String> = emptyMap()): HttpResponse {
+        var authorization: String? = null
+        // OkHttp's RetryAndFollowUpInterceptor allowed at most 20 follow-ups.
+        repeat(21) {
+            val response = httpClient.request {
+                url(endpoint(path))
+                this.method = HttpMethod.parse(method)
+                headers.forEach { (key, value) -> header(key, value) }
+                authorization?.let { header("Authorization", it) }
+                if (body != null) setBody(ByteArrayContent(body, type?.let { runCatching { ContentType.parse(it) }.getOrNull() }))
+            }
+            if (response.status != HttpStatusCode.Unauthorized) return response
+            val url = io.ktor.http.Url(response.finalUrl)
+            val target = url.encodedPath + (url.encodedQuery.takeIf(String::isNotEmpty)?.let { "?$it" } ?: "")
+            authorization = authenticate(method, target, authorization, body != null, headers["http.auth.credential-charset"], response)
+                ?: return response
+        }
+        throw IOException("Too many follow-up requests: 21")
+    }
+
+    suspend fun exists(path: String, directory: Boolean = false): Boolean = request("HEAD", path).let { response ->
+        when (response.status.value) {
             404 -> false
             403 -> true // l4.a regards a forbidden resource as present.
             405 -> if (directory) true else { requireSuccess(response); true } // Only qb.h.m's directory check tolerates this.
@@ -72,32 +87,32 @@ class WebDavClient(private val configuration: SyncConfiguration) {
         }
     }
 
-    fun get(path: String): ByteArray {
+    suspend fun get(path: String): ByteArray {
         if (!exists(path)) throw FileNotFoundException("File not found at $path")
-        return request("GET", path).use { requireSuccess(it); it.body.bytes() }
+        return request("GET", path).let { requireSuccess(it); it.bodyAsBytes() }
     }
 
-    fun list(path: String): List<Resource> = request("PROPFIND", path,
+    suspend fun list(path: String): List<Resource> = request("PROPFIND", path,
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?><d:propfind xmlns:d=\"DAV:\"><d:allprop/></d:propfind>".toByteArray(Charsets.UTF_8),
-        "text/xml", mapOf("Depth" to "1")).use { response ->
+        "text/xml", mapOf("Depth" to "1")).let { response ->
         requireSuccess(response)
-        parseResources(response.body.bytes(), configuration.baseUrl)
+        parseResources(response.bodyAsBytes(), configuration.baseUrl)
     }
 
-    fun modified(path: String): Long = list(path).firstOrNull { it.path == path }?.modified ?: 0L
+    suspend fun modified(path: String): Long = list(path).firstOrNull { it.path == path }?.modified ?: 0L
 
-    fun put(path: String, bytes: ByteArray, mime: String) {
+    suspend fun put(path: String, bytes: ByteArray, mime: String) {
         var slash = path.indexOf('/')
         while (slash > 0) {
             val directory = path.substring(0, slash + 1)
-            if (!exists(directory, directory = true)) request("MKCOL", directory).use(::requireSuccess)
+            if (!exists(directory, directory = true)) requireSuccess(request("MKCOL", directory))
             slash = path.indexOf('/', slash + 1)
         }
-        request("PUT", path, bytes, mime).use(::requireSuccess)
+        requireSuccess(request("PUT", path, bytes, mime))
     }
 
-    private fun requireSuccess(response: Response) {
-        if (!response.isSuccessful) throw IOException("Error contacting ${response.request.url} (${response.code} ${response.message})")
+    private fun requireSuccess(response: HttpResponse) {
+        if (!response.status.isSuccess()) throw IOException("Error contacting ${response.request.url} (${response.status.value} ${response.status.description})")
     }
 
     companion object {

@@ -19,8 +19,11 @@ import dev.ujhhgtg.via.common.LocalNetworkAccess
 import dev.ujhhgtg.via.ui.ViaToast
 import dev.ujhhgtg.via.ui.dialog.ViaDialogFragment
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
+import dev.ujhhgtg.via.common.httpClient
+import dev.ujhhgtg.via.common.launchIo
+import io.ktor.client.request.head
+import io.ktor.client.request.header
+import kotlinx.coroutines.CancellationException
 
 /** mark.via.download.m: original layout, in-place HEAD metadata update and explicit copy action. */
 class DownloadConfirmationFragment : ViaDialogFragment() {
@@ -109,21 +112,21 @@ class DownloadConfirmationFragment : ViaDialogFragment() {
     }
 
     private fun probePermitted() {
-        val activity = requireActivity()
         val initial = request
         val cookie = CookieManager.getInstance().getCookie(initial.url)
-        io.execute {
-            var connection: HttpURLConnection? = null
-            val metadata = runCatching {
-                connection = (URL(initial.url).openConnection() as HttpURLConnection).apply {
-                    cookie?.let { setRequestProperty("Cookie", it) }; setRequestProperty("Referer", initial.url)
-                    initial.userAgent?.let { setRequestProperty("User-Agent", it) }; requestMethod = "HEAD"; connect()
+        viewLifecycleOwner.launchIo({
+            try {
+                val response = httpClient.head(initial.url) {
+                    cookie?.let { header("Cookie", it) }; header("Referer", initial.url)
+                    initial.userAgent?.let { header("User-Agent", it) }
                 }
-                connection.takeIf { it.responseCode == 200 }?.let { Triple(it.contentLengthLong, it.contentType?.substringBefore(';'), it.getHeaderField("Content-Disposition")) }
-            }.getOrNull()
-            connection?.disconnect()
-            if (metadata != null) activity.runOnUiThread {
-                if (view == null || !isAdded) return@runOnUiThread
+                response.takeIf { it.status.value == 200 }?.headers?.let {
+                    Triple(it["Content-Length"]?.toLongOrNull() ?: -1L, it["Content-Type"]?.substringBefore(';'), it["Content-Disposition"])
+                }
+            } catch (error: CancellationException) { throw error } catch (_: Exception) { null }
+        }, { metadata ->
+            if (metadata != null) {
+                if (view == null || !isAdded) return@launchIo
                 length = metadata.first
                 request = request.copy(mimeType = metadata.second ?: request.mimeType, contentDisposition = metadata.third ?: request.contentDisposition)
                 if (overwritableName) {
@@ -136,12 +139,11 @@ class DownloadConfirmationFragment : ViaDialogFragment() {
                 }
                 refreshSize(); copy.visibility = if (length > 64_198_568) View.GONE else View.VISIBLE
             }
-        }
+        })
     }
 
     override fun onSaveInstanceState(out: Bundle) { super.onSaveInstanceState(out); write(out, request, length, overwritableName) }
     companion object {
-        private val io = java.util.concurrent.Executors.newCachedThreadPool()
         fun newInstance(request: DownloadRequest, length: Long) = DownloadConfirmationFragment().apply {
             arguments = Bundle().also { write(it, request, length, request.fileName == null) }
         }

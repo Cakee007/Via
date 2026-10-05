@@ -1,29 +1,35 @@
 package dev.ujhhgtg.via.search
 
+import dev.ujhhgtg.via.common.httpClient
+import io.ktor.client.plugins.timeout
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.CancellationException
 import org.json.JSONArray
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.Charset
 
 /** ma/a..e and ka/i: four original suggestion protocols, injectable transport for local tests. */
-class RemoteSuggestions(private val fetch: (url: String, charset: String) -> String? = ::httpGet) {
+class RemoteSuggestions(private val fetch: suspend (url: String, charset: String) -> String? = ::httpGet) {
     private val cache = object : LinkedHashMap<String, List<String>>(128, .75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<String>>?): Boolean = size > 128
     }
-    fun query(text: String, provider: Int, enabled: Boolean, languageTag: String): List<String> {
+    /** Cancelling the calling coroutine aborts the in-flight request. */
+    suspend fun query(text: String, provider: Int, enabled: Boolean, languageTag: String): List<String> {
         val query = text.trim()
         if (!enabled || query.isEmpty() || query.length > 200 || query.startsWith("http://", true) || query.startsWith("https://", true)) return emptyList()
         val key = "$provider:$query"
-        cache[key]?.let { return it }
+        synchronized(cache) { cache[key] }?.let { return it }
         val endpoint = endpoint(provider, query, languageTag) ?: return emptyList()
         val response = fetch(endpoint, if (provider == 2) "GB2312" else "UTF-8") ?: return emptyList()
         val values = parse(provider, response)
-        if (values.isNotEmpty()) cache[key] = values
+        if (values.isNotEmpty()) synchronized(cache) { cache[key] = values }
         return values
     }
-    fun clearCache() = cache.clear()
+    fun clearCache() = synchronized(cache) { cache.clear() }
 
     companion object {
         fun endpoint(provider: Int, query: String, languageTag: String): String? {
@@ -72,11 +78,11 @@ class RemoteSuggestions(private val fetch: (url: String, charset: String) -> Str
     }
 }
 
-private fun httpGet(url: String, charset: String): String? {
-    val connection = URL(url).openConnection() as HttpURLConnection
-    return try {
-        connection.requestMethod = "GET"; connection.setRequestProperty("User-Agent", "Mozilla/5.0"); connection.connectTimeout = 3000
-        if (connection.responseCode != HttpURLConnection.HTTP_OK) null
-        else connection.inputStream.bufferedReader(Charset.forName(charset)).useLines { lines -> lines.joinToString("") { it.trim() } }
-    } catch (_: Exception) { null } finally { connection.disconnect() }
-}
+private suspend fun httpGet(url: String, charset: String): String? = try {
+    val response = httpClient.get(url) {
+        header("User-Agent", "Mozilla/5.0")
+        timeout { connectTimeoutMillis = 3000 }
+    }
+    if (response.status != HttpStatusCode.OK) null
+    else response.bodyAsBytes().toString(Charset.forName(charset)).lineSequence().joinToString("") { it.trim() }
+} catch (error: CancellationException) { throw error } catch (_: Exception) { null }

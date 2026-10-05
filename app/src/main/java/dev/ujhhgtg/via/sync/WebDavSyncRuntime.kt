@@ -1,18 +1,21 @@
 package dev.ujhhgtg.via.sync
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import dev.ujhhgtg.via.data.BrowserDatabase
 import dev.ujhhgtg.via.common.LocalNetworkAccess
 import dev.ujhhgtg.via.R
-import java.util.concurrent.Executors
+import dev.ujhhgtg.via.common.applicationIoScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /** pa.r/pa.c.k's resident pb.a, shared by nb.n and c8.ua.Y1. */
 object WebDavSyncRuntime {
-    private val worker = Executors.newSingleThreadExecutor()
-    private val main = Handler(Looper.getMainLooper())
+    /** Serializes runs like the former single-thread executor. */
+    private val lock = Mutex()
     private var synchronizer: WebDavSync? = null
 
     /** Called from the browser's normal onResume path (c8.s6.R1). */
@@ -44,9 +47,9 @@ object WebDavSyncRuntime {
     private fun runPermitted(context: Context, operation: WebDavSync.Operation, forced: Boolean,
         completed: (Result<List<WebDavSync.Failure>>) -> Unit) {
         val current = instance(context)
-        worker.execute {
-            val result = runCatching { current.run(operation, forced) }
-            main.post { completed(result) }
+        applicationIoScope.launch {
+            val result = lock.withLock { runCatching { current.run(operation, forced) } }
+            withContext(Dispatchers.Main) { completed(result) }
         }
     }
 

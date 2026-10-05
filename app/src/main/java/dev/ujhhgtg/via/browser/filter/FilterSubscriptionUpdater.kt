@@ -1,17 +1,24 @@
 package dev.ujhhgtg.via.browser.filter
 
+import dev.ujhhgtg.via.common.httpClient
 import dev.ujhhgtg.via.data.BrowserPreferences
+import io.ktor.client.plugins.timeout
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.http.HttpHeaders
+import kotlinx.coroutines.CancellationException
 import java.io.File
 import java.io.LineNumberReader
 import java.io.StringReader
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.UUID
 
 /** b5.c.d/e/c: original HTTP policy, fallback hosts and first-20-line subscription metadata. */
 object FilterSubscriptionUpdater {
-    fun update(store: FilterStore, record: FilterStore.Subscription): FilterStore.Subscription {
-        val content = runCatching { fetch(record.url) }.getOrElse { first ->
+    suspend fun update(store: FilterStore, record: FilterStore.Subscription): FilterStore.Subscription {
+        val content = try { fetch(record.url) }
+        catch (first: CancellationException) { throw first }
+        catch (first: Exception) {
             val fallback = fallbackUrl(record.url) ?: throw first
             fetch(fallback)
         }
@@ -34,7 +41,7 @@ object FilterSubscriptionUpdater {
     }
 
     /** sb.g: run on the app's update worker, with the same interval and per-file cutoff. */
-    fun updateDue(store: FilterStore, preferences: BrowserPreferences, now: Long = System.currentTimeMillis()): Int {
+    suspend fun updateDue(store: FilterStore, preferences: BrowserPreferences, now: Long = System.currentTimeMillis()): Int {
         val interval = preferences.getLong("updater_filter_subscriptions")
         val cutoff = now - interval
         if (interval < 3_600_000L || preferences.getLong("updated_filter_subscriptions") >= cutoff) return 0
@@ -43,21 +50,22 @@ object FilterSubscriptionUpdater {
         var count = 0
         val updated = records.map { record ->
             if (!record.enabled || (record.filePath?.let { File(it).lastModified() } ?: 0L) >= cutoff) record
-            else runCatching { update(store, record) }.getOrNull()?.also { count++ } ?: record
+            else try { update(store, record).also { count++ } }
+            catch (error: CancellationException) { throw error } catch (_: Exception) { record }
         }
         store.writeSubscriptions(updated)
         preferences.putLong("updated_filter_subscriptions", System.currentTimeMillis())
         return count
     }
 
-    private fun fetch(url: String): String {
-        val connection = URL(url).openConnection() as HttpURLConnection
-        try {
-            connection.connectTimeout = 5000
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36")
-            check(connection.responseCode == 200 && connection.contentType?.trim()?.startsWith("text/plain") == true) { "HTTP ${connection.responseCode}: ${connection.contentType}" }
-            return connection.inputStream.bufferedReader().use { it.readText() }
-        } finally { connection.disconnect() }
+    private suspend fun fetch(url: String): String {
+        val response = httpClient.get(url) {
+            timeout { connectTimeoutMillis = 5000 }
+            header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36")
+        }
+        val type = response.headers[HttpHeaders.ContentType]
+        check(response.status.value == 200 && type?.trim()?.startsWith("text/plain") == true) { "HTTP ${response.status.value}: $type" }
+        return response.bodyAsBytes().toString(Charsets.UTF_8)
     }
 
     private fun fallbackUrl(url: String): String? = when {

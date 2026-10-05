@@ -1,8 +1,14 @@
 package dev.ujhhgtg.via.sync
 
+import dev.ujhhgtg.via.common.httpClient
+import io.ktor.client.plugins.timeout
+import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.http.ContentType
+import io.ktor.http.content.ByteArrayContent
 import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
 import java.security.MessageDigest
 import java.util.Locale
 
@@ -20,47 +26,38 @@ class CloudAccountClient(val endpoints: Endpoints) {
     /** z8.u0.r(112) / a4.m(1): the server answered with a status other than 200. */
     class ServiceUnavailable(code: Int) : IOException("HTTP $code")
 
-    fun login(username: String, passwordHash: String): LoginResult = when (get(endpoints.user + "name=$username&psw=$passwordHash")) {
+    suspend fun login(username: String, passwordHash: String): LoginResult = when (get(endpoints.user + "name=$username&psw=$passwordHash")) {
         "0" -> LoginResult.SIGNED_IN
         "1" -> LoginResult.PASSWORD_REJECTED
         "2" -> LoginResult.ACCOUNT_CREATED
         else -> LoginResult.UNKNOWN_RESPONSE
     }
 
-    fun pull(username: String, passwordHash: String): String = get(endpoints.sync + "name=$username&psw=$passwordHash")
+    suspend fun pull(username: String, passwordHash: String): String = get(endpoints.sync + "name=$username&psw=$passwordHash")
 
     /** Section values are already URL-encoded by l9.d.c; account fields remain original raw fields. */
-    fun push(username: String, passwordHash: String, encodedSections: Map<String, String?>) =
+    suspend fun push(username: String, passwordHash: String, encodedSections: Map<String, String?>) =
         post(linkedMapOf<String, String?>().apply { putAll(encodedSections); put("name", username); put("psw", passwordHash) })
 
-    fun requestDeletion(username: String, passwordHash: String) = post(linkedMapOf("name" to username, "psw" to passwordHash, "op" to "delete"))
+    suspend fun requestDeletion(username: String, passwordHash: String) = post(linkedMapOf("name" to username, "psw" to passwordHash, "op" to "delete"))
 
-    private fun get(url: String): String {
-        val connection = URL(url).openConnection() as HttpURLConnection
-        try {
-            connection.requestMethod = "GET"
-            connection.readTimeout = 7_000
-            if (connection.responseCode != 200) throw ServiceUnavailable(connection.responseCode)
-            val source = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readLines().joinToString("") }
-            return source.trim().replace(Regex("<meta.*?>"), "").trim()
-        } finally { connection.disconnect() }
+    private suspend fun get(url: String): String {
+        val response = httpClient.get(url) { timeout { socketTimeoutMillis = 7_000 } }
+        if (response.status.value != 200) throw ServiceUnavailable(response.status.value)
+        val source = response.bodyAsBytes().toString(Charsets.UTF_8).lines().joinToString("")
+        return source.trim().replace(Regex("<meta.*?>"), "").trim()
     }
 
-    private fun post(fields: Map<String, String?>) {
+    private suspend fun post(fields: Map<String, String?>) {
         val body = fields.entries.joinToString("&") { "${it.key}=${it.value}" }.toByteArray(Charsets.UTF_8)
-        val connection = URL(endpoints.update).openConnection() as HttpURLConnection
-        try {
-            connection.connectTimeout = 3_000
-            connection.readTimeout = 5_000 // original dialog disconnects the request at five seconds
-            connection.doInput = true
-            connection.doOutput = true
-            connection.requestMethod = "POST"
-            connection.useCaches = false
-            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-            connection.setFixedLengthStreamingMode(body.size)
-            connection.outputStream.use { it.write(body) }
-            if (connection.responseCode != 200) throw ServiceUnavailable(connection.responseCode)
-        } finally { connection.disconnect() }
+        val response = httpClient.post(endpoints.update) {
+            timeout {
+                connectTimeoutMillis = 3_000
+                socketTimeoutMillis = 5_000 // original dialog disconnects the request at five seconds
+            }
+            setBody(ByteArrayContent(body, ContentType.Application.FormUrlEncoded))
+        }
+        if (response.status.value != 200) throw ServiceUnavailable(response.status.value)
     }
 
     companion object {

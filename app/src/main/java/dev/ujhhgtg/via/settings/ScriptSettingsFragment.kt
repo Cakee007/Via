@@ -23,6 +23,7 @@ import dev.ujhhgtg.via.ui.ViaToast
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
 import java.io.InputStream
 import java.util.concurrent.Executors
+import kotlinx.coroutines.runBlocking
 
 /** sa.d1: imports, batch updates, detail navigation and separately clickable enable controls. */
 class ScriptSettingsFragment : SettingsListFragment() {
@@ -173,7 +174,7 @@ class ScriptSettingsFragment : SettingsListFragment() {
 
     private fun refreshSavedScript(id: Int) {
         loadScripts()
-        worker.execute { store.find(id)?.let(manager::ensureDependencies) }
+        worker.execute { runBlocking { store.find(id)?.let { manager.ensureDependencies(it) } } }
     }
 
     /** sa.d1.o4: batch refresh includes enabled scripts with a network download URL. */
@@ -190,7 +191,7 @@ class ScriptSettingsFragment : SettingsListFragment() {
                 updating = true; toast(R.string.update_pending)
                 worker.execute {
                     selected.forEach { script ->
-                        val updated = runCatching { manager.updateFromNetwork(script.id) }.getOrNull()
+                        val updated = runBlocking { runCatching { manager.updateFromNetwork(script.id) }.getOrNull() }
                         if (updated != null) onUi {
                             scripts = scripts.map { if (it.id == updated.id) updated else it }; bindRows()
                         }

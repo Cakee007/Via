@@ -12,6 +12,7 @@ androidx-webkit = "1.17.1"
 androidx-biometric = "1.1.0"
 
 okhttp = "5.5.0"
+ktor = "3.6.0"
 
 zxing-core = "3.5.4"
 zxing-embedded = "4.3.0"
@@ -29,6 +30,9 @@ androidx-dynamicanimation = { module = "androidx.dynamicanimation:dynamicanimati
 androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "androidx-webkit" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "androidx-biometric" }
 
+ktor-bom = { module = "io.ktor:ktor-bom", version.ref = "ktor" }
+ktor-client-core = { module = "io.ktor:ktor-client-core" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing-core" }

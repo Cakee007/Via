@@ -8,6 +8,8 @@ import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.browser.filter.FilterRequest
+import dev.ujhhgtg.via.common.applicationIoScope
+import kotlinx.coroutines.launch
 import dev.ujhhgtg.via.browser.filter.FilterStore
 import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.settings.ExternalVideoPlayers
@@ -155,7 +157,7 @@ class ResourceImageActions(
     }
 
     private fun acquire(request: Request, data: String?) {
-        worker.execute {
+        applicationIoScope.launch {
             val result = runCatching {
                 val folder = java.io.File(activity.externalCacheDir ?: activity.cacheDir, "download").apply { mkdirs() }
                 val hash = java.security.MessageDigest.getInstance("MD5").digest(request.url.toByteArray(Charsets.UTF_8))

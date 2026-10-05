@@ -3,15 +3,23 @@ package dev.ujhhgtg.via.downloads
 import android.content.Context
 import android.os.SystemClock
 import android.webkit.CookieManager
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
+import io.ktor.client.request.prepareGet
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.client.statement.request
+import io.ktor.utils.io.readAvailable
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import java.io.IOException
 import java.io.InterruptedIOException
-import java.net.HttpURLConnection
 import java.net.MalformedURLException
-import java.net.SocketTimeoutException
 import java.net.URL
 import java.net.UnknownHostException
-import java.util.concurrent.Callable
-import java.util.concurrent.ExecutorService
 import kotlin.math.abs
 
 /** m5.e/d and i5.b: probe first, persisted range chunks, bounded retries and one-connection fallback. */
@@ -19,7 +27,6 @@ internal class DownloadTransfer(
     private val context: Context,
     initial: DownloadRecord,
     private val repository: DownloadRepository,
-    private val executor: ExecutorService,
     private val control: DownloadControl,
     private val update: (DownloadRecord, Long) -> Unit,
     private val observeProgress: Boolean = true,
@@ -37,7 +44,7 @@ internal class DownloadTransfer(
         }
     }
 
-    fun run(): DownloadRecord {
+    suspend fun run(): DownloadRecord {
         try {
             if (record.isComplete) return record
             checkStopped()
@@ -56,7 +63,8 @@ internal class DownloadTransfer(
             }
             if (failure != null) throw failure
             status(DownloadState.COMPLETE)
-        } catch (error: Exception) {
+        } catch (error: CancellationException) { throw error }
+        catch (error: Exception) {
             val failure = if (error is DownloadFailure) error else DownloadFailure(if (control.paused) 1 else 20, error)
             val state = when (failure.code) { 1 -> DownloadState.PAUSED; 32 -> DownloadState.WAITING_NETWORK; else -> DownloadState.FAILED }
             val previousState = record.state
@@ -71,7 +79,7 @@ internal class DownloadTransfer(
     private fun checkNetwork() { if (!DownloadNetwork.isAvailable(context)) throw DownloadFailure(32) }
 
     /** m5.e.j advances Referer/User-Agent choices only after receiving an HTTP response. */
-    private fun probe() {
+    private suspend fun probe() {
         checkNetwork()
         val original = record.url ?: throw DownloadFailure(21)
         val referer = record.headers["Referer"] ?: record.headers["referer"]
@@ -90,13 +98,13 @@ internal class DownloadTransfer(
             try {
                 val accepted = connection(original, headers = { http ->
                     error = null
-                    record.headers.forEach { (name, value) -> if (!name.equals("Referer", true) && !name.equals("User-Agent", true)) http.addRequestProperty(name, value) }
-                    ref?.let { http.setRequestProperty("Referer", it) }; ua?.let { http.setRequestProperty("User-Agent", it) }
+                    record.headers.forEach { (name, value) -> if (!name.equals("Referer", true) && !name.equals("User-Agent", true)) http.header(name, value) }
+                    ref?.let { http.headers[HEADER_REFERER] = it }; ua?.let { http.headers[HEADER_USER_AGENT] = it }
                 }, redirected = { record = record.copy(url = it) }) { http ->
                     checkStopped()
                     referenceIndex--
                     if (referenceIndex < 0) { agentIndex--; if (agentIndex >= 0) referenceIndex = referers.lastIndex }
-                    if (http.responseCode != 200 && http.responseCode != 206) throw DownloadFailure.http(http)
+                    if (http.status.value != 200 && http.status.value != 206) throw DownloadFailure.http(http)
                     acceptMetadata(http, ref, ua)
                 }
                 if (accepted) return
@@ -108,11 +116,11 @@ internal class DownloadTransfer(
         error?.let { throw it }
     }
 
-    private fun acceptMetadata(http: HttpURLConnection, referer: String?, userAgent: String?): Boolean {
-        var mime = http.contentType?.let { if (';' in it) it.substringBefore(';').trim().lowercase(java.util.Locale.ROOT) else it }
+    private fun acceptMetadata(http: HttpResponse, referer: String?, userAgent: String?): Boolean {
+        var mime = http.headers["Content-Type"]?.let { if (';' in it) it.substringBefore(';').trim().lowercase(java.util.Locale.ROOT) else it }
         var extension = DownloadMimeTypes.extension(mime)
         if (mime == null || mime == "application/octet-stream") {
-            val name = DownloadFiles.name(http.url.toString(), http.getHeaderField("Content-Disposition"), null)
+            val name = DownloadFiles.name(http.request.url.toString(), http.headers["Content-Disposition"], null)
             if ('.' in name) { extension = name.substringAfterLast('.'); mime = DownloadMimeTypes.mime(extension, mime) }
         }
         val html = mime == "text/html" || extension == "html" || extension == "htm"
@@ -122,12 +130,12 @@ internal class DownloadTransfer(
             if (!extension.isNullOrEmpty() && extension != "bin") name = name.substringBeforeLast('.', name) + ".$extension"
             record = record.copy(name = name, mimeType = mime)
         }
-        var total = if (http.getHeaderField("Transfer-Encoding") == null) http.getHeaderField("Content-Length")?.toLongOrNull() ?: -1 else -1
-        if (total == -1L) total = DownloadNetwork.contentRangeLength(http.getHeaderField("Content-Range"))
-        var resumable = http.getHeaderField("Accept-Ranges").equals("bytes", true) || http.getHeaderField("Content-Range") != null
+        var total = if (http.headers["Transfer-Encoding"] == null) http.headers["Content-Length"]?.toLongOrNull() ?: -1 else -1
+        if (total == -1L) total = DownloadNetwork.contentRangeLength(http.headers["Content-Range"])
+        var resumable = http.headers["Accept-Ranges"].equals("bytes", true) || http.headers["Content-Range"] != null
         if (html) { total = -1; resumable = false }
         val headers = record.headers.toMutableMap()
-        http.getHeaderField("ETag")?.takeIf(String::isNotEmpty)?.let { headers["ETag"] = it }
+        http.headers["ETag"]?.takeIf(String::isNotEmpty)?.let { headers["ETag"] = it }
         if (referer == null) headers.remove("Referer") else headers["Referer"] = referer
         if (userAgent == null) headers.remove("User-Agent") else headers["User-Agent"] = userAgent
         val count = if (total > 0 && resumable) minOf(maxOf(1, record.chunks), maxOf(1, kotlin.math.ceil(total.toFloat() / 1_048_576f).toInt())) else 1
@@ -138,7 +146,7 @@ internal class DownloadTransfer(
         return true
     }
 
-    private fun transferChunks(): DownloadFailure? {
+    private suspend fun transferChunks(): DownloadFailure? {
         checkStopped()
         chunks = repository.chunks(record.id).ifEmpty {
             val ranges = if (record.totalSize > 0 && record.flags and 1 != 0) {
@@ -167,22 +175,29 @@ internal class DownloadTransfer(
             checkStopped()
             val waiting = remaining.drop(connections).toMutableList()
             val tasks = remaining.take(connections)
-            val futures = tasks.map { chunk -> executor.submit(Callable { transferChunk(chunk) }) }
             remaining.clear()
             var terminal = false
             failure = null
-            futures.forEachIndexed { index, future ->
-                if (terminal) { future.cancel(true); return@forEachIndexed }
-                val result = runCatching { future.get() }.getOrNull()
-                if (result != null) {
-                    attempts--; connections = maxOf(1, connections - 1); failure = result
-                    if (result.code in setOf(503, 500, 20, 31)) remaining += tasks[index] else terminal = true
+            coroutineScope {
+                val workers = tasks.map { chunk ->
+                    async(Dispatchers.IO) {
+                        // The original treated an unexpected worker exception like a finished chunk.
+                        try { transferChunk(chunk) } catch (error: CancellationException) { throw error } catch (_: Exception) { null }
+                    }
+                }
+                workers.forEachIndexed { index, worker ->
+                    if (terminal) { worker.cancel(); return@forEachIndexed }
+                    val result = worker.await()
+                    if (result != null) {
+                        attempts--; connections = maxOf(1, connections - 1); failure = result
+                        if (result.code in setOf(503, 500, 20, 31)) remaining += tasks[index] else terminal = true
+                    }
                 }
             }
             if (terminal) return failure
             remaining += waiting
             if (remaining.isNotEmpty() && attempts > 0) {
-                try { Thread.sleep(300) } catch (_: InterruptedException) { return DownloadFailure(1) }
+                delay(300)
                 if (failure == null) failure = DownloadFailure(30)
             }
         }
@@ -190,7 +205,7 @@ internal class DownloadTransfer(
         return if (remaining.isEmpty()) null else failure
     }
 
-    private fun transferChunk(chunk: DownloadChunk): DownloadFailure? {
+    private suspend fun transferChunk(chunk: DownloadChunk): DownloadFailure? {
         if (chunk.length > 0 && chunk.downloaded == chunk.length) return null
         if (record.flags and 1 == 0) chunk.downloaded = 0
         val resumed = chunk.downloaded > 0
@@ -201,16 +216,16 @@ internal class DownloadTransfer(
                 record.headers.forEach { (key, value) ->
                     when {
                         key.equals("ETag", true) -> etag = value
-                        key.equals("Referer", true) -> http.setRequestProperty("Referer", value)
-                        else -> http.addRequestProperty(key, value)
+                        key.equals("Referer", true) -> http.headers[HEADER_REFERER] = value
+                        else -> http.header(key, value)
                     }
                 }
-                http.setRequestProperty("Accept-Encoding", "identity"); http.setRequestProperty("Connection", "close")
-                if (resumed && etag != null) http.addRequestProperty("If-Match", etag)
-                if (chunk.length > 0) http.addRequestProperty("Range", "bytes=${chunk.begin}-${chunk.end}")
+                http.headers["Accept-Encoding"] = "identity"; http.headers["Connection"] = "close"
+                if (resumed && etag != null) http.header("If-Match", etag)
+                if (chunk.length > 0) http.header("Range", "bytes=${chunk.begin}-${chunk.end}")
             }) { http ->
-                if (http.responseCode != 200 && http.responseCode != 206) throw DownloadFailure.http(http)
-                if (http.responseCode == 200 && resumed) throw DownloadFailure(24)
+                if (http.status.value != 200 && http.status.value != 206) throw DownloadFailure.http(http)
+                if (http.status.value == 200 && resumed) throw DownloadFailure(24)
                 readChunk(http, chunk)
             }
             null
@@ -218,15 +233,13 @@ internal class DownloadTransfer(
     }
 
     /** m5.d.j is verified against smali: stream acquisition, reading and output errors differ. */
-    private fun readChunk(http: HttpURLConnection, chunk: DownloadChunk) {
+    private suspend fun readChunk(http: HttpResponse, chunk: DownloadChunk) {
         checkStopped()
-        val requiresLength = chunk.length <= 0 && !http.getHeaderField("Connection").equals("close", true) && !http.getHeaderField("Transfer-Encoding").equals("chunked", true)
-        val length = http.getHeaderField("Content-Length")?.toLongOrNull()
+        val requiresLength = chunk.length <= 0 && !http.headers["Connection"].equals("close", true) && !http.headers["Transfer-Encoding"].equals("chunked", true)
+        val length = http.headers["Content-Length"]?.toLongOrNull()
         if (length != null && chunk.length > 0 && length > chunk.length) throw DownloadFailure(24)
         if (requiresLength) { if (length == null || length <= 0 || chunk.start != 0L) throw DownloadFailure(24); chunk.length = length }
-        val input = try { http.inputStream }
-            catch (_: SocketTimeoutException) { throw DownloadFailure(23) }
-            catch (failure: IOException) { throw DownloadFailure(20, failure) }
+        val input = http.bodyAsChannel()
         var sink: DownloadOutput? = null
         try {
             val output = try { DownloadOutput.open(context, record) }
@@ -248,7 +261,7 @@ internal class DownloadTransfer(
             }
             while (true) {
                 checkStopped()
-                val count = try { input.read(buffer) } catch (failure: IOException) { throw DownloadFailure(20, failure) }
+                val count = try { input.readAvailable(buffer) } catch (failure: IOException) { throw DownloadFailure(20, failure) }
                 if (count == -1) break
                 try { output.write(buffer, 0, count) } catch (failure: IOException) { throw DownloadFailure(12, failure) }
                 chunk.downloaded += count
@@ -259,7 +272,6 @@ internal class DownloadTransfer(
             report(true)
             if (chunk.length > 0 && abs(chunk.downloaded - chunk.length) > 1) throw DownloadFailure(31)
         } finally {
-            try { input.close() } catch (_: IOException) { }
             try { sink?.close() } catch (_: IOException) { }
         }
     }
@@ -281,27 +293,41 @@ internal class DownloadTransfer(
     }
 
     /** i5.b applies fresh cookies per redirect and caps the original redirect traversal at five requests. */
-    private fun <T> connection(initial: String, headers: (HttpURLConnection) -> Unit, redirected: (String) -> Unit = {}, block: (HttpURLConnection) -> T): T {
+    private suspend fun <T> connection(initial: String, headers: (HttpRequestBuilder) -> Unit, redirected: (String) -> Unit = {},
+        block: suspend (HttpResponse) -> T): T {
         var url = initial
         repeat(5) {
             val target = try { URL(url) } catch (failure: MalformedURLException) { throw DownloadFailure(21, failure) }
-            val http = try { target.openConnection() as HttpURLConnection }
-                catch (failure: IOException) { throw connectionFailure(failure) }
+            // Assigned only when the hop is a redirect; otherwise the block's result is returned below.
+            var next: String? = null
             try {
-                http.instanceFollowRedirects = false; http.connectTimeout = 20_000; http.readTimeout = 20_000
-                http.setRequestProperty("Accept-Encoding", "identity")
-                runCatching { CookieManager.getInstance().getCookie(url) }.getOrNull()?.let { http.setRequestProperty("Cookie", it) }
-                DownloadNetwork.configure(http)
-                headers(http)
-                when (http.responseCode) {
-                    301, 302, 303, 307, 308 -> { url = URL(http.url, http.getHeaderField("Location")).toString(); redirected(url) }
-                    else -> return block(http)
+                val result = DownloadNetwork.client.prepareGet(url) {
+                    this.headers["Accept-Encoding"] = "identity"
+                    runCatching { CookieManager.getInstance().getCookie(url) }.getOrNull()?.let { this.headers["Cookie"] = it }
+                    headers(this)
+                }.execute { http ->
+                    when (http.status.value) {
+                        301, 302, 303, 307, 308 -> {
+                            next = try { URL(target, http.headers["Location"]).toString() }
+                                catch (failure: MalformedURLException) { throw DownloadFailure(21, failure) }
+                            null
+                        }
+                        else -> Box(block(http))
+                    }
                 }
+                if (result != null) return result.value
             } catch (failure: DownloadFailure) { throw failure }
             catch (failure: IOException) { throw connectionFailure(failure) }
-            finally { http.disconnect() }
+            url = next ?: throw DownloadFailure(21)
+            redirected(url)
         }
         throw DownloadFailure(25)
+    }
+
+    private class Box<T>(val value: T)
+    private companion object {
+        const val HEADER_REFERER = "Referer"
+        const val HEADER_USER_AGENT = "User-Agent"
     }
 
     private fun connectionFailure(failure: IOException) = DownloadFailure(when (failure) {
@@ -324,5 +350,5 @@ internal class DownloadFailure(val code: Int, cause: Throwable? = null, message:
     24 -> "Non Resumable"; 25 -> "Too Many Redirects"; 30 -> "Task Submit Failed"; 31 -> "Chunk Verify Failed"
     32 -> "No Network Connection"; 40 -> "Decode Error"; else -> null
 }, cause) {
-    companion object { fun http(http: HttpURLConnection) = DownloadFailure(http.responseCode, message = "HTTP Error: ${http.responseCode} ${http.responseMessage}") }
+    companion object { fun http(http: HttpResponse) = DownloadFailure(http.status.value, message = "HTTP Error: ${http.status.value} ${http.status.description}") }
 }

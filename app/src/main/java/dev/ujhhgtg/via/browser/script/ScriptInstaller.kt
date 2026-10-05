@@ -102,7 +102,7 @@ class ScriptInstaller(private val fragment: Fragment) {
     private fun installFailed(name: String) = ViaToast.show(fragment.requireContext(),
         fragment.getString(R.string.toast_install_script_failed_unknown, name))
 
-    private fun <T : Any> execute(task: () -> T, completed: (T) -> Unit,
+    private fun <T : Any> execute(task: suspend () -> T, completed: (T) -> Unit,
         failed: (Throwable) -> Unit = { Log.e("ViaScripts", "Userscript operation failed", it) }) {
         fragment.viewLifecycleOwner.launchIo(task, completed, failed)
     }

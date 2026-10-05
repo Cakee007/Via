@@ -18,7 +18,9 @@ import dev.ujhhgtg.via.browser.script.ScriptResources
 import dev.ujhhgtg.via.browser.script.ScriptStore
 import dev.ujhhgtg.via.browser.script.UserScript
 import dev.ujhhgtg.via.common.GeneratedDocumentState
+import dev.ujhhgtg.via.common.applicationIoScope
 import dev.ujhhgtg.via.common.launchIo
+import kotlinx.coroutines.launch
 import dev.ujhhgtg.via.data.BookmarkRepository
 import dev.ujhhgtg.via.data.BrowserDataBackup
 import dev.ujhhgtg.via.data.BrowserDatabase
@@ -507,13 +509,13 @@ class SettingsController(
     private fun prepareDependencies(scripts: List<UserScript>) {
         val dependencies = scripts.filter { it.requires.isNotEmpty() || it.resources.isNotEmpty() }
         if (dependencies.isEmpty()) return
-        Thread({
+        applicationIoScope.launch {
             val resources = ScriptResources(applicationContext)
-            val failed = dependencies.filterNot(resources::ensure)
+            val failed = dependencies.filterNot { resources.ensure(it) }
             if (failed.isNotEmpty()) runOnUiThread {
-                ViaToast.makeText(this, failed.joinToString("\n") { getString(R.string.toast_install_script_failed_dependency_error, it.name) }, ViaToast.LENGTH_LONG).show()
+                ViaToast.makeText(this@SettingsController, failed.joinToString("\n") { getString(R.string.toast_install_script_failed_dependency_error, it.name) }, ViaToast.LENGTH_LONG).show()
             }
-        }, "via-script-dependencies").start()
+        }
     }
 
     private fun about() = AlertDialog.Builder(this)

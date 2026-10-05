@@ -2,10 +2,13 @@ package dev.ujhhgtg.via.downloads
 
 import android.content.Context
 import android.net.ConnectivityManager
-import java.net.HttpURLConnection
+import dev.ujhhgtg.via.common.platformUserAgent
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.UserAgent
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
-import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
@@ -20,23 +23,32 @@ internal object DownloadNetwork {
         return connectivity.getNetworkCapabilities(active) != null
     }
 
-    fun configure(connection: HttpURLConnection) {
-        if (connection !is HttpsURLConnection) return
-        // Original l5.b.c ignores factory-creation exceptions but always installs i5.a afterwards.
-        // FIXME: verbatim from the original: downloads trust every certificate and host name, so a forged
-        //  certificate is accepted silently. Review whether to keep this behavior.
-        runCatching {
-            @android.annotation.SuppressLint("CustomX509TrustManager", "TrustAllX509TrustManager")
-            val trust = object : X509TrustManager {
-                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) = Unit
-                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) = Unit
-                override fun getAcceptedIssuers(): Array<X509Certificate>? = null
+    /** The download engine's own client: redirects are followed manually (cookies per hop, five-request cap). */
+    val client = HttpClient(OkHttp) {
+        followRedirects = false
+        engine {
+            config {
+                followRedirects(false)
+                followSslRedirects(false)
+                // Original l5.b.c ignores factory-creation exceptions but always installs i5.a afterwards.
+                // FIXME: verbatim from the original: downloads trust every certificate and host name, so a forged
+                //  certificate is accepted silently. Review whether to keep this behavior.
+                runCatching {
+                    @android.annotation.SuppressLint("CustomX509TrustManager", "TrustAllX509TrustManager")
+                    val trust = object : X509TrustManager {
+                        override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) = Unit
+                        override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) = Unit
+                        override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+                    }
+                    sslSocketFactory(SSLContext.getInstance("TLS").apply {
+                        init(null, arrayOf<TrustManager>(trust), SecureRandom())
+                    }.socketFactory, trust)
+                }
+                hostnameVerifier { _, _ -> true }
             }
-            connection.sslSocketFactory = SSLContext.getInstance("TLS").apply {
-                init(null, arrayOf<TrustManager>(trust), SecureRandom())
-            }.socketFactory
         }
-        connection.hostnameVerifier = javax.net.ssl.HostnameVerifier { _, _ -> true }
+        install(HttpTimeout) { connectTimeoutMillis = 20_000; socketTimeoutMillis = 20_000 }
+        install(UserAgent) { agent = platformUserAgent }
     }
 
     /** l5.b.f: total after '/', or the inclusive returned range when its total is '*'. */
