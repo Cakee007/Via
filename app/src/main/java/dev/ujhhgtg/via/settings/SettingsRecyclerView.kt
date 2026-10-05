@@ -10,16 +10,17 @@ import androidx.dynamicanimation.animation.DynamicAnimation
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
 import androidx.recyclerview.widget.RecyclerView
+import dev.ujhhgtg.via.ui.widgets.ViaFastScroller
 import kotlin.math.min
 
 /** mark.via.common.widget.u0, q4.a and z8.r3's list configuration. */
-class SettingsRecyclerView(context: Context) : RecyclerView(context), dev.ujhhgtg.via.ui.widgets.ViaFastScroller.Target {
-    private var fastScroll: dev.ujhhgtg.via.ui.widgets.ViaFastScroller? = null
+class SettingsRecyclerView(context: Context) : RecyclerView(context), ViaFastScroller.Target {
+    private var fastScroll: ViaFastScroller? = null
 
     init {
         isVerticalScrollBarEnabled = false
         overScrollMode = OVER_SCROLL_IF_CONTENT_SCROLLS
-        fastScroll = dev.ujhhgtg.via.ui.widgets.ViaFastScroller(this)
+        fastScroll = ViaFastScroller(this)
         edgeEffectFactory = StretchEdgeEffectFactory()
     }
 

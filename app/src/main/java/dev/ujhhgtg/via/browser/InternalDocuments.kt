@@ -53,7 +53,10 @@ object InternalDocuments {
                 val rows = buildList {
                     if (resolvedFolder.isNotEmpty()) {
                         val parent = current?.parentFolderId?.let(repo::findFolder)
-                        add(BookmarkRow("..", parent?.ordering ?: 0, bookmarkFolderUrl(parent?.id.orEmpty()), true, true))
+                        add(BookmarkRow("..", parent?.ordering ?: 0, bookmarkFolderUrl(parent?.id.orEmpty()),
+                            folder = true,
+                            immutable = true
+                        ))
                     }
                     database.readableDatabase.query("bookmark_folders", arrayOf("_id", "title", "ordering"),
                         "parent_folder_id = ?", arrayOf(resolvedFolder), null, null, null).use { cursor ->
@@ -75,21 +78,21 @@ object InternalDocuments {
                     }
                 }
                 FileWriter(file).buffered().use { writer ->
-                    val title = if (!rootRequest && !current?.title.isNullOrEmpty()) normalizeTitle(current!!.title) else context.getString(R.string.action_bookmarks)
+                    val title = if (!rootRequest && !current?.title.isNullOrEmpty()) normalizeTitle(current.title) else context.getString(R.string.action_bookmarks)
                     writer.write(InternalDocumentHtml.head(title))
                     writer.write(InternalDocumentHtml.style(InternalDocumentHtml.css(context, preferences)))
                     writer.write(InternalDocumentHtml.BODY)
                     var foldersOpened = false
                     var bookmarksOpened = false
-                    for (row in rows) {
-                        if (row.folder) {
+                    for ((title, _, url, folder) in rows) {
+                        if (folder) {
                             if (!foldersOpened) { writer.write("<div id=\"bookmark_folders\">"); foldersOpened = true }
                         } else if (!bookmarksOpened) {
                             if (foldersOpened) writer.write("</div>")
                             writer.write("<div id=\"bookmark_tags\">")
                             bookmarksOpened = true
                         }
-                        writer.write(InternalDocumentHtml.row(row.url, row.title.orEmpty(), if (row.folder) "tag" else "bookmark"))
+                        writer.write(InternalDocumentHtml.row(url, title.orEmpty(), if (folder) "tag" else "bookmark"))
                     }
                     // The source closes the bookmark group here, but leaves an all-folder group to HTML parsing.
                     if (bookmarksOpened) writer.write("</div>")

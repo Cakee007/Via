@@ -697,17 +697,33 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         top.addView(reloadButton, LinearLayout.LayoutParams(dp(48), dp(48)))
         if (customMode) {
             customChrome = CustomTabToolbar(host, host.intent, object : CustomTabToolbar.Host {
-                override fun currentUrl() = visibleUrl(current())
-                override fun hasScripts() = ScriptStore(host).use { it.list().isNotEmpty() }
+                override fun currentUrl() = current()?.url
+                // s6.Va: i0.s, r9.k.e and p5.a.C (patterns of every non-negative script).
+                override fun hasScripts(): Boolean {
+                    val url = current()?.url
+                    return preferences.scriptsEnabled && url != null && url.length > 6 && UrlResolver.isHttpUrl(url) &&
+                        !CustomTabToolbar.scriptsBlocked(url) &&
+                        ScriptStore(host).use { store -> store.list().any { it.id >= 0 && it.appliesTo(url) } }
+                }
+                // s6.T4 / s6.l5
                 override fun onAction(action: String) {
+                    val url = current()?.url
                     when (action) {
-                        CustomTabToolbar.SHARE -> performMenuAction(6)
+                        CustomTabToolbar.SHARE -> if (!url.isNullOrEmpty()) shareUrl(url)
                         CustomTabToolbar.BOOKMARK -> editBookmark()
                         CustomTabToolbar.FIND -> showFind()
                         CustomTabToolbar.TRANSLATE -> showTranslation()
-                        CustomTabToolbar.SCRIPTS -> showPageScripts()
-                        CustomTabToolbar.COPY -> copy(visibleUrl(current()))
-                        CustomTabToolbar.OPEN_IN_BROWSER -> { startActivity(Intent(host, Shell::class.java).setAction(Intent.ACTION_VIEW).setData(visibleUrl(current()).toUri())); host.finish() }
+                        CustomTabToolbar.SCRIPTS -> if (!url.isNullOrEmpty()) showPageScripts()
+                        CustomTabToolbar.COPY -> if (!url.isNullOrEmpty()) {
+                            copy(url)
+                            ViaToast.makeText(host, text(R.string.toast_copy_url_successful), ViaToast.LENGTH_SHORT).show()
+                        }
+                        // z8.b0.P
+                        CustomTabToolbar.OPEN_IN_BROWSER -> if (!url.isNullOrEmpty()) {
+                            startActivity(Intent(Intent.ACTION_VIEW, url.toUri()).setClass(host, Shell::class.java)
+                                .putExtra(ViaIntents.EXTRA_INTENT, ViaIntents.MARKER_BROWSER))
+                            host.finish()
+                        }
                     }
                 }
             })
@@ -1141,8 +1157,17 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
 
     private fun attachSelected() {
         if (!::browserHost.isInitialized) return
-        browserHost.removeAllViews()
-        current()?.let { tab -> (tab.webView.parent as? ViewGroup)?.removeView(tab.webView); browserHost.addView(tab.webView, FrameLayout.LayoutParams(-1, -1)); installContextMenu(tab); installPageGestures(tab) }
+        val tab = current()
+        val web = tab?.webView
+        // Detaching a WebView releases its compositor surface, so re-adding the
+        // same view paints an empty frame. Keep it attached when the selection is
+        // unchanged and add a new page before dropping the old one.
+        if (web != null && web.parent !== browserHost) {
+            (web.parent as? ViewGroup)?.removeView(web)
+            browserHost.addView(web, 0, FrameLayout.LayoutParams(-1, -1))
+        }
+        for (i in browserHost.childCount - 1 downTo 0) if (browserHost.getChildAt(i) !== web) browserHost.removeViewAt(i)
+        tab?.let { installContextMenu(it); installPageGestures(it) }
         updateChrome()
         currentWebView()?.let { web ->
             progress.setPageProgress((if (pageTypeOf(web.url) > 0) 100 else web.progress) + 20)
@@ -1821,7 +1846,6 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             }
             if (tab.url.isNotEmpty()) short else text(R.string.untitled)
         }
-        if (tabs.size == 1 && !returnToCaller) tabs.createTab(preferences.home, select = true, clearClosedTabRecovery = false)
         worker.execute {
             if (snapshot == null) deleteSession(closedId)
             else {
@@ -1840,10 +1864,17 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 }
             }
         }
-        tabs.close(tab.id, allowLast = returnToCaller)
+        val replacingLastTab = tabs.size == 1 && !returnToCaller
+        tabs.close(tab.id, allowLast = returnToCaller || replacingLastTab)
         if (returnToCaller) {
             if (tabs.size > 0) host.moveTaskToBack(true) else host.finish()
             return
+        }
+        if (replacingLastTab) {
+            // ua.C0 removes the selected tab before creating the replacement
+            // home tab.  The ordering preserves the original tab-strip event
+            // sequence, including the brief replacement WebView transition.
+            tabs.createTab(preferences.home, select = true, clearClosedTabRecovery = false)
         }
         if (attach) attachSelected()
     }
@@ -2150,8 +2181,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             showAddressInput(prefill = clipboardText())
         }
         menu.add(text(R.string.paste_and_go)) { pasteAndGo() }
-        // c8.s6$g anchors the popup to the whole toolbar (f2769x0).
-        menu.show(navigationBar)
+        menu.show(anchor)
     }
 
     /** g6.n.d: the current clipboard text, empty when unavailable. */
@@ -2391,7 +2421,13 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         val rootPosition = IntArray(2); root.getLocationOnScreen(rootPosition)
         ViaDialog(host).items(items.map { it.second }.toTypedArray(), onClick = { which ->
             when (items[which].first) {
-                0 -> { tabs.createTab(link, select = false, insertIndex = tabs.indexOf(current()) + 1); attachSelected(); updateChrome(); ViaToast.makeText(host, text(R.string.opened_in_background_message), ViaToast.LENGTH_SHORT).show() }
+                0 -> {
+                    tabs.createTab(link, select = false, insertIndex = tabs.indexOf(current()) + 1)
+                    // Background creation leaves the selected WebView mounted.
+                    // Only refresh the chrome count; reattaching here causes a
+                    // visible flash, and the original link menu has no toast.
+                    updateChrome()
+                }
                 1 -> { tabs.createTab(link, select = true, insertIndex = tabs.indexOf(current()) + 1); attachSelected(); updateChrome() }
                 2 -> {
                     val address = src ?: return@items
@@ -3362,6 +3398,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     /** Q7/C5: window cover, bottom toolbar and optional search toolbar are separate layers. */
     private fun applyToolbarBackground(frame: ToolbarColorController.BackgroundFrame) {
         browserLayout.bottom.setBackgroundColor(frame.color)
+        if (customMode) customChrome?.setBackgroundColor(frame.color)
         if (!frame.onlyToolbar) {
             currentBackgroundColor = frame.color
             nativeBackground.setCoverColor(frame.color)

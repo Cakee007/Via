@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- com.tuyafeng.support.widget.z: x7.n.j (title), x7.n.l (text item), x7.n.c (item padding), x7.n.d (icon item width). -->
+    <dimen name="custom_tab_title_size">16sp</dimen>
+    <dimen name="custom_tab_action_text_size">14sp</dimen>
+    <dimen name="custom_tab_item_padding">13dp</dimen>
+    <dimen name="custom_tab_item_width">48dp</dimen>
+</resources>

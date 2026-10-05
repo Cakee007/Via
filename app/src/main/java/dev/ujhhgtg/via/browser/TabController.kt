@@ -4,8 +4,14 @@ import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.os.Message
+import android.view.View
+import android.webkit.GeolocationPermissions
+import android.webkit.HttpAuthHandler
+import android.webkit.PermissionRequest
+import android.webkit.SslErrorHandler
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import dev.ujhhgtg.via.browser.script.ScriptManager
@@ -13,6 +19,7 @@ import dev.ujhhgtg.via.browser.script.ScriptStore
 import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.data.SessionTab
 import dev.ujhhgtg.via.data.SiteConfiguration
+import dev.ujhhgtg.via.ui.behavior.GestureWebView
 
 /** Owns WebViews and their saved state while leaving activity UI decisions to [Host]. */
 class TabController(
@@ -49,19 +56,19 @@ class TabController(
         fun onNavigationRequest(tab: BrowserTab, url: String): Boolean = false
         fun onExternalUrl(tab: BrowserTab, url: String) = Unit
         fun onInternalUrl(tab: BrowserTab, url: String) = onExternalUrl(tab, url)
-        fun onError(tab: BrowserTab, request: WebResourceRequest?, error: android.webkit.WebResourceError?) = Unit
-        fun onHttpAuth(tab: BrowserTab, handler: android.webkit.HttpAuthHandler, host: String, realm: String?) = Unit
-        fun onSslError(tab: BrowserTab, handler: android.webkit.SslErrorHandler, error: android.net.http.SslError) =
+        fun onError(tab: BrowserTab, request: WebResourceRequest?, error: WebResourceError?) = Unit
+        fun onHttpAuth(tab: BrowserTab, handler: HttpAuthHandler, host: String, realm: String?) = Unit
+        fun onSslError(tab: BrowserTab, handler: SslErrorHandler, error: android.net.http.SslError) =
             handler.cancel()
         fun onCreateWindow(tab: BrowserTab, isDialog: Boolean, userGesture: Boolean, message: Message) = message.sendToTarget()
         fun onPopupCreated(opener: BrowserTab, popup: BrowserTab) = Unit
         fun onWindowClosed(tab: BrowserTab) = Unit
-        fun onGeolocationPrompt(tab: BrowserTab, origin: String, callback: android.webkit.GeolocationPermissions.Callback) =
+        fun onGeolocationPrompt(tab: BrowserTab, origin: String, callback: GeolocationPermissions.Callback) =
             callback.invoke(origin, false, false)
         fun onGeolocationHidePrompt(tab: BrowserTab) = Unit
-        fun onPermissionRequest(tab: BrowserTab, request: android.webkit.PermissionRequest) = request.deny()
-        fun onPermissionRequestCanceled(tab: BrowserTab, request: android.webkit.PermissionRequest) = Unit
-        fun onShowCustomView(tab: BrowserTab, view: android.view.View, callback: WebChromeClient.CustomViewCallback) =
+        fun onPermissionRequest(tab: BrowserTab, request: PermissionRequest) = request.deny()
+        fun onPermissionRequestCanceled(tab: BrowserTab, request: PermissionRequest) = Unit
+        fun onShowCustomView(tab: BrowserTab, view: View, callback: WebChromeClient.CustomViewCallback) =
             callback.onCustomViewHidden()
         fun onHideCustomView(tab: BrowserTab) = Unit
         fun onFormResubmission(tab: BrowserTab, dontResend: Message, resend: Message) =
@@ -168,7 +175,7 @@ class TabController(
         val id = savedState?.let(BrowserTab::stateId) ?: BrowserTab.nextId()
         BrowserTab.observeId(id)
         // Via's privacy is global plus SiteConf, not a permanent property of a tab.
-        val webView = dev.ujhhgtg.via.ui.behavior.GestureWebView(appContext).apply { this.id = android.view.View.generateViewId() }
+        val webView = GestureWebView(appContext).apply { this.id = View.generateViewId() }
         lateinit var tab: BrowserTab
         val engine = BrowserEngine(appContext, preferences, callbacksFor { tab }, siteConfiguration, filterEngine, scripts, userAgentForId, bridgeSecret, allowBlockedPage = { url -> DocumentPolicy.host(url) in allowedBlockedPageHosts })
         engine.configure(webView, url)
@@ -349,7 +356,7 @@ class TabController(
         val oldPage = history.pages[history.current]
         if (freezePreviousForward) oldPage.nativeForwardAllowance = 0 // H(..., 0) calls the old view's o().
         discardForwardPages(tab)
-        val created = dev.ujhhgtg.via.ui.behavior.GestureWebView(appContext).apply { id = android.view.View.generateViewId() }
+        val created = GestureWebView(appContext).apply { id = View.generateViewId() }
         val engine = BrowserEngine(appContext, preferences, callbacksFor { tab }, siteConfiguration, filterEngine, scripts, userAgentForId, bridgeSecret, allowBlockedPage = { url -> DocumentPolicy.host(url) in allowedBlockedPageHosts })
         engine.configure(created, target)
         previous.stopLoading()
@@ -527,7 +534,7 @@ class TabController(
         val page = history.pages[next]
         val cached = page.view
         if (cached == null) {
-            val created = dev.ujhhgtg.via.ui.behavior.GestureWebView(appContext).apply { id = android.view.View.generateViewId() }
+            val created = GestureWebView(appContext).apply { id = View.generateViewId() }
             val engine = BrowserEngine(appContext, preferences, callbacksFor { tab }, siteConfiguration, filterEngine, scripts, userAgentForId, bridgeSecret, allowBlockedPage = { url -> DocumentPolicy.host(url) in allowedBlockedPageHosts })
             page.view = created
             page.engine = engine
@@ -686,11 +693,11 @@ class TabController(
         }
         override fun onExternalUrl(webView: WebView, url: String) = host.onExternalUrl(tab(), url)
         override fun onInternalUrl(webView: WebView, url: String) = host.onInternalUrl(tab(), url)
-        override fun onError(webView: WebView, request: WebResourceRequest?, error: android.webkit.WebResourceError?) =
+        override fun onError(webView: WebView, request: WebResourceRequest?, error: WebResourceError?) =
             host.onError(tab(), request, error)
-        override fun onHttpAuth(webView: WebView, handler: android.webkit.HttpAuthHandler, host: String, realm: String?) =
+        override fun onHttpAuth(webView: WebView, handler: HttpAuthHandler, host: String, realm: String?) =
             this@TabController.host.onHttpAuth(tab(), handler, host, realm)
-        override fun onSslError(webView: WebView, handler: android.webkit.SslErrorHandler, error: android.net.http.SslError) =
+        override fun onSslError(webView: WebView, handler: SslErrorHandler, error: android.net.http.SslError) =
             host.onSslError(tab(), handler, error)
         override fun onCreateWindow(source: WebView, isDialog: Boolean, userGesture: Boolean, message: Message) =
             host.onCreateWindow(tab(), isDialog, userGesture, message)
@@ -708,12 +715,12 @@ class TabController(
             listeners.toList().forEach { it.onTabsMoved(all.size - 1, ordered.indexOfFirst { tab -> tab.id == created.id }, ordered.indexOfFirst { tab -> tab.id == selectedId }) }
             host.onPopupCreated(tab(), created)
         }
-        override fun onGeolocationPrompt(origin: String, callback: android.webkit.GeolocationPermissions.Callback) =
+        override fun onGeolocationPrompt(origin: String, callback: GeolocationPermissions.Callback) =
             host.onGeolocationPrompt(tab(), origin, callback)
         override fun onGeolocationHidePrompt() = host.onGeolocationHidePrompt(tab())
-        override fun onPermissionRequest(request: android.webkit.PermissionRequest) = host.onPermissionRequest(tab(), request)
-        override fun onPermissionRequestCanceled(request: android.webkit.PermissionRequest) = host.onPermissionRequestCanceled(tab(), request)
-        override fun onShowCustomView(view: android.view.View, callback: WebChromeClient.CustomViewCallback) =
+        override fun onPermissionRequest(request: PermissionRequest) = host.onPermissionRequest(tab(), request)
+        override fun onPermissionRequestCanceled(request: PermissionRequest) = host.onPermissionRequestCanceled(tab(), request)
+        override fun onShowCustomView(view: View, callback: WebChromeClient.CustomViewCallback) =
             host.onShowCustomView(tab(), view, callback)
         override fun onHideCustomView() = host.onHideCustomView(tab())
         override fun onFormResubmission(webView: WebView, dontResend: Message, resend: Message) =

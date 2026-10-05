@@ -7,7 +7,7 @@ import android.util.Log
 import android.widget.Toast
 
 /**
- * com.tuyafeng.support.crash.a + BrowserApp.g/b/c: [DERIVED FROM ORIGINAL] background threads' uncaught exceptions are
+ * [DIVERGED FROM ORIGINAL] com.tuyafeng.support.crash.a + BrowserApp.g/b/c: background threads' uncaught exceptions are
  * reported with the original's diagnostic toast without ending the process, while main-thread
  * failures are handed to the system handler and crash normally.
  */

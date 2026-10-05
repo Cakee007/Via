@@ -22,7 +22,9 @@ open class Shell : ViaActivity() {
     private lateinit var softInputAssist: SoftInputAssistObserver
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        WindowInsetsHelper.enableEdgeToEdge(this)
+        // Original CustomTab uses the platform-fitted window; only the main
+        // browser Shell opts into the edge-to-edge canvas.
+        if (!intent.getBooleanExtra("CUSTOM_TAB", false)) WindowInsetsHelper.enableEdgeToEdge(this)
         super.onCreate(savedInstanceState)
         window.attributes = window.attributes.apply {
             layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
@@ -32,7 +34,9 @@ open class Shell : ViaActivity() {
             layoutParams = FrameLayout.LayoutParams(-1, -1)
         })
         if (savedInstanceState == null) {
-            if (BrowserPreferences(this).agreementLevel < 1) {
+            // mark.via.CustomTab.V launches the browser directly and never
+            // inserts the normal first-run agreement fragment.
+            if (!intent.getBooleanExtra("CUSTOM_TAB", false) && BrowserPreferences(this).agreementLevel < 1) {
                 supportFragmentManager.beginTransaction().setReorderingAllowed(true)
                     .replace(R.id.fragment_container, WelcomeFragment(), WelcomeFragment::class.java.name).commit()
             } else showBrowser()

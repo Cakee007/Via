@@ -119,7 +119,10 @@ class BrowserEngine(
 
     /** Applies the common WebView policy recovered from Via's `s4.b.f` and `e8.i`. */
     @SuppressLint("SetJavaScriptEnabled", "WebSettingsDeprecated")
-    fun configure(webView: WebView, url: String? = null) {
+    fun configure(webView: WebView, url: String? = null) = configure(webView, url, installBindings = true)
+
+    @SuppressLint("SetJavaScriptEnabled", "WebSettingsDeprecated")
+    private fun configure(webView: WebView, url: String?, installBindings: Boolean) {
         webView.setBackgroundColor(0)
         webView.isFocusable = true
         webView.isScrollbarFadingEnabled = true
@@ -163,6 +166,8 @@ class BrowserEngine(
         cookies.setAcceptThirdPartyCookies(webView, cookiesEnabled && preferences.webFlags and 16_384 != 0)
         WebView.setWebContentsDebuggingEnabled(preferences.webFlags and 4_096 != 0)
 
+        if (!installBindings) return
+
         // These platform bridges are legacy attack surfaces and are removed by Via before its
         // own page bridge is attached. Community code intentionally exposes no implicit bridge.
         webView.removeJavascriptInterface("searchBoxJavaBridge_")
@@ -204,7 +209,9 @@ class BrowserEngine(
     }
 
     fun reloadPreferences(webView: WebView, url: String? = webView.url) {
-        configure(webView, url)
+        // ua.n1 -> r4.a.t reapplies WebSettings to every live tab, but the
+        // WebView clients and JavaScript bridges already belong to this engine.
+        configure(webView, url, installBindings = false)
     }
 
     /** c8.ua.n1(false,true): rebind darkening and the external page's injected CSS in place. */
@@ -263,15 +270,19 @@ class BrowserEngine(
     fun destroy(webView: WebView) {
         runCatching {
             viaBridge = null
+            // Destroying an attached WebView leaves a dead surface on screen until the host swaps it out.
+            (webView.parent as? android.view.ViewGroup)?.removeView(webView)
             webView.stopLoading()
             webView.settings.javaScriptEnabled = false
             webView.setWebViewClient(WebViewClient())
             webView.webChromeClient = null
             webView.tag = null
             webView.clearHistory()
-            webView.clearCache(false)
+            // [DIVERGED FROM ORIGINAL] BRO WHAT THE FUCK
+            // webView.clearCache(false)
             webView.onPause()
             webView.removeAllViews()
+            @Suppress("DEPRECATION")
             webView.destroyDrawingCache()
             webView.destroy()
         }
