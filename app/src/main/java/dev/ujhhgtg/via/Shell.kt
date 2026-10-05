@@ -12,7 +12,9 @@ import dev.ujhhgtg.via.common.SoftInputAssistObserver
 import dev.ujhhgtg.via.common.WindowInsetsHelper
 import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.engine.Engines
+import dev.ujhhgtg.via.home.HomeCustomizationFragment
 import dev.ujhhgtg.via.settings.SettingsFragment
+import dev.ujhhgtg.via.tools.PdfViewerFragment
 import dev.ujhhgtg.via.ui.ViaActivity
 import dev.ujhhgtg.via.ui.WelcomeFragment
 import java.util.WeakHashMap
@@ -120,8 +122,8 @@ open class Shell : ViaActivity() {
         if (manager.isStateSaved) return
         manager.fragments.filter { it.view != null && !it.isDetached }.forEach { fragment ->
             when (fragment) {
-                is dev.ujhhgtg.via.home.HomeCustomizationFragment -> fragment.refreshForTheme()
-                is dev.ujhhgtg.via.tools.PdfViewerFragment -> {
+                is HomeCustomizationFragment -> fragment.refreshForTheme()
+                is PdfViewerFragment -> {
                     manager.beginTransaction().detach(fragment).commit()
                     manager.beginTransaction().attach(fragment).commit()
                 }
@@ -131,7 +133,6 @@ open class Shell : ViaActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        // Original Shell dispatches to its Intent receiver without replacing the cold-start Intent.
         browserFragment()?.onNewIntent(intent)
     }
 
@@ -143,7 +144,8 @@ open class Shell : ViaActivity() {
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val browser = browserFragment()
-        return event.action == KeyEvent.ACTION_DOWN && browser?.isVisible == true && browser.onKeyDown(event.keyCode, event) || super.dispatchKeyEvent(event)
+        return event.action == KeyEvent.ACTION_DOWN && browser?.isVisible == true && browser.onKeyDown(
+            event) || super.dispatchKeyEvent(event)
     }
 
     private fun browserFragment() = supportFragmentManager.findFragmentByTag(BrowserFragment::class.java.name) as? BrowserFragment

@@ -3518,7 +3518,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         if (::browserLayout.isInitialized) { configureBrowserLayout(); applyAppearance() }
     }
 
-    fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+    fun onKeyDown(event: KeyEvent): Boolean {
         if (!::tabs.isInitialized) return false
         val allowed = customView == null && !appFullscreen && childFragmentManager.backStackEntryCount == 0
         when (val command = BrowserActions.keyCommand(event, behavior.volumeScroll, allowed) ?: return false) {
@@ -3530,6 +3530,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         }
         return true
     }
+
     /** c8.s6.kb / c8.f8.l: while a popup is open the content subtree is
      * invisible to accessibility, the pane takes focus, and the address row
      * gets the z8.l.c render-effect blur. */
