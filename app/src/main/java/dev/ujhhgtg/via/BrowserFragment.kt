@@ -878,8 +878,12 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         pendingIncomingRoutes.toList().also { pendingIncomingRoutes.clear() }.forEach { routeIncoming(it, coldStart = false) }
         if (askToRestore.isNotEmpty()) {
             val saved = askToRestore
-            ViaToast.show(host, text(R.string.restore_tabs_hint), ViaToast.LENGTH_LONG, text(android.R.string.ok)) {
-                restoreIncomingSessions(saved.map { it.id }, saved.firstOrNull { it.flags and 4 != 0 }?.id)
+            // ViaToast drops messages while the window isn't shown, which is still the case during view creation.
+            root.post {
+                if (!isAdded) return@post
+                ViaToast.show(host, text(R.string.restore_tabs_hint), ViaToast.LENGTH_LONG, text(android.R.string.ok)) {
+                    restoreIncomingSessions(saved.map { it.id }, saved.firstOrNull { it.flags and 4 != 0 }?.id)
+                }
             }
         }
         applyAppearance()
