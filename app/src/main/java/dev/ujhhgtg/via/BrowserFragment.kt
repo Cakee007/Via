@@ -19,11 +19,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.GestureDetector
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
@@ -42,9 +40,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import dev.ujhhgtg.via.browser.AddressTitleFormatter
 import dev.ujhhgtg.via.browser.BrowserIntentRouter
 import dev.ujhhgtg.via.browser.BrowserTab
+import dev.ujhhgtg.via.browser.InternalDocuments
 import dev.ujhhgtg.via.browser.PageColorCache
 import dev.ujhhgtg.via.browser.PageColorSampler
 import dev.ujhhgtg.via.browser.PageScriptsDialogFragment
@@ -80,10 +80,13 @@ import dev.ujhhgtg.via.reader.ReadAloudController
 import dev.ujhhgtg.via.reader.ReadAloudDialog
 import dev.ujhhgtg.via.reader.ReaderMode
 import dev.ujhhgtg.via.records.RecordsBrowserView
+import dev.ujhhgtg.via.search.SearchProvider
+import dev.ujhhgtg.via.search.SearchProviders
 import dev.ujhhgtg.via.search.UrlInputText
 import dev.ujhhgtg.via.settings.SettingsController
 import dev.ujhhgtg.via.sites.SiteSettingsFragment
 import dev.ujhhgtg.via.skins.setSkinImageResource
+import dev.ujhhgtg.via.sync.WebDavSyncRuntime
 import dev.ujhhgtg.via.ui.AnchorTextMenu
 import dev.ujhhgtg.via.ui.BrowserBackgrounds
 import dev.ujhhgtg.via.ui.BrowserLayout
@@ -109,11 +112,10 @@ import dev.ujhhgtg.via.video.FullscreenVideoController
 import dev.ujhhgtg.via.video.FullscreenVideoControls
 import dev.ujhhgtg.via.video.VideoPictureInPicture
 import dev.ujhhgtg.via.video.VideoScripts
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsBytes
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.Executors
@@ -366,10 +368,10 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         }.getOrDefault(target)
         target.startsWith("folder://", true) -> {
             val folder = target.substring(9)
-            dev.ujhhgtg.via.browser.InternalDocuments.write(host, preferences, database,
-                if (folder.isEmpty()) dev.ujhhgtg.via.browser.InternalDocuments.Kind.BOOKMARKS else dev.ujhhgtg.via.browser.InternalDocuments.Kind.FOLDER, folder)
+            InternalDocuments.write(host, preferences, database,
+                if (folder.isEmpty()) InternalDocuments.Kind.BOOKMARKS else InternalDocuments.Kind.FOLDER, folder)
         }
-        target.startsWith("history://", true) -> dev.ujhhgtg.via.browser.InternalDocuments.write(host, preferences, database, dev.ujhhgtg.via.browser.InternalDocuments.Kind.HISTORY)
+        target.startsWith("history://", true) -> InternalDocuments.write(host, preferences, database, InternalDocuments.Kind.HISTORY)
         else -> target
     }
 
@@ -411,9 +413,9 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     }
 
     /** ua.s1/h: native-generated documents replace an internal page, otherwise append a new tab. */
-    private fun openInternalDocument(kind: dev.ujhhgtg.via.browser.InternalDocuments.Kind, folderId: String? = null) {
+    private fun openInternalDocument(kind: InternalDocuments.Kind, folderId: String? = null) {
         worker.execute {
-            val file = dev.ujhhgtg.via.browser.InternalDocuments.write(host, preferences, database, kind, folderId)
+            val file = InternalDocuments.write(host, preferences, database, kind, folderId)
             host.runOnUiThread {
                 if (!isAdded) return@runOnUiThread
                 val selected = current()
@@ -437,10 +439,10 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         when {
             url.startsWith("folder://", true) -> {
                 val folder = url.substring(9)
-                if (page == 2 || page == 11) openInternalDocument(if (folder.isEmpty()) dev.ujhhgtg.via.browser.InternalDocuments.Kind.BOOKMARKS else dev.ujhhgtg.via.browser.InternalDocuments.Kind.FOLDER, folder)
+                if (page == 2 || page == 11) openInternalDocument(if (folder.isEmpty()) InternalDocuments.Kind.BOOKMARKS else InternalDocuments.Kind.FOLDER, folder)
                 else showBookmarks(decoded(folder).orEmpty())
             }
-            url.startsWith("history://", true) -> openInternalDocument(dev.ujhhgtg.via.browser.InternalDocuments.Kind.HISTORY)
+            url.startsWith("history://", true) -> openInternalDocument(InternalDocuments.Kind.HISTORY)
             url.startsWith("v://", true) -> when {
                 url.startsWith("v://error/jump?url=", true) -> decoded(query("url="))?.takeIf { it.isNotEmpty() && !it.startsWith("javascript:", true) }?.let(::navigate)
                 url.startsWith("v://blocker/jump?url=", true) -> decoded(query("url="))?.takeIf(UrlResolver::isHttpUrl)?.let { target -> tabs.allowBlockedPage(target); navigate(target) }
@@ -450,19 +452,20 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                     recordSearchQuery(it)
                     navigate(UrlResolver.search(preferences.effectiveSearchUrl(), it))
                 } ?: showAddressInput()
-                matches(UrlResolver.HISTORY) -> if (page == 5) openInternalDocument(dev.ujhhgtg.via.browser.InternalDocuments.Kind.HISTORY) else showHistory()
+                matches(UrlResolver.HISTORY) -> if (page == 5) openInternalDocument(
+                    InternalDocuments.Kind.HISTORY) else showHistory()
                 matches(UrlResolver.DOWNLOADER) -> showDownloads()
                 matches(UrlResolver.READ_ALOUD) -> ReadAloudDialog.show(childFragmentManager)
                 matches(UrlResolver.BOOKMARKS) -> {
                     val folder = query("folder=")
-                    if (page in setOf(2, 11, 5)) openInternalDocument(if (folder.isNullOrEmpty()) dev.ujhhgtg.via.browser.InternalDocuments.Kind.BOOKMARKS else dev.ujhhgtg.via.browser.InternalDocuments.Kind.FOLDER, folder)
+                    if (page in setOf(2, 11, 5)) openInternalDocument(if (folder.isNullOrEmpty()) InternalDocuments.Kind.BOOKMARKS else InternalDocuments.Kind.FOLDER, folder)
                     else showBookmarks(folder.orEmpty())
                 }
                 url.startsWith("v://translator/translate?text=", true) -> showTextTranslation(decoded(query("text=")))
                 url.startsWith("v://tabs", true) -> query("/restore?ids=")?.split(',')?.takeIf { it.isNotEmpty() }?.let { restoreIncomingSessions(it, query("selected=")) }
                 matches("v://home") -> current()?.let { tab -> if (!isHome(tab.page.url ?: tab.url)) tabs.navigate(tab, preferences.home) }
-                matches("v://about") -> openInternalDocument(dev.ujhhgtg.via.browser.InternalDocuments.Kind.ABOUT)
-                matches("v://offline") -> openInternalDocument(dev.ujhhgtg.via.browser.InternalDocuments.Kind.SAVED_PAGES)
+                matches("v://about") -> openInternalDocument(InternalDocuments.Kind.ABOUT)
+                matches("v://offline") -> openInternalDocument(InternalDocuments.Kind.SAVED_PAGES)
                 matches("v://log") -> {
                     val source = tabs.all.firstOrNull { it.id == resourceSourceTabId }
                     val file = dev.ujhhgtg.via.browser.ResourceDocument(host, preferences).write(source?.let(tabs::resources).orEmpty(), false, night())
@@ -471,7 +474,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                     else tabs.createTab(file, select = true, insertIndex = tabs.indexOf(selected) + 1)
                     attachSelected()
                 }
-                else -> openInternalDocument(dev.ujhhgtg.via.browser.InternalDocuments.Kind.CATALOG)
+                else -> openInternalDocument(InternalDocuments.Kind.CATALOG)
             }
             url.startsWith("thunder://") || url.startsWith("qqdl://") || url.startsWith("flashget://") -> {
                 UrlResolver.unwrapDownloadScheme(url)?.let { target -> current()?.let { requestDownload(it, target, it.page.userAgent, "attachment", null, -1) } }
@@ -535,7 +538,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             if (input.isNotEmpty()) {
                 when {
                     result.getInt("input_action") == 2 -> {
-                        val providers = dev.ujhhgtg.via.search.SearchProviders(host, preferences, database)
+                        val providers = SearchProviders(host, preferences, database)
                         val query = result.getString("input_query") ?: input
                         recordSearchQuery(query)
                         navigate(UrlResolver.search(providers.template(result.getInt("input_engine")), query))
@@ -999,15 +1002,15 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         }
         pending.forEach { (tab, type) ->
             val kind = when (type) {
-                2 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.BOOKMARKS
-                11 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.FOLDER
-                3 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.HISTORY
-                4 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.ABOUT
-                else -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.CATALOG
+                2 -> InternalDocuments.Kind.BOOKMARKS
+                11 -> InternalDocuments.Kind.FOLDER
+                3 -> InternalDocuments.Kind.HISTORY
+                4 -> InternalDocuments.Kind.ABOUT
+                else -> InternalDocuments.Kind.CATALOG
             }
             val folder = if (type == 11) tab.page.url!!.toUri().getQueryParameter("folder")
                 ?: tab.requestedUrl.takeIf { it.startsWith("folder://") }?.toUri()?.host else null
-            dev.ujhhgtg.via.browser.InternalDocuments.write(host, preferences, database, kind, folder)
+            InternalDocuments.write(host, preferences, database, kind, folder)
             tab.page.reload()
         }
     }
@@ -1232,7 +1235,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         val providers = if (enabled && url.isNotEmpty()) {
             val disabled = preferences.searchToolBarDisabled?.split(',').orEmpty().toSet()
             val order = preferences.searchToolBarOrder.split(',').mapNotNull(String::toIntOrNull)
-            dev.ujhhgtg.via.search.SearchProviders(host, preferences, database).list()
+            SearchProviders(host, preferences, database).list()
                 .filter { it.id.toString() !in disabled }
                 // c8.s6.y5 sorts the provider rows with ib.n(n0.E1()); the
                 // persisted searchtoolbarorder list is the comparator input.
@@ -1244,7 +1247,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         }
         val strip = searchStrip ?: SearchStrip(host).also { created ->
             created.setCallback(object : SearchStrip.Callback {
-                override fun onEngineSelected(provider: dev.ujhhgtg.via.search.SearchProvider) {
+                override fun onEngineSelected(provider: SearchProvider) {
                     // c8.s6$a.a: re-run the page's query on the chosen engine.
                     val query = created.matchedQuery(visibleUrl(current())) ?: return
                     val target = SearchStrip.buildSearchUrl(provider, query)
@@ -1405,7 +1408,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         val searchMatch = if (prefill.isNullOrEmpty()) {
             val currentUrl = currentWebView()?.url.orEmpty()
             val order = preferences.searchToolBarOrder.split(',').mapNotNull(String::toIntOrNull)
-            val providers = dev.ujhhgtg.via.search.SearchProviders(host, preferences, database).list()
+            val providers = SearchProviders(host, preferences, database).list()
                 .sortedWith(compareBy { order.indexOf(it.id).takeIf { index -> index >= 0 } ?: Int.MAX_VALUE })
             if (providers.size > 1 && UrlResolver.isHttpUrl(currentUrl)) {
                 providers.firstNotNullOfOrNull { provider ->
@@ -2226,7 +2229,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
 
     /** Search-engine selector used by the leading address-bar long press. */
     private fun showSearchEngineSelector() {
-        val providers = dev.ujhhgtg.via.search.SearchProviders(host, preferences, database)
+        val providers = SearchProviders(host, preferences, database)
         val options = providers.list()
         if (options.isEmpty()) return
         val currentId = preferences.searchMode
@@ -2588,18 +2591,18 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 tab.page.reload()
             } else {
                 val kind = when (pageTypeOf(tab.page.url)) {
-                    2 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.BOOKMARKS
-                    3 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.HISTORY
-                    4 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.ABOUT
-                    5 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.CATALOG
-                    7 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.SAVED_PAGES
-                    11 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.FOLDER
-                    12 -> dev.ujhhgtg.via.browser.InternalDocuments.Kind.BLANK
+                    2 -> InternalDocuments.Kind.BOOKMARKS
+                    3 -> InternalDocuments.Kind.HISTORY
+                    4 -> InternalDocuments.Kind.ABOUT
+                    5 -> InternalDocuments.Kind.CATALOG
+                    7 -> InternalDocuments.Kind.SAVED_PAGES
+                    11 -> InternalDocuments.Kind.FOLDER
+                    12 -> InternalDocuments.Kind.BLANK
                     else -> null
                 }
                 if (kind != null) {
-                    val folder = if (kind == dev.ujhhgtg.via.browser.InternalDocuments.Kind.FOLDER) tab.page.url!!.toUri().getQueryParameter("folder") else null
-                    dev.ujhhgtg.via.browser.InternalDocuments.write(host, preferences, database, kind, folder)
+                    val folder = if (kind == InternalDocuments.Kind.FOLDER) tab.page.url!!.toUri().getQueryParameter("folder") else null
+                    InternalDocuments.write(host, preferences, database, kind, folder)
                 }
                 if (pageTypeOf(tab.page.url) > 0) tab.page.reload()
             }
@@ -2614,7 +2617,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         ) { value ->
             var count = 0
             var height = 0
-            val digits = value?.trim()?.removePrefix("\"")?.removeSuffix("\"").orEmpty()
+            val digits = value.trim().removePrefix("\"").removeSuffix("\"")
             if (digits.isNotEmpty() && digits.all(Char::isDigit)) runCatching {
                 val packed = digits.toInt()
                 val top = packed shr 6
@@ -2741,11 +2744,11 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 tab.title = text(R.string.home); tabs.loadInternalPage(tab, file, "about:home")
             }
             "about:blank" -> {
-                val file = dev.ujhhgtg.via.browser.InternalDocuments.write(host, preferences, database, dev.ujhhgtg.via.browser.InternalDocuments.Kind.BLANK)
+                val file = InternalDocuments.write(host, preferences, database, InternalDocuments.Kind.BLANK)
                 tabs.loadInternalPage(tab, file, "about:blank")
             }
             "about:bookmarks" -> {
-                val file = dev.ujhhgtg.via.browser.InternalDocuments.write(host, preferences, database, dev.ujhhgtg.via.browser.InternalDocuments.Kind.BOOKMARKS)
+                val file = InternalDocuments.write(host, preferences, database, InternalDocuments.Kind.BOOKMARKS)
                 tabs.loadInternalPage(tab, file, "about:bookmarks")
             }
             else -> dispatchBrowserCommand(url)
@@ -3017,6 +3020,9 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             dev.ujhhgtg.via.browser.SslErrorDialogs.show(host, tab.page.url, preferences, request)
         override fun onFileChooser(tab: BrowserTab, request: dev.ujhhgtg.via.engine.FileChooserRequest): Boolean = chooseFile(request)
         override fun onGeolocationPrompt(tab: BrowserTab, request: dev.ujhhgtg.via.engine.LocationRequest) = requestLocation(request)
+        override fun onAndroidPermissions(permissions: Array<String>, complete: (Boolean) -> Unit) {
+            requestRuntimePermissions(permissions) { complete(permissions.all(::hasPermission)) }
+        }
         override fun onPermissionRequest(tab: BrowserTab, request: dev.ujhhgtg.via.engine.MediaPermissionRequest) { requestMediaPermission(request) }
         override fun onPermissionRequestCanceled(tab: BrowserTab, request: dev.ujhhgtg.via.engine.MediaPermissionRequest) { if (pendingPermission == request) pendingPermission = null }
         override fun onShowFullscreen(tab: BrowserTab, request: dev.ujhhgtg.via.engine.FullscreenRequest) { showVideo(request) }
@@ -3030,7 +3036,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         homepageSuggestions = null
         val flags = preferences.searchSuggestion
         if (flags == 0) return
-        val provider = dev.ujhhgtg.via.search.SearchProviders(host, preferences, database).suggestionProvider()
+        val provider = SearchProviders(host, preferences, database).suggestionProvider()
         val language = java.util.Locale.getDefault().toLanguageTag()
         homepageSuggestions = viewLifecycleOwner.launchIo({
             if (query.isEmpty()) dev.ujhhgtg.via.search.SuggestionRepository(database).local(query, flags, emptyList()).map { it.input }
@@ -3450,6 +3456,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         outState.putInt("pending_request", pendingRequest)
         super.onSaveInstanceState(outState)
     }
+
     override fun onPause() {
         GeneratedDocumentState.flush(preferences)
         if (::tabs.isInitialized) tabs.flushFilterStatistics()
@@ -3458,6 +3465,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         clearExternalIntentOrigin()
         super.onPause()
     }
+
     override fun onResume() {
         super.onResume()
         downloadFeedback?.start()
@@ -3468,7 +3476,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             refreshCustomizedHome()
             refreshGeneratedDocuments()
             reloadTabPreferences()
-            if (!customMode) dev.ujhhgtg.via.sync.WebDavSyncRuntime.onBrowserResumed(host)
+            if (!customMode) WebDavSyncRuntime.onBrowserResumed(host)
             host.requestedOrientation = preferences.resolvedScreenOrientation()
             configureBrowserLayout()
             applyAppearance()
@@ -3476,12 +3484,14 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             updateReadAloudControls()
         }
     }
+
     override fun onDestroyView() {
         pageGesture = null
         readAloudController?.removeListener(readAloudListener)
         readAloudControls?.dispose(); readAloudControls = null
         super.onDestroyView()
     }
+
     override fun onDestroy() {
         runCatching { host.unregisterReceiver(videoReceiver) }
         networkMonitor?.unregisterNetworkCallback(networkCallback)
@@ -3497,6 +3507,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         worker.shutdown()
         super.onDestroy()
     }
+
     override fun onConfigurationChanged(configuration: android.content.res.Configuration) {
         super.onConfigurationChanged(configuration)
         // s6.onConfigurationChanged -> a8 -> v0.c invalidates the gesture's cached viewport.
@@ -3506,6 +3517,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         }
         if (::browserLayout.isInitialized) { configureBrowserLayout(); applyAppearance() }
     }
+
     fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (!::tabs.isInitialized) return false
         val allowed = customView == null && !appFullscreen && childFragmentManager.backStackEntryCount == 0

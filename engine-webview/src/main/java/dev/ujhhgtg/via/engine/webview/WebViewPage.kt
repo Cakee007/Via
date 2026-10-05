@@ -7,18 +7,18 @@ import android.net.http.SslCertificate
 import android.os.Bundle
 import android.print.PrintDocumentAdapter
 import android.webkit.CookieManager
+import android.webkit.ValueCallback
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.get
-import dev.ujhhgtg.via.engine.webview.R
 import dev.ujhhgtg.via.engine.ContextMenuHandler
 import dev.ujhhgtg.via.engine.ContextTarget
 import dev.ujhhgtg.via.engine.EngineConfig
 import dev.ujhhgtg.via.engine.EnginePage
 import dev.ujhhgtg.via.engine.PageBridge
-import dev.ujhhgtg.via.engine.ScriptChannel
 import dev.ujhhgtg.via.engine.PageSettings
+import dev.ujhhgtg.via.engine.ScriptChannel
 import dev.ujhhgtg.via.engine.SelectionAction
 
 /** [EnginePage] over a system WebView. One instance per WebView, see [of]. */
@@ -79,13 +79,14 @@ class WebViewPage private constructor(val webView: WebView) : EnginePage {
     override fun saveState(out: Bundle): Boolean = webView.saveState(out) != null
     override fun restoreState(state: Bundle): String? = webView.restoreState(state)?.let { it.currentItem?.url.orEmpty() }
 
+    @SuppressLint("MissingOnRenderProcessGone")
     override fun destroy() {
         runCatching {
             // Destroying an attached WebView leaves a dead surface on screen until the host swaps it out.
             (webView.parent as? android.view.ViewGroup)?.removeView(webView)
             webView.stopLoading()
             webView.settings.javaScriptEnabled = false
-            webView.setWebViewClient(WebViewClient())
+            webView.webViewClient = WebViewClient()
             webView.webChromeClient = null
             webView.tag = null
             webView.clearHistory()
@@ -100,7 +101,7 @@ class WebViewPage private constructor(val webView: WebView) : EnginePage {
     }
 
     override fun evaluate(script: String, callback: ((String) -> Unit)?) =
-        webView.evaluateJavascript(script, callback?.let { block -> android.webkit.ValueCallback<String> { block(it ?: "null") } })
+        webView.evaluateJavascript(script, callback?.let { block -> ValueCallback { block(it ?: "null") } })
 
     override fun find(query: String, listener: ((Int, Int, Boolean) -> Unit)?) {
         if (listener == null) webView.setFindListener(null)

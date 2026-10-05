@@ -26,6 +26,7 @@ internal class DocumentInjection(
 
     /** The phase announcer; [viewId] identifies the page in its action-101 messages. */
     fun installCoordinator(page: EnginePage, viewId: Int) {
+        if (page.preloadsDocumentScripts) return
         val url = page.url ?: return
         if (!page.javaScriptEnabled || url.isEmpty() || url.startsWith("file://", true)) return
         page.evaluate(documentScripts.bootstrap(secret, viewId))
@@ -33,19 +34,28 @@ internal class DocumentInjection(
 
     /** Removes the night CSS fallback from an already loaded page. */
     fun removeNightCss(page: EnginePage) = page.evaluate(documentScripts.night(false))
+    fun applyNightCss(page: EnginePage, enabled: Boolean) = page.evaluate(documentScripts.night(enabled))
 
     /** runAt = 1 (head), 2 (DOMContentLoaded), 4 (load). */
     fun inject(page: EnginePage, runAt: Int): Boolean {
         if (!page.javaScriptEnabled) return false
         val url = page.url?.takeIf(String::isNotEmpty) ?: return false
         if (url.startsWith("file://", true)) return false
+        if (!page.preloadsDocumentScripts) sources(url, runAt).forEach { page.evaluate(it) }
+        if (runAt == 4) onReaderCheckRequested()
+        if (runAt == 2) documentReader.prepare(page) { prepared -> if (prepared) onReaderCheckRequested() }
+        return true
+    }
+
+    fun sources(url: String, runAt: Int, includeStartScripts: Boolean = true, inlineResources: Boolean = false): List<String> = buildList {
+        if (url.startsWith("file://", true)) return@buildList
         val host = DocumentPolicy.host(url)
-        if (host.isEmpty()) return false
+        if (host.isEmpty()) return@buildList
         val enabled = preferences.scriptsEnabled
         if (runAt == 4) {
-            page.evaluate(documentScripts.marker(secret))
-            onReaderCheckRequested()
-            return !enabled || scripts?.injectPhase(page, url, ScriptRunAt.IDLE) == true
+            add(documentScripts.marker(secret))
+            if (enabled) addAll(scripts?.phaseSources(url, ScriptRunAt.IDLE).orEmpty())
+            return@buildList
         }
         if (runAt == 1) {
             val site = siteConfiguration(DocumentPolicy.authority(url))?.takeIf { it.isEnabled }
@@ -53,9 +63,9 @@ internal class DocumentInjection(
             val source = StringBuilder()
             val blocking = site?.adBlocking(flags) ?: (flags and 1 != 0)
             if (blocking && UrlResolver.isHttpUrl(url)) {
-                source.append(documentScripts.blockerLink(host))
+                if (!inlineResources) source.append(documentScripts.blockerLink(host))
                 val css = documentScripts.blockerStyle(filterEngine?.cosmeticCss(url))
-                if (css.isNotEmpty()) page.evaluate(css)
+                if (css.isNotEmpty()) add(css)
             }
             val desktop = site?.desktopMode(flags) ?: (flags and 2048 != 0)
             if (host != "music.163.com" && host != "taobao.com" && desktop) source.append(documentScripts.desktopViewport())
@@ -73,12 +83,21 @@ internal class DocumentInjection(
             if (flags and 1073741824 == 0) source.append(documentScripts.source("vibration"))
             source.append(documentScripts.passwordCapture(secret))
             val font = preferences.uiFont
-            if (font.isNotEmpty()) source.append(documentScripts.font(font))
-            if (source.isNotEmpty()) page.evaluate(source.toString())
-            return !enabled || scripts?.injectPhase(page, url, ScriptRunAt.START) == true
+            if (font.isNotEmpty()) {
+                if (inlineResources) {
+                    val file = java.io.File(preferences.fontDirectory, font)
+                    if (file.isFile) {
+                        val mime = dev.ujhhgtg.via.downloads.DownloadMimeTypes.mime(file.extension, "font/ttf") ?: "font/ttf"
+                        val data = android.util.Base64.encodeToString(file.readBytes(), android.util.Base64.NO_WRAP)
+                        source.append(documentScripts.fontUri("data:$mime;base64,$data"))
+                    }
+                } else source.append(documentScripts.font(font))
+            }
+            if (inlineResources && preferences.isNightMode && preferences.nightCss) source.append(documentScripts.night(true))
+            if (source.isNotEmpty()) add(source.toString())
+            if (enabled && includeStartScripts) addAll(scripts?.phaseSources(url, ScriptRunAt.START).orEmpty())
+            return@buildList
         }
-        val injected = enabled && scripts?.injectPhase(page, url, ScriptRunAt.END) == true
-        documentReader.prepare(page) { prepared -> if (prepared) onReaderCheckRequested() }
-        return injected
+        if (enabled) addAll(scripts?.phaseSources(url, ScriptRunAt.END).orEmpty())
     }
 }

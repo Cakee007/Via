@@ -10,6 +10,8 @@ androidx-viewpager2 = "1.1.0"
 androidx-customview = "1.2.0"
 androidx-dynamicanimation = "1.0.0"
 androidx-webkit = "1.17.1"
+# Pinned exactly: GeckoView has no compatibility guarantees between builds.
+geckoview = "157.0.20260924084938"
 androidx-biometric = "1.1.0"
 
 okhttp = "5.5.0"
@@ -32,6 +34,7 @@ androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref =
 androidx-customview = { module = "androidx.customview:customview", version.ref = "androidx-customview" }
 androidx-dynamicanimation = { module = "androidx.dynamicanimation:dynamicanimation", version.ref = "androidx-dynamicanimation" }
 androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "androidx-webkit" }
+geckoview-arm64 = { module = "org.mozilla.geckoview:geckoview-arm64-v8a", version.ref = "geckoview" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "androidx-biometric" }
 
 ktor-bom = { module = "io.ktor:ktor-bom", version.ref = "ktor" }

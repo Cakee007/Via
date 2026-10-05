@@ -61,6 +61,7 @@ class TabController(
         fun onPopupCreated(opener: BrowserTab, popup: BrowserTab) = Unit
         fun onWindowClosed(tab: BrowserTab) = Unit
         fun onGeolocationPrompt(tab: BrowserTab, request: LocationRequest) = request.respond(allow = false, retain = false)
+        fun onAndroidPermissions(permissions: Array<String>, complete: (Boolean) -> Unit) = complete(false)
         fun onGeolocationHidePrompt(tab: BrowserTab) = Unit
         fun onPermissionRequest(tab: BrowserTab, request: MediaPermissionRequest) = request.deny()
         fun onPermissionRequestCanceled(tab: BrowserTab, request: MediaPermissionRequest) = Unit
@@ -695,6 +696,7 @@ class TabController(
             host.onPopupCreated(tab(), created)
         }
         override fun onGeolocationPrompt(request: LocationRequest) = host.onGeolocationPrompt(tab(), request)
+        override fun onAndroidPermissions(permissions: Array<String>, complete: (Boolean) -> Unit) = host.onAndroidPermissions(permissions, complete)
         override fun onGeolocationHidePrompt() = host.onGeolocationHidePrompt(tab())
         override fun onPermissionRequest(request: MediaPermissionRequest) = host.onPermissionRequest(tab(), request)
         override fun onPermissionRequestCanceled(request: MediaPermissionRequest) = host.onPermissionRequestCanceled(tab(), request)

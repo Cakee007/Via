@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gecko_error_title">无法打开此页面</string>
+    <string name="gecko_error_certificate">该网站的安全证书不受信任，可能有人在冒充该网站。</string>
+    <string name="gecko_error_retry">重试</string>
+    <string name="gecko_error_accept_risk">接受风险并继续</string>
+</resources>

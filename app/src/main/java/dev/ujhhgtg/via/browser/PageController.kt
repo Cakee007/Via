@@ -111,6 +111,7 @@ class PageController(
         fun onBridgeAddon(page: EnginePage, id: String) = Unit
         fun onInstalledAddonIds(page: EnginePage): String = "[]"
         fun onGeolocationPrompt(request: LocationRequest) = request.respond(allow = false, retain = false)
+        fun onAndroidPermissions(permissions: Array<String>, complete: (Boolean) -> Unit) = complete(false)
         fun onGeolocationHidePrompt() = Unit
         fun onPermissionRequest(request: MediaPermissionRequest) = request.deny()
         fun onPermissionRequestCanceled(request: MediaPermissionRequest) = Unit
@@ -181,7 +182,8 @@ class PageController(
         if (!url.isNullOrEmpty() && !url.startsWith("file://", true) && page.progress >= 100) {
             // w9.k.x1 uses the CSS fallback only below API 29. The other
             // path removes stale injected CSS, retaining the document and JS state.
-            injection.removeNightCss(page)
+            if (dev.ujhhgtg.via.engine.Engines.backend.capabilities.algorithmicDarkening) injection.removeNightCss(page)
+            else injection.applyNightCss(page, dark && preferences.nightCss)
         }
     }
 
@@ -231,6 +233,15 @@ class PageController(
     }
 
     private inner class Events : PageEvents {
+        override fun documentScripts(url: String): Map<Int, List<String>> {
+            if (!page.javaScriptEnabled) return emptyMap()
+            val setup = listOf("window.__VIA_SECRET__=${org.json.JSONObject.quote(pageBridgeSecret)};") +
+                if (url.startsWith("http") && preferences.disableWebRtc) listOf("delete window.RTCPeerConnection;delete window.webkitRTCPeerConnection;delete window.mozRTCPeerConnection;") else emptyList()
+            val start = if (preferences.scriptsEnabled) scripts?.phaseSources(url, dev.ujhhgtg.via.browser.script.ScriptRunAt.START).orEmpty() else emptyList()
+            return mapOf(0 to (setup + start), 1 to injection.sources(url, 1, includeStartScripts = false, inlineResources = true),
+                2 to injection.sources(url, 2), 4 to injection.sources(url, 4))
+        }
+        override fun onDocumentPhase(phase: Int) { injection.inject(page, phase) }
         override fun onPageStarted(url: String) {
             resourceLog.startPage()
             callbacks.onResourceAvailabilityChanged(page, false)
@@ -288,6 +299,7 @@ class PageController(
 
         override fun onCloseWindow() = callbacks.onCloseWindow(page)
         override fun onGeolocationPrompt(request: LocationRequest) = callbacks.onGeolocationPrompt(request)
+        override fun onAndroidPermissions(permissions: Array<String>, complete: (Boolean) -> Unit) = callbacks.onAndroidPermissions(permissions, complete)
         override fun onGeolocationHidePrompt() = callbacks.onGeolocationHidePrompt()
         override fun onPermissionRequest(request: MediaPermissionRequest) = callbacks.onPermissionRequest(request)
         override fun onPermissionRequestCanceled(request: MediaPermissionRequest) = callbacks.onPermissionRequestCanceled(request)
@@ -367,7 +379,9 @@ class PageController(
                 choice, if (choice > 0) userAgentForId(choice) else site.customUserAgent ?: globalAgent,
                 defaultUserAgent, siteFlag(8, flags and 2048 != 0),
                 preferences.duaChoice, preferences.duaString, preferences.webFlags2 and 1 != 0),
-            textZoom = if (file) 100 else site?.textZoomOverride?.takeIf { it > 0 } ?: preferences.textSize,
+            textZoom = if (!dev.ujhhgtg.via.engine.Engines.backend.capabilities.perPageTextZoom) preferences.textSize
+                else if (file) 100 else site?.textZoomOverride?.takeIf { it > 0 } ?: preferences.textSize,
+            desktop = !file && siteFlag(8, flags and 2048 != 0),
         ))
     }
 

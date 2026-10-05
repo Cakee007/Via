@@ -24,6 +24,8 @@ interface EnginePage {
     val certificate: SslCertificate?
     val userAgent: String?
     val javaScriptEnabled: Boolean
+    /** The backend executes [PageEvents.documentScripts] at document phases itself. */
+    val preloadsDocumentScripts: Boolean get() = false
 
     /** Page-independent settings; applied at creation and again when preferences change. */
     fun configure(config: EngineConfig)
@@ -115,6 +117,7 @@ data class PageSettings(
     /** Null restores the engine default. */
     val userAgent: String?,
     val textZoom: Int,
+    val desktop: Boolean = false,
 )
 
 /** A selection-toolbar entry. [hide] removes a platform entry with the same title instead of adding one. */

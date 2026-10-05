@@ -28,8 +28,15 @@ class ScriptManager(
     fun all(): List<UserScript> = store.list()
     fun findByScriptId(id: String): UserScript? = store.findByScriptId(id)
     fun getValue(id: String, name: String): String? = store.getValue(id, name)
-    fun setValue(id: String, name: String, value: String?): Boolean = store.setValue(id, name, value)
-    fun deleteValue(id: String, name: String): Boolean = store.deleteValue(id, name)
+    private val valueObservers = java.util.concurrent.CopyOnWriteArraySet<(String, String, String?) -> Unit>()
+    internal fun addValueObserver(observer: (String, String, String?) -> Unit) { valueObservers.add(observer) }
+    internal fun removeValueObserver(observer: (String, String, String?) -> Unit) { valueObservers.remove(observer) }
+    fun setValue(id: String, name: String, value: String?): Boolean = store.setValue(id, name, value).also { saved ->
+        if (saved) valueObservers.forEach { it(id, name, value) }
+    }
+    fun deleteValue(id: String, name: String): Boolean = store.deleteValue(id, name).also { deleted ->
+        if (deleted) valueObservers.forEach { it(id, name, null) }
+    }
     fun listValues(id: String): List<String> = store.listValues(id)
     fun resourceText(script: UserScript, name: String): String? = resources.resourceText(script, name)
     fun resourceUrl(script: UserScript, name: String): String? = resources.resourceUrl(script, name)
@@ -62,8 +69,8 @@ class ScriptManager(
     }.sortedBy { it.content.length } // p5.b.s orders loaded patterns by LENGTH(content) ASC.
 
     /** n5.a.b: installation API and every matched userscript are separate page evaluations. */
-    fun injectPhase(view: EnginePage, url: String, runAt: ScriptRunAt): Boolean {
-        if (url.isEmpty() || url.startsWith("file://")) return false
+    fun phaseSources(url: String, runAt: ScriptRunAt): List<String> = buildList {
+        if (url.isEmpty() || url.startsWith("file://")) return@buildList
         if (runAt == ScriptRunAt.START || runAt == ScriptRunAt.END) {
             // n5.a.e deliberately takes the network URL authority verbatim, including its port.
             val scheme = url.indexOf("://")
@@ -73,10 +80,9 @@ class ScriptManager(
                 url.substring(start, end).lowercase(java.util.Locale.ROOT)
             } else ""
             if (arrayOf("greasyfork.org", "userscript.zone", "openuserjs.org", "sleazyfork.org").any(authority::contains)) {
-                view.evaluate(GmApiSource.installationApi(secret))
+                add(GmApiSource.installationApi(secret))
             }
         }
-        var injected = false
         scriptsFor(url, runAt).forEach { script ->
             if (script.content.isNotEmpty()) {
                 val wrap = script.flags and 1 == 0
@@ -87,11 +93,9 @@ class ScriptManager(
                     append(script.content)
                     if (wrap) append("\n})();")
                 }
-                view.evaluate(source)
-                injected = true
+                add(source)
             }
         }
-        return injected
     }
 
     fun menuStateSource(): String = GmApiSource.menuState(secret)

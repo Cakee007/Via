@@ -1,0 +1,27 @@
+{
+  "manifest_version": 2,
+  "name": "Via engine",
+  "version": "1.1",
+  "description": "Connects Via to GeckoView pages: script evaluation, page bridges and request filtering.",
+  "browser_specific_settings": {
+    "gecko": { "id": "engine@via.ujhhgtg.dev" }
+  },
+  "permissions": [
+    "tabs",
+    "nativeMessaging",
+    "nativeMessagingFromContent",
+    "geckoViewAddons",
+    "webRequest",
+    "webRequestBlocking",
+    "cookies",
+    "<all_urls>"
+  ],
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+  "background": { "scripts": ["background.js"] },
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["gm-cache.js", "sync-xhr.js", "content.js"],
+    "run_at": "document_start",
+    "match_about_blank": true
+  }]
+}

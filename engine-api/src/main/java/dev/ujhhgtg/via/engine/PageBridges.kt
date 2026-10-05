@@ -17,4 +17,10 @@ interface PageBridge {
 /** The userscript channel page JavaScript reaches as `via_gm.call(message, secret)`; returns a JSON reply or null. */
 fun interface ScriptChannel {
     fun call(message: String?, secret: String?): String?
+
+    /** Initial synchronous GM replies for an asynchronous engine bridge. JSON, scoped to this URL. */
+    fun snapshot(url: String): String? = null
+
+    /** Persisted value changes, including changes made by another open page. Null removes the observer. */
+    fun observeValues(observer: ((scriptId: String, name: String, value: String?) -> Unit)?) = Unit
 }

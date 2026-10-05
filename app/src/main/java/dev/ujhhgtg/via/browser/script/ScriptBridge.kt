@@ -19,6 +19,37 @@ class ScriptBridge(
     private val callbacks: Callbacks,
 ) : ScriptChannel {
     private val webView = WeakReference(view)
+    private var valueObserver: ((String, String, String?) -> Unit)? = null
+
+    override fun observeValues(observer: ((String, String, String?) -> Unit)?) {
+        valueObserver?.let(manager::removeValueObserver)
+        valueObserver = observer
+        observer?.let(manager::addValueObserver)
+    }
+
+    override fun snapshot(url: String): String = JSONObject().apply {
+        put("secret", manager.secret)
+        put("scripts", JSONObject().apply {
+            manager.scriptsFor(url).forEach { script ->
+                val mask = script.grantMask()
+                put(script.scriptId, JSONObject().apply {
+                    put("grants", mask)
+                    put("info", info(script))
+                    put("values", JSONObject().apply {
+                        if (mask and 6291462 != 0) manager.listValues(script.scriptId).forEach { name ->
+                            put(name, manager.getValue(script.scriptId, name))
+                        }
+                    })
+                    put("resourceText", JSONObject().apply {
+                        if (mask and 32 != 0) script.resources.keys.forEach { name -> put(name, manager.resourceText(script, name)) }
+                    })
+                    put("resourceUrl", JSONObject().apply {
+                        if (mask and 67108880 != 0) script.resources.keys.forEach { name -> put(name, manager.resourceUrl(script, name)) }
+                    })
+                })
+            }
+        })
+    }.toString()
 
     interface Callbacks {
         fun onDownload(url: String, name: String)

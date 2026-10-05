@@ -8,6 +8,9 @@ import android.graphics.Bitmap
  * Calls arrive on the main thread unless noted.
  */
 interface PageEvents {
+    /** A URL-scoped injection plan: 0 (document_start), 1 (head), 2 (DOMContentLoaded), 4 (load). Main thread. */
+    fun documentScripts(url: String): Map<Int, List<String>> = emptyMap()
+    fun onDocumentPhase(phase: Int) = Unit
     fun onPageStarted(url: String)
     fun onPageFinished(url: String)
     fun onProgressChanged(progress: Int)
@@ -34,6 +37,8 @@ interface PageEvents {
     fun onCloseWindow()
     fun onGeolocationPrompt(request: LocationRequest)
     fun onGeolocationHidePrompt()
+    /** Runtime permissions requested by an engine before its site permission callback. */
+    fun onAndroidPermissions(permissions: Array<String>, complete: (Boolean) -> Unit) = complete(false)
     fun onPermissionRequest(request: MediaPermissionRequest)
     fun onPermissionRequestCanceled(request: MediaPermissionRequest)
     fun onShowFullscreen(request: FullscreenRequest)

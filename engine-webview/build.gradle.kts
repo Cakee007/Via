@@ -5,7 +5,9 @@ plugins {
 // The system WebView backend.
 android {
     namespace = "dev.ujhhgtg.via.engine.webview"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) { minorApiLevel = 2 }
+    }
 
     defaultConfig {
         minSdk = 29

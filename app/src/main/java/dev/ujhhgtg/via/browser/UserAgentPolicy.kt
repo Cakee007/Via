@@ -14,9 +14,10 @@ object UserAgentPolicy {
         reduce: Boolean,
     ): String? {
         // The default desktop choice returns directly in b4.c, before UA reduction.
-        if (desktop && desktopChoice == 0) return DESKTOP
+        val desktopDefault = desktopDefault(default)
+        if (desktop && desktopChoice == 0) return desktopDefault
         val selected = if (desktop) desktopChoice else choice
-        val selectedCustom = if (desktop) desktopCustom?.takeIf { it.isNotEmpty() } ?: DESKTOP else custom
+        val selectedCustom = if (desktop) desktopCustom?.takeIf { it.isNotEmpty() } ?: desktopDefault else custom
         val value = when (selected) {
             -8 -> "Mozilla/5.0 (Symbian/3; Series60/5.2 NokiaN8-00/012.002; Profile/MIDP-2.1 Configuration/CLDC-1.1 ) AppleWebKit/533.4 (KHTML, like Gecko) NokiaBrowser/7.3.0 Mobile Safari/533.4 3gpp-gba"
             -7 -> "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15"
@@ -30,6 +31,11 @@ object UserAgentPolicy {
             else -> selectedCustom
         }
         return if (reduce) reduce(value) else value
+    }
+
+    private fun desktopDefault(default: String?): String {
+        val firefox = default?.let { Regex("Firefox/([0-9.]+)").find(it)?.groupValues?.get(1) } ?: return DESKTOP
+        return "Mozilla/5.0 (X11; Linux x86_64; rv:$firefox) Gecko/20100101 Firefox/$firefox"
     }
 
     /** Original startup removes Chromium's embedded-WebView identifiers (z8.f -> b4.i). */

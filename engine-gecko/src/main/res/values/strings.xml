@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gecko_error_title">Can\'t open this page</string>
+    <string name="gecko_error_certificate">The site\'s security certificate isn\'t trusted. Someone may be impersonating the site.</string>
+    <string name="gecko_error_retry">Try again</string>
+    <string name="gecko_error_accept_risk">Accept the risk and continue</string>
+</resources>

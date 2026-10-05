@@ -39,8 +39,12 @@ class ScriptHttpRequest(private val view: EnginePage, details: String) {
         val details = request ?: return
         if (!details.has("url")) return
         // A synchronous request blocks the calling JavaScript bridge thread, as the original did.
-        if (details.optBoolean("synchronous", false)) runBlocking { execute(details) }
-        else applicationIoScope.launch { execute(details) }
+        if (details.optBoolean("synchronous", false) && dev.ujhhgtg.via.engine.Engines.backend.capabilities.syncScriptBridge) {
+            runBlocking { execute(details) }
+        } else {
+            if (details.optBoolean("synchronous", false)) android.util.Log.w("ViaUserscript", "This engine runs synchronous GM XHR asynchronously")
+            applicationIoScope.launch { execute(details) }
+        }
     }
 
     private suspend fun execute(details: JSONObject) {

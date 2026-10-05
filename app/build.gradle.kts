@@ -5,7 +5,10 @@ plugins {
 
 android {
     namespace = "dev.ujhhgtg.via"
-    compileSdk = 37
+    // GeckoView needs the 37.1+ platform; every module shares one platform.
+    compileSdk {
+        version = release(37) { minorApiLevel = 2 }
+    }
 
     defaultConfig {
         applicationId = "dev.ujhhgtg.via"
@@ -67,6 +70,12 @@ android {
             dimension = "engine"
             isDefault = true
         }
+        // Same versionCode as webview, so either APK installs over the other.
+        create("gecko") {
+            dimension = "engine"
+            versionNameSuffix = "-gecko"
+            ndk { abiFilters += "arm64-v8a" }
+        }
     }
 
     buildFeatures {
@@ -82,6 +91,7 @@ android {
 dependencies {
     implementation(project(":engine-api"))
     "webviewImplementation"(project(":engine-webview"))
+    "geckoImplementation"(project(":engine-gecko"))
 
     implementation(libs.androidx.activity)
     implementation(libs.androidx.fragment)
