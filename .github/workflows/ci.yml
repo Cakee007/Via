@@ -48,13 +48,22 @@ jobs:
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
 
       - name: Decode release keystore
+        # Forks usually have no signing secrets configured. Fall back to debug
+        # signing instead of failing: app/build.gradle.kts picks the debug
+        # signing config whenever ANDROID_KEYSTORE_FILE is missing/empty.
         if: github.event_name != 'pull_request'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/via-keystore.jks"
-          test -s "$RUNNER_TEMP/via-keystore.jks" || {
-            echo "::error::ANDROID_KEYSTORE_BASE64 is missing or not valid base64; master builds must be release-signed"
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::notice title=No release keystore::ANDROID_KEYSTORE_BASE64 is not configured; falling back to debug signing"
+            exit 0
+          fi
+          if ! printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/via-keystore.jks" || [ ! -s "$RUNNER_TEMP/via-keystore.jks" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not valid base64 or decoded to an empty file"
             exit 1
-          }
+          fi
+          echo "Release keystore decoded; signing release builds"
 
       - name: Build release APKs (both engines)
         if: github.event_name != 'pull_request'
