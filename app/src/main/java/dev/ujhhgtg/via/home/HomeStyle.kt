@@ -35,14 +35,11 @@ object HomeStyle {
                 .search_part { display:table; vertical-align:middle; width:90%; max-width:600px; margin:0 auto 20px; padding:0; }
                 .search.icon { width:12px; height:12px; border:solid 2px currentColor; border-radius:100%; -webkit-transform:rotate(-45deg); transform:rotate(-45deg); text-align:center; margin:auto; }
                 .search.icon:before { content:''; position:absolute; top:10px; left:3px; height:5px; width:2px; background-color:currentColor; }
-                .search_bar_wrapper { position:relative; display:table; width:100%; margin:15px auto 0; }
-                .search_bar { position:relative; display:table; width:100%; margin:0; $border:${c.strokeWidth}px solid ${active.stroke}; border-radius:${c.searchRadius}px; background:${active.bar}; color:${active.barText}; $blur }
+                .search_bar { display:table; width:100%; margin:15px auto 0; $border:${c.strokeWidth}px solid ${active.stroke}; border-radius:${c.searchRadius}px; background:${active.bar}; color:${active.barText}; $blur }
                 #search_input { height:46px; padding:0 12px; width:100%; outline:none; border:none; font-size:15px; background-color:transparent; }
                 #search_submit { display:none; outline:none; height:46px; width:56px; float:right; font-size:15px; font-weight:bold; border:none; background-color:transparent; padding:0 10px; }
-                #search_bar_trigger { position:absolute; inset:0; z-index:1; width:100%; height:46px; padding:0; border:0; border-radius:${c.searchRadius}px; background:transparent; color:inherit; }
-                #search_bar_trigger:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
                 .search.icon, #search_input, #search_submit { color:inherit; }
-                .opSug_wpr { background:${active.suggestion}; $blur border:${c.strokeWidth}px solid ${active.stroke}; border-radius:0 0 ${c.searchRadius}px ${c.searchRadius}px; overflow-y:scroll; line-height:normal; position:absolute; width:100%; max-width:600px; margin:-${c.strokeWidth}px 0 0; z-index:9999; }
+                .opSug_wpr { background:${active.suggestion}; $blur border:${c.strokeWidth}px solid ${active.stroke}; border-radius:0 0 ${c.searchRadius}px ${c.searchRadius}px; overflow-y:scroll; line-height:normal; position:absolute; width:90%; max-width:600px; margin:-${c.strokeWidth}px 0 0; z-index:9999; }
                 .opSug_wpr::-webkit-scrollbar { width:0; }
                 .opSug_wpr table { background:none; padding:0; width:100%; border-spacing:0; }
                 .opSug_wpr tr { padding:0; margin:0; display:table-row; vertical-align:inherit; border-color:inherit; }
