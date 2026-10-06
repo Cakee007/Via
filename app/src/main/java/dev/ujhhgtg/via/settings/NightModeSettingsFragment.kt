@@ -40,6 +40,11 @@ class NightModeSettingsFragment : SettingsListFragment() {
                 GeneratedDocumentState.mark(GeneratedDocumentState.PAGE_SETTINGS)
                 rows.submit(items())
             }
+            3 -> {
+                preferences.disableHomeBackgroundDimming = !preferences.disableHomeBackgroundDimming
+                GeneratedDocumentState.mark(GeneratedDocumentState.HOME_STYLE or GeneratedDocumentState.PAGE_SETTINGS)
+                rows.submit(items())
+            }
         } }
         list.itemAnimator = null
         list.adapter = rows
@@ -49,6 +54,7 @@ class NightModeSettingsFragment : SettingsListFragment() {
         SettingsRow(1, getString(R.string.night_filter_for_web_contents)),
         SettingsToggleRow(2, getString(R.string.force_dark_mode_for_web_contents), getString(R.string.force_dark_mode_for_web_contents_description), preferences.forceDarkPages)
             .takeIf { dev.ujhhgtg.via.engine.Engines.backend.capabilities.algorithmicDarkening },
+        SettingsToggleRow(3, getString(R.string.disable_home_background_dimming), getString(R.string.disable_home_background_dimming_description), preferences.disableHomeBackgroundDimming),
     )
     private fun preview(): View {
         preview?.let { (it.parent as? ViewGroup)?.removeView(it); return it }

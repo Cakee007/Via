@@ -41,7 +41,9 @@ object BrowserBackgrounds {
                 main.post { if (imageKey == key) published.setImage(image) }
             }
         }
-        val night = if (dark) if (HomeDesign.isLight(preferences.urlBarColor)) 128 else 64 else 0
+        // The night scrim darkens the customized image; "disable homepage background dimming" skips it
+        // while the user's own bginfo opacity still applies.
+        val night = if (dark && !preferences.disableHomeBackgroundDimming) if (HomeDesign.isLight(preferences.urlBarColor)) 128 else 64 else 0
         val opacity = ((preferences.backgroundInfo and 127) / 100f * 255).toInt()
         published.setFilterColor(Color.argb(maxOf(night, opacity), 0, 0, 0))
         published.setCoverColor(coverColor)

@@ -186,7 +186,7 @@ class HomeCustomizationView(
     /** d9.q.z3: the native black filter is independent of the generated CSS. */
     private fun updateBackground() {
         val base = backgroundLayer ?: return
-        val nightAlpha = if (night()) if (HomeDesign.isLight(preferences.urlBarColor)) 128 else 64 else 0
+        val nightAlpha = if (night() && !preferences.disableHomeBackgroundDimming) if (HomeDesign.isLight(preferences.urlBarColor)) 128 else 64 else 0
         val alpha = maxOf(nightAlpha, ((preferences.backgroundInfo and 127) / 100f * 255).toInt())
         if (alpha == backgroundAlpha) return
         backgroundAlpha = alpha

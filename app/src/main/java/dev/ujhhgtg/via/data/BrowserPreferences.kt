@@ -97,6 +97,8 @@ class BrowserPreferences(context: Context) {
     // w9.k.K2 -> w9.r.h: the default is the platform force-dark capability (API 29+).
     /** WebView's "Force dark mode for web contents". The key keeps its legacy name for saved settings and backups. */
     var forceDarkPages: Boolean get() = getBoolean("nightcss", true); set(value) = putBoolean("nightcss", value)
+    /** Night mode leaves the customized homepage background color/image at its day appearance when set. */
+    var disableHomeBackgroundDimming: Boolean get() = getBoolean("nightnobgdim", false); set(value) = putBoolean("nightnobgdim", value)
     var searchToolBarDisabled: String? get() = string("searchtoolbardisabled", null); set(value) = putString("searchtoolbardisabled", value)
     var searchToolBarOrder: String get() = string("searchtoolbarorder", "") ?: ""; set(value) = putString("searchtoolbarorder", value)
     var searchShortcuts: String get() = string("searchshortcuts", "") ?: ""; set(value) = putString("searchshortcuts", value)
@@ -224,7 +226,7 @@ class BrowserPreferences(context: Context) {
     private fun flag(value: Int, mask: Int, enabled: Boolean) = if (enabled) value or mask else value and mask.inv()
 
     companion object {
-        private val backupBooleanKeys = arrayOf("nightcss")
+        private val backupBooleanKeys = arrayOf("nightcss", "nightnobgdim")
         private val backupIntKeys = arrayOf("appflag", "webflag", "fullscreenmode", "search2", "textsize", "uachoice", "screenOrientation", "keyback", "keyforward", "keyhome", "keytab", "keymenu", "gesturetoolbarleft", "gesturetoolbarright", "urlbox", "appui2", "logochioce", "urlbarcolor", "fab", "restoreclosedtabs", "cleardata2", "cleardataonexit2", "version", "nightfilter", "bookmarksorder", "favinfo", "logoinfo2", "searchinfo", "custominfo", "searchsuggestion", "readertextsize", "readerthemecolor", "videoorientation", "bookmarksviewmode", "labflag", "duachoice", "webflag2")
         private val backupLongKeys = arrayOf("updater_filter_subscriptions", "updater_scripts")
         private val backupStringKeys = arrayOf("home", "searchurl", "uastring", "csstheme", "taghome", "dlmanager", "language", "videoplayer", "displayedmenus", "readercustomcss", "searchtoolbardisabled", "duastring", "searchtoolbarorder", "hiddenmenus", "searchshortcuts")

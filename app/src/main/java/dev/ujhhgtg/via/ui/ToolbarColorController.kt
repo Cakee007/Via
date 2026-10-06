@@ -50,7 +50,7 @@ internal class ToolbarColorController(
             val color = if (hasBackgroundImage()) 0 else {
                 val configured = configuredBackgroundColor()
                 if (configured == -1) defaultColor()
-                else if (isNight()) blend(Color.BLACK, configured, .5f) else configured
+                else if (isNight() && !preferences.disableHomeBackgroundDimming) blend(Color.BLACK, configured, .5f) else configured
             }
             if (color != currentColor || !usesDefaultBackground) apply(color, shouldAnimate, true)
         } else {

@@ -177,7 +177,9 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     private lateinit var pageColors: PageColorSampler
     private var toolbarControls: ToolbarColorController.Controls? = null
     private var currentBackgroundColor = 0
-    private var backgroundDesign: Triple<String?, Int, Int>? = null
+    /** Homepage background inputs that change how ToolbarColorController paints the cover; dimming toggle included. */
+    private data class BackgroundDesign(val image: String?, val info: Int, val color: Int, val dimmingDisabled: Boolean)
+    private var backgroundDesign: BackgroundDesign? = null
     private lateinit var gesturePreview: ImageView
     private var appFullscreen = false
     private lateinit var address: TextView
@@ -3502,7 +3504,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     private fun applyAppearance() {
         if (!::shell.isInitialized) return
         val dark = night()
-        val design = Triple(preferences.backgroundHome, preferences.backgroundInfo, preferences.urlBarColor)
+        val design = BackgroundDesign(preferences.backgroundHome, preferences.backgroundInfo, preferences.urlBarColor, preferences.disableHomeBackgroundDimming)
         updateNativeBrowserBackground(dark)
         browserLayout.top.setBackgroundColor(Color.TRANSPARENT)
         updateAddressSurface()

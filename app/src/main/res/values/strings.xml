@@ -323,6 +323,8 @@
     <string name="night_filter_for_web_contents">Night filter for web contents</string>
     <string name="force_dark_mode_for_web_contents">Force dark operation for web contents</string>
     <string name="force_dark_mode_for_web_contents_description">When enabled, webpages will be forced to darken, which may cause some pages to behave abnormally.</string>
+    <string name="disable_home_background_dimming">Disable homepage background dimming</string>
+    <string name="disable_home_background_dimming_description">Night mode no longer darkens the customized homepage background color and image</string>
     <string name="keyboard_shortcuts">Keyboard shortcuts</string>
     <string name="export_data_description">Export bookmarks, settings, scripts and ad filters</string>
     <string name="language">Language</string>

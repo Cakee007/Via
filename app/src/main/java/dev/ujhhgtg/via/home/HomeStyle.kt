@@ -11,10 +11,12 @@ object HomeStyle {
     private data class Colors(val text: String, val tap: String, val stroke: String, val bar: String, val barText: String, val suggestion: String, val suggestionText: String)
 
     private fun pageBackground(c: HomeDesign, background: PageBackground, dark: Boolean): String {
+        // "Disable homepage background dimming" keeps the customized color/image in its day appearance.
+        val dim = dark && !c.backgroundDimmingDisabled
         val url = background.imageUrl
         if (url != null) {
             // c8.s6.a9: black filter = night scrim (light accent 128, else 64; day 0) maxed with the bginfo opacity.
-            val night = if (dark) if (HomeDesign.isLight(c.accentColor)) 128 else 64 else 0
+            val night = if (dim) if (HomeDesign.isLight(c.accentColor)) 128 else 64 else 0
             val alpha = maxOf(night, ((c.backgroundBits and 127) / 100f * 255f).toInt()).coerceIn(0, 255)
             val scrim = "rgba(0,0,0,${alpha / 255f})"
             return "linear-gradient($scrim,$scrim),url('$url') center/cover no-repeat"
@@ -23,7 +25,7 @@ object HomeStyle {
         // ToolbarColorController.configuredBackgroundColor; legacy non-negative values too.
         val configured = c.accentColor.takeIf { it < 0 && it != -1 } ?: background.defaultColor
         // Night pages sit on the cover color blended halfway to black (c8.s6 Q7).
-        val color = if (dark) Color.rgb((Color.red(configured) * .5f).toInt(), (Color.green(configured) * .5f).toInt(),
+        val color = if (dim) Color.rgb((Color.red(configured) * .5f).toInt(), (Color.green(configured) * .5f).toInt(),
             (Color.blue(configured) * .5f).toInt()) else configured
         return "rgb(${Color.red(color)},${Color.green(color)},${Color.blue(color)})"
     }

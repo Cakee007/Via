@@ -22,7 +22,8 @@ import java.net.URLEncoder
 class HomeDocument(private val context: Context, private val preferences: BrowserPreferences) {
     fun design(dark: Boolean) = HomeDesign(preferences.logoInfo, preferences.favoritesInfo, preferences.searchInfo,
         preferences.customInfo, preferences.backgroundInfo, preferences.urlBarColor, preferences.backgroundHome,
-        dark, context.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL, preferences.cssTheme.orEmpty())
+        dark, preferences.disableHomeBackgroundDimming,
+        context.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL, preferences.cssTheme.orEmpty())
 
     fun write(favorites: List<Favorite>, dark: Boolean, nativeGestureAllowed: Boolean = false): String {
         val config = design(dark)

@@ -321,6 +321,8 @@
     <string name="night_filter_for_web_contents">網頁遮色片濾鏡</string>
     <string name="force_dark_mode_for_web_contents">強制網頁深色</string>
     <string name="force_dark_mode_for_web_contents_description">為網頁啟用強制深色，這可能會導致部分網頁表現異常</string>
+    <string name="disable_home_background_dimming">停用首頁背景壓暗</string>
+    <string name="disable_home_background_dimming_description">夜間模式不再壓暗自訂的首頁背景顏色和圖片</string>
     <string name="keyboard_shortcuts">鍵盤快捷鍵</string>
     <string name="export_data_description">匯出書籤、設定、指令碼和廣告篩選條件</string>
     <string name="language">語言</string>

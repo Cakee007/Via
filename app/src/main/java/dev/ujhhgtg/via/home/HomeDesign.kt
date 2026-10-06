@@ -13,6 +13,7 @@ data class HomeDesign(
     val accentColor: Int = -1,
     val backgroundPath: String? = null,
     val dark: Boolean = false,
+    val backgroundDimmingDisabled: Boolean = false,
     val rtl: Boolean = false,
     val extraCss: String = "",
 ) {
