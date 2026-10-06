@@ -275,10 +275,14 @@ internal class GeckoPage(
             this@GeckoPage.url = logical
             documentPending = true
             events.onPageStarted(logical)
+            // Gecko emits its first progress step before page start; hold it until the page
+            // URL is current, or the host reads the previous (internal) page and hides the bar.
+            pendingProgress?.let { held -> pendingProgress = null; events.onProgressChanged(held) }
         }
 
         override fun onPageStop(session: GeckoSession, success: Boolean) {
             progress = 100
+            pendingProgress = null
             // The new document's port may have connected before this page start arrived; ports of unloaded
             // documents disconnect, so a live port is the current one. Without one (about:, error pages) the queue drops.
             if (documentPending) {
@@ -290,7 +294,10 @@ internal class GeckoPage(
 
         override fun onProgressChange(session: GeckoSession, progress: Int) {
             this@GeckoPage.progress = progress
-            events.onProgressChanged(progress)
+            // Hold only pre-start steps (their page URL is still the previous document's);
+            // completion steps must always pass, even when they trail the page stop event.
+            if (documentPending || progress >= 100) events.onProgressChanged(progress)
+            else pendingProgress = progress
         }
 
         override fun onSecurityChange(session: GeckoSession, securityInfo: GeckoSession.ProgressDelegate.SecurityInformation) {
@@ -599,6 +606,8 @@ internal class GeckoPage(
 
     // --- Requests ---
 
+    /** Progress steps Gecko emits before their page start; delivered once the page URL is current. */
+    @Volatile private var pendingProgress: Int? = null
     /** The top-level URL this page is about to load; matches the first request of a tab not yet registered. */
     @Volatile private var expectedDocument: String? = null
 
