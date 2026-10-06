@@ -161,6 +161,9 @@ internal class GeckoPage(
     private val navigation = object : GeckoSession.NavigationDelegate {
         override fun onLocationChange(session: GeckoSession, url: String?,
             perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>, hasUserGesture: Boolean) {
+            // Gecko reports a location change when a navigation starts, even one the delegate
+            // denies right after; such attempts must not become the page URL.
+            if (url != null && neverLoadsDocument(url)) return
             this@GeckoPage.url = logicalUrl(url)
         }
 
@@ -262,6 +265,9 @@ internal class GeckoPage(
 
     private val progressDelegate = object : GeckoSession.ProgressDelegate {
         override fun onPageStart(session: GeckoSession, url: String) {
+            // Denied navigations (command and third-party app schemes) still emit page start;
+            // they never become a document, so neither the URL nor page events may fire.
+            if (neverLoadsDocument(url)) return
             favicon = null
             certificate = null
             progress = 0
@@ -632,6 +638,20 @@ internal class GeckoPage(
     }
 
     /** Maps the data: document of a generated response to its logical URL; any other document ends that mapping. */
+    /**
+     * Schemes that never render a document in this view: command URLs (v://, folder://,
+     * history://) are dispatched as actions and third-party schemes (bilibili://, intent://,
+     * mailto:, ...) are handed to other applications. Gecko still reports page start and
+     * location for these denied navigations, which must not become the page URL; WebView
+     * matches by only reporting loads it did not cancel. data:/blob: stay loadable because
+     * generated error pages use them.
+     */
+    private fun neverLoadsDocument(url: String): Boolean {
+        val scheme = url.substringBefore(':', "").lowercase()
+        return scheme !in setOf("http", "https", "ws", "wss", "ftp", "file", "content", "about",
+            "data", "blob", "javascript", "view-source", "moz-extension", "resource")
+    }
+
     private fun logicalUrl(actual: String?): String? {
         val logical = generatedLogicalUrl
         if (logical != null && actual?.startsWith("data:", ignoreCase = true) == true) return logical
