@@ -78,4 +78,20 @@ object HomeBackground {
         if (File(contentDirectory(context), "background.jpg").isFile) return
         process(context, source)
     }
+
+    /**
+     * The image as referenced by the generated homepage document. Backends without translucent
+     * pages paint the background in CSS and may only load file:// subresources from the page's
+     * own directory, so a same-directory copy of the cache is kept next to homepage2.html.
+     */
+    internal fun homepageImageFile(context: Context, backgroundPath: String?): File? {
+        val source = imageFile(context, backgroundPath) ?: return null
+        val copy = File(context.filesDir, "background-home.jpg")
+        if (copy.isFile && copy.lastModified() == source.lastModified()) return copy
+        return runCatching {
+            source.copyTo(copy, overwrite = true)
+            copy.setLastModified(source.lastModified())
+            copy
+        }.getOrNull()
+    }
 }

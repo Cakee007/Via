@@ -39,6 +39,7 @@ import dev.ujhhgtg.via.common.WindowInsetsHelper
 import dev.ujhhgtg.via.data.BrowserDatabase
 import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.data.FavoritesRepository
+import dev.ujhhgtg.via.engine.Engines
 import dev.ujhhgtg.via.settings.SettingsToolbar
 import dev.ujhhgtg.via.settings.TextEditorFragment
 import dev.ujhhgtg.via.settings.settingsColor
@@ -78,6 +79,8 @@ class HomeCustomizationView(
     private fun text(id: Int) = context.getString(id)
     private fun night() = preferences.isNightMode
     private fun surface() = settingsColor(context, R.attr.viaSurfaceColor, Color.WHITE)
+    /** Pages that cannot be translucent draw their own background; the preview must not stack a native layer under it. */
+    private val selfPaintedBackground = !Engines.backend.capabilities.translucentPages
 
     init {
         val root = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(0xff222222.toInt()) }
@@ -162,7 +165,7 @@ class HomeCustomizationView(
         io.execute {
             runCatching {
                 val uri = document.write(FavoritesRepository(database).list(), dark, false)
-                val background = if (backgroundChanged) {
+                val background = if (backgroundChanged && !selfPaintedBackground) {
                     HomeBackground.createWindowImage(context, preferences.backgroundHome) ?: (preferences.urlBarColor.takeIf { it != -1 }
                         ?: settingsColor(
                             context,

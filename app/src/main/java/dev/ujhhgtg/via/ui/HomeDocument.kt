@@ -1,16 +1,20 @@
 package dev.ujhhgtg.via.ui
 
 import android.content.Context
+import android.graphics.Color
 import android.net.Uri
 import android.view.View
 import dev.ujhhgtg.via.engine.EnginePage
+import dev.ujhhgtg.via.engine.Engines
 import androidx.core.text.htmlEncode
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.browser.UrlResolver
 import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.data.Favorite
+import dev.ujhhgtg.via.home.HomeBackground
 import dev.ujhhgtg.via.home.HomeDesign
 import dev.ujhhgtg.via.home.HomeStyle
+import dev.ujhhgtg.via.settings.settingsColor
 import java.io.File
 import java.net.URLEncoder
 
@@ -22,7 +26,12 @@ class HomeDocument(private val context: Context, private val preferences: Browse
 
     fun write(favorites: List<Favorite>, dark: Boolean, nativeGestureAllowed: Boolean = false): String {
         val config = design(dark)
-        val css = File(context.filesDir, "homepage.css").apply { writeText(HomeStyle.css(config)) }
+        // Backends that cannot render translucent pages (Gecko) draw the window layers in CSS instead.
+        val pageBackground = if (Engines.backend.capabilities.translucentPages) null else HomeStyle.PageBackground(
+            imageUrl = HomeBackground.homepageImageFile(context, preferences.backgroundHome)?.name,
+            defaultColor = settingsColor(context, R.attr.viaBackgroundColor, Color.WHITE),
+        )
+        val css = File(context.filesDir, "homepage.css").apply { writeText(HomeStyle.css(config, pageBackground)) }
         val logo = preferences.homeTag?.takeIf { it.isNotEmpty() } ?: context.assets.open("home/default-logo.html").bufferedReader().use { it.readText() }
         val title = escape(context.getString(R.string.home))
         val bookmarkTitle = escape(context.getString(R.string.action_bookmarks))

@@ -1,9 +1,33 @@
 package dev.ujhhgtg.via.home
 
+import android.graphics.Color
+
 /** i6/o.b CSS, resolved from both original smali and CFR where JADX duplicated branches. */
 object HomeStyle {
+
+    /** Inputs for the page-painted background used by backends whose pages cannot be translucent. */
+    data class PageBackground(val imageUrl: String?, val defaultColor: Int)
+
     private data class Colors(val text: String, val tap: String, val stroke: String, val bar: String, val barText: String, val suggestion: String, val suggestionText: String)
-    fun css(c: HomeDesign): String {
+
+    private fun pageBackground(c: HomeDesign, background: PageBackground, dark: Boolean): String {
+        val url = background.imageUrl
+        if (url != null) {
+            // c8.s6.a9: black filter = night scrim (light accent 128, else 64; day 0) maxed with the bginfo opacity.
+            val night = if (dark) if (HomeDesign.isLight(c.accentColor)) 128 else 64 else 0
+            val alpha = maxOf(night, ((c.backgroundBits and 127) / 100f * 255f).toInt()).coerceIn(0, 255)
+            val scrim = "rgba(0,0,0,${alpha / 255f})"
+            return "linear-gradient($scrim,$scrim),url('$url') center/cover no-repeat fixed"
+        }
+        // w9.k.c0 canonicalizes non-negative colors to the default, like ToolbarColorController.
+        val configured = c.accentColor.takeIf { it < 0 } ?: background.defaultColor
+        // Night pages sit on the cover color blended halfway to black (c8.s6 Q7).
+        val color = if (dark) Color.rgb((Color.red(configured) * .5f).toInt(), (Color.green(configured) * .5f).toInt(),
+            (Color.blue(configured) * .5f).toInt()) else configured
+        return "rgb(${Color.red(color)},${Color.green(color)},${Color.blue(color)})"
+    }
+
+    fun css(c: HomeDesign, pageBackground: PageBackground? = null): String {
         val light = c.lightForegroundBackground
         val hasBackground = !c.backgroundPath.isNullOrEmpty()
         val dayText = if (light) "#1b1b1b" else "#fafafa"
@@ -54,6 +78,8 @@ object HomeStyle {
                 .title { border-radius:${c.favoriteRadius}px; color:${if (c.favoriteColorDisabled) active.text else "#ffffff"}; width:${c.favoriteWidth}px; line-height:${c.favoriteHeight}px; height:${c.favoriteHeight}px; font-size:15px; }
                 .url { color:${active.text}; margin:2px 0 0; width:${c.favoriteWidth}px; height:20px; line-height:20px; white-space:normal; word-wrap:break-word; overflow:hidden; text-overflow:clip; ms-text-overflow:clip; font-size:10px; }
             """.trimIndent())
+            // Backends without translucent pages reproduce the window layers (image, filter, cover) in CSS.
+            if (pageBackground != null) append("body{background:${pageBackground(c, pageBackground, c.dark)}}")
             if (c.dark) append("img.smaller,.overlay,.title{-webkit-filter:brightness(75%);filter:brightness(75%);}")
             val itemWidth = c.favoriteWidth + 18
             for (columns in 1..540 / itemWidth) append("@media only screen and (min-width:${(columns + if (c.searchEnabled) 1 else 0) * itemWidth}px){#box_container{width:${columns * itemWidth}px}}")

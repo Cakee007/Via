@@ -18,6 +18,8 @@ data class Capabilities(
     val userAgentMetadata: Boolean = true,
     /** A tab may hold several live pages for QuickBack. */
     val quickBackSegments: Boolean = true,
+    /** Pages can render with a transparent background so the native window background shows through. */
+    val translucentPages: Boolean = true,
     /** WebExtensions can be installed. */
     val webExtensions: Boolean = false,
 )

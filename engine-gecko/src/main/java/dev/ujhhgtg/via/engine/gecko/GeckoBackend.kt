@@ -37,6 +37,8 @@ object GeckoBackend : BrowserBackend {
         algorithmicDarkening = false,
         userAgentMetadata = false,
         quickBackSegments = false,
+        // Gecko paints root documents opaque (bugzilla 1549943), so the homepage draws its own background.
+        translucentPages = false,
         webExtensions = true,
     )
 
