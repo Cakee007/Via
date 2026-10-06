@@ -1,0 +1,183 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
+      - '.gitignore'
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
+      - '.gitignore'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-build-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle 9.7.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.7.1"
+
+      - name: Accept Android SDK licenses
+        # AGP then auto-installs the compileSdk platform (37) on first build.
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+
+      - name: Decode release keystore
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/via-keystore.jks"
+          test -s "$RUNNER_TEMP/via-keystore.jks" || {
+            echo "::error::ANDROID_KEYSTORE_BASE64 is missing or not valid base64; master builds must be release-signed"
+            exit 1
+          }
+
+      - name: Build release APKs (both engines)
+        if: github.event_name != 'pull_request'
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/via-keystore.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: gradle :app:assembleRelease
+
+      - name: Build debug APKs (both engines)
+        if: github.event_name == 'pull_request'
+        run: gradle :app:assembleDebug
+
+      - name: Upload release APKs
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-release
+          path: app/build/outputs/apk/*/release/*.apk
+          if-no-files-found: error
+
+      - name: Upload debug APKs
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-debug
+          path: app/build/outputs/apk/*/debug/*.apk
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    # Publishes only for matching release commits on Ujhhgtg/Via master; forks never publish.
+    if: >-
+      needs.build.result == 'success' &&
+      github.repository == 'Ujhhgtg/Via' &&
+      github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-release
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Download release APKs
+        uses: actions/download-artifact@v4
+        with:
+          name: apk-release
+          path: apks
+
+      - name: Parse release commit message
+        id: parse
+        env:
+          MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          first_line=$(printf '%s\n' "$MESSAGE" | head -n1)
+          version=$(printf '%s' "$first_line" | sed -n 's/^chore: \([^ ]*\) ([0-9]*)$/\1/p')
+          code=$(printf '%s' "$first_line" | sed -n 's/^chore: \([^ ]*\) (\([0-9]*\))$/\2/p')
+          if [[ -n "$version" && -n "$code" ]]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the commit message versions match the build files
+        if: steps.parse.outputs.publish == 'true'
+        env:
+          VERSION: ${{ steps.parse.outputs.version }}
+          CODE: ${{ steps.parse.outputs.code }}
+        run: |
+          gradle_name=$(sed -n 's/^ *versionName = "\(.*\)"$/\1/p' app/build.gradle.kts)
+          gradle_code=$(sed -n 's/^ *versionCode = \(.*\)$/\1/p' app/build.gradle.kts)
+          echo "commit message: $VERSION ($CODE); build files: $gradle_name ($gradle_code)"
+          if [[ "$VERSION" != "$gradle_name" || "$CODE" != "$gradle_code" ]]; then
+            echo "::error::version mismatch: update app/build.gradle.kts to versionName \"$VERSION\" and versionCode $CODE, or fix the commit message"
+            exit 1
+          fi
+
+      - name: Build release notes
+        if: steps.parse.outputs.publish == 'true'
+        env:
+          VERSION: ${{ steps.parse.outputs.version }}
+        run: |
+          previous=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || true)
+          {
+            if [[ -n "$previous" ]]; then
+              echo "Changes since $previous:"
+              git log "$previous"..HEAD --pretty='- %s (%h)'
+              echo
+              echo "**Full Changelog**: https://github.com/Ujhhgtg/Via/compare/$previous...v$VERSION"
+            else
+              git log --pretty='- %s (%h)'
+            fi
+          } > "$RUNNER_TEMP/release-notes.md"
+
+      - name: Generate SHA256SUMS
+        if: steps.parse.outputs.publish == 'true'
+        working-directory: apks
+        run: sha256sum *.apk > SHA256SUMS
+
+      - name: Create the release and upload APKs
+        if: steps.parse.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.parse.outputs.version }}
+        run: |
+          if gh release view "v$VERSION" --json id > /dev/null 2>&1; then
+            echo "Release v$VERSION already exists; refreshing notes and assets"
+            gh release edit "v$VERSION" \
+              --title "v$VERSION" \
+              --notes-file "$RUNNER_TEMP/release-notes.md"
+            gh release upload "v$VERSION" apks/* --clobber
+          else
+            gh release create "v$VERSION" \
+              --target "$GITHUB_SHA" \
+              --title "v$VERSION" \
+              --notes-file "$RUNNER_TEMP/release-notes.md" \
+              apks/*
+            gh release upload "v$VERSION" apks/SHA256SUMS --clobber
+          fi
