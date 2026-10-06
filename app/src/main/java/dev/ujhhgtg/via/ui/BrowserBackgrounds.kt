@@ -3,9 +3,6 @@ package dev.ujhhgtg.via.ui
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Color
-import android.graphics.RenderEffect
-import android.graphics.Shader
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -68,9 +65,7 @@ object BrowserBackgrounds {
         val image = SettingsBackgroundView(context).apply {
             setImageDrawable(snapshot)
             resetImageBounds()
-            if (Build.VERSION.SDK_INT >= 31 && preferences.blurEffect) {
-                setRenderEffect(RenderEffect.createBlurEffect(30f, 30f, Shader.TileMode.MIRROR))
-            }
+            // f8.n's RenderEffect blur stays on the browser background only; settings pages show the image sharp.
         }
         body.background = null
         return FrameLayout(context).apply {

@@ -1,7 +1,6 @@
 package dev.ujhhgtg.via.settings
 
 import android.os.Bundle
-import android.os.SystemClock
 import android.view.View
 import androidx.fragment.app.Fragment
 import dev.ujhhgtg.via.R
@@ -12,8 +11,6 @@ import dev.ujhhgtg.via.data.BrowserPreferences
 class SettingsFragment : SettingsListFragment() {
     private lateinit var preferences: BrowserPreferences
     private lateinit var rows: SettingsRowsAdapter
-    private var lastTitleClick = 0L
-    private var titleClickCount = 0
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -23,19 +20,7 @@ class SettingsFragment : SettingsListFragment() {
         rows.submit(items())
     }
 
-    override fun configureToolbar(toolbar: SettingsToolbar) {
-        toolbar.setTitle(R.string.settings)
-        toolbar.titleView.setOnClickListener {
-            val now = SystemClock.elapsedRealtime()
-            titleClickCount = if (now - lastTitleClick < 500) titleClickCount + 1 else 1
-            lastTitleClick = now
-            if (titleClickCount == 5) {
-                preferences.experimentalAvailable = !preferences.experimentalAvailable
-                titleClickCount = 0
-                rows.submit(items())
-            }
-        }
-    }
+    override fun configureToolbar(toolbar: SettingsToolbar) = toolbar.setTitle(R.string.settings)
 
     private fun items() = buildList {
         add(SettingsRow(1, getString(R.string.settings_general)))
@@ -44,7 +29,6 @@ class SettingsFragment : SettingsListFragment() {
         add(SettingsRow(3, getString(R.string.settings_advanced)))
         add(SettingsRow(9, getString(R.string.settings_script)))
         if (dev.ujhhgtg.via.engine.Engines.backend.extensions != null) add(SettingsRow(13, getString(R.string.settings_extensions)))
-        if (preferences.experimentalAvailable) add(SettingsRow(12, getString(R.string.experimental)))
         add(SettingsRow(5, getString(R.string.settings_about)))
     }
 
@@ -57,9 +41,6 @@ class SettingsFragment : SettingsListFragment() {
             5 -> shell.navigate(AboutSettingsFragment())
             8 -> shell.openPage("homepage_customization")
             9 -> shell.navigate(ScriptSettingsFragment())
-            10 -> shell.openPage("site_conf")
-            11 -> shell.openPage("proxy_settings")
-            12 -> shell.navigate(ExperimentalSettingsFragment())
             13 -> shell.navigate(ExtensionSettingsFragment())
         }
     }
@@ -91,8 +72,8 @@ class SettingsFragment : SettingsListFragment() {
                 "update_interval" -> ScriptSettingsFragment()
                 "settings_extensions" -> ExtensionSettingsFragment()
                 "settings_about" -> AboutSettingsFragment()
-                "experimental" -> ExperimentalSettingsFragment()
-                else -> SettingsChildFragment.newInstance(action)
+                // Unrouted deep-link actions fall back to the settings root; every known page has its own fragment.
+                else -> SettingsFragment()
             }
     }
 }

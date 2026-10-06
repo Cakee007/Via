@@ -435,6 +435,7 @@
     <string name="search_part">搜尋區域</string>
     <string name="search_part_hide">隱藏</string>
     <string name="search_part_show">展示</string>
+    <string name="apply_to_settings">對設定生效</string>
     <string name="background_color">色彩</string>
     <string name="background_image">圖片</string>
     <string name="favorites_clear_icons">清除圖示</string>

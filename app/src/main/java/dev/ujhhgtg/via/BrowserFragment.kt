@@ -1753,7 +1753,6 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     private fun showBrowserSettingAction(action: String) {
         val controller = menuSettings ?: SettingsController(
             host,
-            onBack = {},
             openPage = host::openPage,
             launchForResult = ::launchForResult,
             scopeOwner = this,

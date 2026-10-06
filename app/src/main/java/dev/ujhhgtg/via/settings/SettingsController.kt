@@ -27,7 +27,6 @@ import dev.ujhhgtg.via.data.BrowserDatabase
 import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.passwords.PasswordAuthenticator
 import dev.ujhhgtg.via.passwords.PasswordRepository
-import dev.ujhhgtg.via.ui.SettingsScreen
 import dev.ujhhgtg.via.ui.ViaToast
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
 import java.io.File
@@ -36,9 +35,7 @@ import java.util.Locale
 /** Retained settings actions; document-picker results return through [onActivityResult]. */
 class SettingsController(
     private val activity: FragmentActivity,
-    private val onBack: () -> Unit,
     private val openPage: (String) -> Unit,
-    private val page: SettingsScreen.Page = SettingsScreen.Page.ROOT,
     private val launchForResult: (Intent, Int) -> Unit,
     private val scopeOwner: LifecycleOwner = activity as LifecycleOwner,
     private val exportScopeOwner: LifecycleOwner = scopeOwner,
@@ -55,18 +52,12 @@ class SettingsController(
     private var backupPassword: String? = null
     private val passwordAuthenticator by lazy { PasswordAuthenticator(activity, launchForResult) }
     private val scriptStore by lazy { ScriptStore(this) }
-    private val screenValue = lazy { settingsView() }
-    private val screen by screenValue
-    val view: SettingsScreen get() = screen
     private var closed = false
     private var awaitingAuthentication = false
     private var transferDialog: ViaDialog? = null
     private var requestedOrientation: Int
         get() = activity.requestedOrientation
         set(value) { activity.requestedOrientation = value }
-
-    fun onHostResume() = refreshScreen()
-    private fun refreshScreen() { if (screenValue.isInitialized()) screen.refresh() }
 
     fun saveState(out: Bundle) {
         out.putInt("backup_sections", backupSections)
@@ -110,58 +101,7 @@ class SettingsController(
     private fun launchDocument(intent: Intent, requestCode: Int) = launchForResult(intent, requestCode)
     private fun runOnUiThread(action: () -> Unit) = activity.runOnUiThread { if (!closed) action() }
 
-    private fun settingsState() = SettingsScreen.State(
-        restoreTabs = preferences.restoreClosedTabs,
-        safeBrowsing = preferences.safeBrowsing,
-        doNotTrack = preferences.doNotTrack,
-        disableWebRtc = preferences.disableWebRtc,
-        doNotSellOrShare = preferences.doNotSellOrShare,
-        saveData = preferences.saveData,
-        webPageDebug = preferences.webPageDebug,
-        experimentalAvailable = preferences.experimentalAvailable,
-        showUndoCloseTab = preferences.showUndoCloseTab,
-        showSnifferButton = preferences.showSnifferButton,
-        disablePredictiveBack = preferences.disablePredictiveBack,
-        disableCustomTabs = preferences.disableCustomTabs,
-        scriptsEnabled = preferences.scriptsEnabled,
-        blurEffect = preferences.blurEffect,
-        showSettingsBackground = preferences.showSettingsBackground,
-        forceDarkPages = preferences.forceDarkPages,
-        readerConfirmation = preferences.readerConfirmation,
-        typeface = preferences.selectedTypeface(),
-    )
-
-    private fun settingsView(): SettingsScreen = SettingsScreen(
-        this,
-        settingsState(),
-        object : SettingsScreen.Listener {
-            override fun onBack() = this@SettingsController.onBack.invoke()
-
-            override fun onReadState(): SettingsScreen.State = settingsState()
-            override fun onSafeBrowsingChanged(enabled: Boolean) { preferences.safeBrowsing = enabled }
-
-            override fun onAction(name: String) = route(name)
-        },
-        page,
-    )
-
-    fun route(raw: String) {
-        val parts = raw.split(':', limit = 2)
-        val key = parts.first()
-        if (parts.size == 2) {
-            val enabled = parts[1].toBooleanStrictOrNull() ?: return
-            toggle(key, enabled)
-            return
-        }
-        if (SettingsScreen.Page.fromAction(key) != null) {
-            openPage(key)
-            return
-        }
-        // Full settings pages own these actions; retain their routing contract here.
-        if (key in translatedPages) {
-            openPage(key)
-            return
-        }
+    fun route(key: String) {
         when (key) {
             "home", "homepage" -> homepage()
             "homepage_customization" -> openPage("homepage_customization")
@@ -187,35 +127,6 @@ class SettingsController(
             "email_me" -> startActivity(Intent(Intent.ACTION_SENDTO, "mailto:yafengtu@gmail.com".toUri()))
             "wechat_official_account" -> openUrl("https://viayoo.com/contact/wechat/")
             "about", "debugging_info" -> about()
-            else -> unavailable(key)
-        }
-    }
-
-    private val translatedPages = setOf(
-        "settings_operation", "toolbars_settings", "customize_menu", "customize_context_menu",
-        "block_ads", "site_conf", "password_manager", "action_night", "reader_mode",
-        "search_settings", "agent", "font", "user_syns", "settings_script",
-        "title_ignore_ssl_warnings", "night_filter_for_web_contents", "text_size", "textsize",
-        "custom_reader_css", "theme_color", "update_interval"
-    )
-
-    private fun toggle(key: String, value: Boolean) {
-        when (key) {
-            "experimental_available" -> preferences.experimentalAvailable = value
-            "do_not_track" -> preferences.doNotTrack = value
-            "disable_webrtc" -> preferences.disableWebRtc = value
-            "do_not_sell_or_share" -> preferences.doNotSellOrShare = value
-            "save_data" -> preferences.saveData = value
-            "web_page_debug" -> preferences.webPageDebug = value
-            "show_toast_to_undo_closing_tab" -> preferences.showUndoCloseTab = value
-            "enable_scripts" -> preferences.scriptsEnabled = value
-            "show_sniffer_btn_automatically" -> preferences.showSnifferButton = value
-            "disable_predictive_back_gesture" -> preferences.disablePredictiveBack = value
-            "disable_custom_tabs" -> preferences.disableCustomTabs = value
-            "blur_effect" -> preferences.blurEffect = value
-            "show_background_in_settings" -> preferences.showSettingsBackground = value
-            "force_dark_mode_for_web_contents" -> preferences.forceDarkPages = value
-            "require_confirmation_to_enable_reader_mode" -> preferences.readerConfirmation = value
             else -> unavailable(key)
         }
     }
@@ -490,7 +401,6 @@ class SettingsController(
         ViaToast.makeText(this, getString(when (status) { 0 -> R.string.import_data_succeed; 3 -> R.string.import_data_failed_file_too_large; else -> R.string.import_data_failed }), ViaToast.LENGTH_SHORT).show()
         if (status == 0) {
             requestedOrientation = preferences.resolvedScreenOrientation()
-            refreshScreen()
             prepareDependencies(scriptStore.list())
         }
     }

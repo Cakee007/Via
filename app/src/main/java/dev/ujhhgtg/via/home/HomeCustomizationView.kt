@@ -10,6 +10,7 @@ import android.graphics.Outline
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -41,6 +42,7 @@ import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.data.FavoritesRepository
 import dev.ujhhgtg.via.engine.Engines
 import dev.ujhhgtg.via.settings.SettingsToolbar
+import dev.ujhhgtg.via.settings.SkinSettingsFragment
 import dev.ujhhgtg.via.settings.TextEditorFragment
 import dev.ujhhgtg.via.settings.settingsColor
 import dev.ujhhgtg.via.ui.HomeDocument
@@ -271,12 +273,18 @@ class HomeCustomizationView(
     private fun searchControls() {
         val bits = preferences.searchInfo
         controls.setControls(listOf(
+            toggle(R.drawable.custom_favorite_color, R.string.search_part, preferences.customInfo and 2 != 0, R.string.search_part_hide, R.string.search_part_show) {
+                preferences.customInfo = HomeDesign.bit(preferences.customInfo, 2, it)
+            },
             range(R.drawable.custom_opacity, R.string.corner_radius, bits and 127, 0, 100, "%d%%") { preferences.searchInfo = HomeDesign.bits(preferences.searchInfo, 0, 7, it) },
             range(R.drawable.custom_theme_fill, R.string.opacity, bits shr 7 and 127, 0, 100, "%d%%") { preferences.searchInfo = HomeDesign.bits(preferences.searchInfo, 7, 7, it) },
             range(R.drawable.custom_search_line, R.string.stroke_width, bits shr 21 and 7, 0, 7, "%dpx") { preferences.searchInfo = HomeDesign.bits(preferences.searchInfo, 21, 3, it) },
             range(R.drawable.custom_search_rectangle, R.string.stroke_opacity, bits shr 14 and 127, 0, 100, "%d%%") { preferences.searchInfo = HomeDesign.bits(preferences.searchInfo, 14, 7, it) },
             toggle(R.drawable.custom_favorite, R.string.search_bar_style, bits and 16777216 != 0, R.string.search_bar_style_line, R.string.search_bar_style_rectangle) {
                 preferences.searchInfo = HomeDesign.bit(preferences.searchInfo, 16777216, it)
+            },
+            toggle(R.drawable.custom_favorite, R.string.search_bar_effect, preferences.customInfo and 1 != 0, R.string.search_bar_effect_blur, R.string.search_bar_effect_transparent) {
+                preferences.customInfo = HomeDesign.bit(preferences.customInfo, 1, it)
             },
         ))
     }
@@ -369,6 +377,9 @@ class HomeCustomizationView(
             rows += range(R.drawable.custom_background_opacity, R.string.opacity, info and 127, 0, 80, "%d%%") {
                 preferences.backgroundInfo = HomeDesign.bits(preferences.backgroundInfo, 0, 7, it)
             }
+            // Moved from the experimental settings; without an image the settings pages have nothing to show.
+            rows += HomeControl.Toggle(R.drawable.image_frame, text(R.string.apply_to_settings),
+                preferences.showSettingsBackground, text(R.string.on), text(R.string.off)) { preferences.showSettingsBackground = it }
         }
         controls.setControls(rows, show)
     }
@@ -395,34 +406,34 @@ class HomeCustomizationView(
 
     /** e9.y / d9.t.q */
     private fun advancedControls() {
-        controls.setControls(listOf(
-            toggle(R.drawable.custom_favorite, R.string.search_bar_effect, preferences.customInfo and 1 != 0, R.string.search_bar_effect_blur, R.string.search_bar_effect_transparent) {
-                preferences.customInfo = HomeDesign.bit(preferences.customInfo, 1, it)
-            },
-            toggle(R.drawable.custom_favorite_color, R.string.search_part, preferences.customInfo and 2 != 0, R.string.search_part_hide, R.string.search_part_show) {
-                preferences.customInfo = HomeDesign.bit(preferences.customInfo, 2, it)
-            },
-            HomeControl.Action(R.drawable.plus, text(R.string.custom_css_special)) {
-                editCode(R.string.custom_css_special, preferences.cssTheme.orEmpty()) {
-                    preferences.cssTheme = it
-                    GeneratedDocumentState.mark(GeneratedDocumentState.HOME_STYLE)
-                    refreshPreview()
-                }
-            },
-            HomeControl.Action(R.drawable.trash_tapered, text(R.string.favorites_clear_icons)) {
-                ViaDialog(activity).title(R.string.clear_website_icon_cache).message(R.string.clear_website_icon_cache_message)
-                    .positive(android.R.string.ok) { _, _ ->
-                        if (deleteTree(File(context.filesDir, "icon"))) {
-                            ViaToast.makeText(context, R.string.data_cleared, ViaToast.LENGTH_SHORT).show()
-                            refreshPreview(clearCache = true)
-                        }
-                    }.negative(android.R.string.cancel).show()
-            },
-            HomeControl.Action(R.drawable.reload, text(R.string.customization_reset)) {
-                ViaDialog(activity).title(R.string.reset_to_default_settings).message(R.string.dialog_sure)
-                    .positive(android.R.string.ok) { _, _ -> resetDesign() }.negative(android.R.string.cancel).show()
-            },
-        ))
+        val rows = mutableListOf<HomeControl>()
+        // The app-wide blur toggle moved here from the experimental settings; RenderEffect needs API 31.
+        if (Build.VERSION.SDK_INT >= 31) rows += HomeControl.Toggle(R.drawable.custom_blur, text(R.string.blur_effect),
+            preferences.blurEffect, text(R.string.on), text(R.string.off)) { preferences.blurEffect = it }
+        rows += HomeControl.Action(R.drawable.plus, text(R.string.custom_css_special)) {
+            editCode(R.string.custom_css_special, preferences.cssTheme.orEmpty()) {
+                preferences.cssTheme = it
+                GeneratedDocumentState.mark(GeneratedDocumentState.HOME_STYLE)
+                refreshPreview()
+            }
+        }
+        rows += HomeControl.Action(R.drawable.trash_tapered, text(R.string.favorites_clear_icons)) {
+            ViaDialog(activity).title(R.string.clear_website_icon_cache).message(R.string.clear_website_icon_cache_message)
+                .positive(android.R.string.ok) { _, _ ->
+                    if (deleteTree(File(context.filesDir, "icon"))) {
+                        ViaToast.makeText(context, R.string.data_cleared, ViaToast.LENGTH_SHORT).show()
+                        refreshPreview(clearCache = true)
+                    }
+                }.negative(android.R.string.cancel).show()
+        }
+        rows += HomeControl.Action(R.drawable.custom_theme, text(R.string.skins)) {
+            (activity as Shell).navigate(SkinSettingsFragment())
+        }
+        rows += HomeControl.Action(R.drawable.reload, text(R.string.customization_reset)) {
+            ViaDialog(activity).title(R.string.reset_to_default_settings).message(R.string.dialog_sure)
+                .positive(android.R.string.ok) { _, _ -> resetDesign() }.negative(android.R.string.cancel).show()
+        }
+        controls.setControls(rows)
     }
 
     private fun resetDesign() {

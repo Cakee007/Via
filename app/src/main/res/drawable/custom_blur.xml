@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Water droplet for the blur toggle; stroke matches the outline weight of the PNG icon family. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M12,2.9 C12,2.9 5.7,9.7 5.7,14.3 C5.7,17.9 8.5,20.9 12,20.9 C15.5,20.9 18.3,17.9 18.3,14.3 C18.3,9.7 12,2.9 12,2.9 Z"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+</vector>

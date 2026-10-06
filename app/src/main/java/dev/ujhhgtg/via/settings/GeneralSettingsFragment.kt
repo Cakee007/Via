@@ -41,7 +41,7 @@ class GeneralSettingsFragment : SettingsListFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         preferences = BrowserPreferences(requireContext())
-        handlers = SettingsController(requireActivity(), onBack = { parentFragmentManager.popBackStack() },
+        handlers = SettingsController(requireActivity(),
             openPage = { (requireActivity() as Shell).openPage(it) },
             launchForResult = { intent, code -> pendingRequest = code; document.launch(intent) }, scopeOwner = viewLifecycleOwner, exportScopeOwner = this)
         handlers.restoreState(savedInstanceState)

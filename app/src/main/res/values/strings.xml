@@ -439,6 +439,7 @@
     <string name="search_part">Search part</string>
     <string name="search_part_hide">Hide</string>
     <string name="search_part_show">Show</string>
+    <string name="apply_to_settings">Apply to settings</string>
     <string name="background_color">Color</string>
     <string name="background_image">Image</string>
     <string name="favorites_clear_icons">Clear icons</string>
