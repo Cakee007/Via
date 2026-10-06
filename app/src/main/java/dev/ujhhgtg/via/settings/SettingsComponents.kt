@@ -154,6 +154,8 @@ open class SettingsToggleRow(
 /** a6.g and a6.l, keeping distinct adapter identities like the original. */
 class SettingsChoiceRow(id: Int, title: String, checked: Boolean, summary: String? = null) : SettingsToggleRow(id, title, summary, checked)
 class SettingsHeadingRow(title: String) : SettingsRow(0, title)
+/** A row whose title wraps to its full length instead of ending in an ellipsis. */
+class SettingsTextRow(id: Int, text: String) : SettingsRow(id, text)
 class SettingsEmptyRow : SettingsRow(Int.MIN_VALUE, "")
 class ReaderColorRow(val color: Int) : SettingsRow(0, "") {
     override fun equals(other: Any?) = this === other
@@ -184,6 +186,10 @@ private class SettingsRowView(context: Context) : LinearLayout(context) {
     }
 
     fun bind(item: SettingsRow) {
+        // Recycled views switch between single-line titles and full-length text rows.
+        val wrap = item is SettingsTextRow
+        title.maxLines = if (wrap) Int.MAX_VALUE else 1
+        title.ellipsize = if (wrap) null else TextUtils.TruncateAt.END
         title.text = item.title
         summary.text = item.summary
         summary.visibility = if (item.summary.isNullOrEmpty()) GONE else VISIBLE

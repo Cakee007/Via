@@ -12,7 +12,7 @@ data class Capabilities(
     val sslProceed: Boolean = true,
     /** Text zoom can differ per page; otherwise it is runtime-wide. */
     val perPageTextZoom: Boolean = true,
-    /** The engine can darken pages itself; otherwise only the CSS fallback is available. */
+    /** The engine can darken pages itself; otherwise night mode only sets the pages' preferred color scheme. */
     val algorithmicDarkening: Boolean = true,
     /** User-Agent Client Hints metadata can be overridden. */
     val userAgentMetadata: Boolean = true,

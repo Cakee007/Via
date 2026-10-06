@@ -1,10 +1,10 @@
 package dev.ujhhgtg.via.settings
 
 import android.content.Context
+import android.graphics.Rect
 import android.text.TextUtils
 import android.util.TypedValue
 import android.view.TouchDelegate
-import android.graphics.Rect
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
@@ -12,9 +12,9 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import dev.ujhhgtg.via.R
-import dev.ujhhgtg.via.skins.SkinResources
 import dev.ujhhgtg.via.browser.script.UserScript
 import dev.ujhhgtg.via.data.BrowserPreferences
+import dev.ujhhgtg.via.skins.SkinResources
 import dev.ujhhgtg.via.ui.dp
 
 internal class ScriptListRow(val script: UserScript, val scriptsEnabled: Boolean) :
@@ -33,10 +33,10 @@ internal class ScriptResourceRow(id: Int, title: String, val available: Boolean)
 internal class ScriptSettingsAdapter(
     private val click: (SettingsRow) -> Unit,
     private val toggle: (UserScript, Boolean) -> Unit = { _, _ -> },
-    longClick: ((View, SettingsRow) -> Boolean)? = null,
+    private val longClick: ((View, SettingsRow) -> Boolean)? = null,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private val common = SettingsRowsAdapter(click).apply { onLongClick = longClick }
-    private val longClick = longClick
+
     init {
         common.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onChanged() = notifyDataSetChanged()
@@ -90,8 +90,8 @@ internal class ScriptSettingsAdapter(
     fun submit(rows: List<SettingsRow>) = common.submit(rows)
 }
 
-/** sa.h1 uses an independently clickable checkbox; tapping the text opens ta.u. */
-private class ScriptListView(context: Context) : RelativeLayout(context) {
+/** sa.h1 uses an independently clickable checkbox; tapping the text opens ta.u. Extension rows reuse it. */
+internal class ScriptListView(context: Context) : RelativeLayout(context) {
     private val name = label(R.dimen.settings_row_title_size, R.attr.viaPrimaryTextColor).apply {
         id = generateViewId(); setSingleLine()
     }
@@ -119,15 +119,20 @@ private class ScriptListView(context: Context) : RelativeLayout(context) {
         setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimensionPixelSize(size).toFloat())
         setTextColor(settingsColor(context, color, 0xff000000.toInt()))
         typeface = BrowserPreferences(context).selectedTypeface()
-        textDirection = View.TEXT_DIRECTION_LOCALE; ellipsize = TextUtils.TruncateAt.END
+        textDirection = TEXT_DIRECTION_LOCALE; ellipsize = TextUtils.TruncateAt.END
     }
-    fun bind(row: ScriptListRow, click: () -> Unit, longClick: () -> Boolean, toggle: (Boolean) -> Unit) {
-        name.text = row.script.name; version.text = row.script.version
-        version.visibility = if (row.script.version.isNullOrEmpty()) GONE else VISIBLE
-        enabled.setOnCheckedChangeListener(null); enabled.isChecked = row.script.enabled
+    fun bind(row: ScriptListRow, click: () -> Unit, longClick: () -> Boolean, toggle: (Boolean) -> Unit) =
+        bind(row.script.name, row.script.version, row.script.enabled, row.scriptsEnabled,
+            row.scriptsEnabled && row.script.content.isNotEmpty(), click, longClick, toggle)
+
+    fun bind(title: String, summary: String?, checked: Boolean, active: Boolean, opaque: Boolean,
+        click: () -> Unit, longClick: () -> Boolean, toggle: (Boolean) -> Unit) {
+        name.text = title; version.text = summary
+        version.visibility = if (summary.isNullOrEmpty()) GONE else VISIBLE
+        enabled.setOnCheckedChangeListener(null); enabled.isChecked = checked
         enabled.setOnCheckedChangeListener { _, value -> toggle(value) }
-        isEnabled = row.scriptsEnabled
-        val opacity = if (row.scriptsEnabled && row.script.content.isNotEmpty()) 1f else .5f
+        isEnabled = active
+        val opacity = if (opaque) 1f else .5f
         name.alpha = opacity; version.alpha = opacity; enabled.alpha = opacity
         setOnClickListener { click() }; setOnLongClickListener { longClick() }
     }

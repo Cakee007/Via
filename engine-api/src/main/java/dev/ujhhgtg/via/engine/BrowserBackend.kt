@@ -32,6 +32,9 @@ interface BrowserBackend {
 
     val cookies: CookieAccess
 
+    /** Installed WebExtensions, when [Capabilities.webExtensions] is true. */
+    val extensions: ExtensionManager? get() = null
+
     fun clearCache(context: Context)
     fun clearFormData(context: Context)
     fun clearStorage(context: Context)

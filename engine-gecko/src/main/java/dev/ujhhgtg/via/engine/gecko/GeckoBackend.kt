@@ -72,9 +72,12 @@ object GeckoBackend : BrowserBackend {
         GeckoRuntimeSettings.Builder()
             .consoleOutput(true)
             .aboutConfigEnabled(true)
+            // addons.mozilla.org's "Add to Firefox" uses navigator.mozAddonManager.
+            .extensionsWebAPIEnabled(true)
             .build(),
     ).also { created ->
         runtime = created
+        GeckoExtensions.attach(created)
         created.webExtensionController.ensureBuiltIn(EXTENSION_URI, EXTENSION_ID).accept({ installed ->
             if (installed == null) return@accept
             installed.setMessageDelegate(background, NATIVE_APP)
@@ -155,6 +158,9 @@ object GeckoBackend : BrowserBackend {
 
     internal fun register(page: GeckoPage) { pages[page.id] = java.lang.ref.WeakReference(page) }
     internal fun unregister(page: GeckoPage) { pages.remove(page.id) }
+    internal fun livePages(): List<GeckoPage> = pages.values.mapNotNull { it.get() }
+
+    override val extensions: dev.ujhhgtg.via.engine.ExtensionManager get() = GeckoExtensions
 
     /**
      * Decides one request off the main thread. A tab's first document arrives before its content script

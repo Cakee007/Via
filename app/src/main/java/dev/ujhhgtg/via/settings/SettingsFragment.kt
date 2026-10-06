@@ -43,6 +43,7 @@ class SettingsFragment : SettingsListFragment() {
         add(SettingsRow(2, getString(R.string.settings_privacy)))
         add(SettingsRow(3, getString(R.string.settings_advanced)))
         add(SettingsRow(9, getString(R.string.settings_script)))
+        if (dev.ujhhgtg.via.engine.Engines.backend.extensions != null) add(SettingsRow(13, getString(R.string.settings_extensions)))
         if (preferences.experimentalAvailable) add(SettingsRow(12, getString(R.string.experimental)))
         add(SettingsRow(5, getString(R.string.settings_about)))
     }
@@ -59,6 +60,7 @@ class SettingsFragment : SettingsListFragment() {
             10 -> shell.openPage("site_conf")
             11 -> shell.openPage("proxy_settings")
             12 -> shell.navigate(ExperimentalSettingsFragment())
+            13 -> shell.navigate(ExtensionSettingsFragment())
         }
     }
 
@@ -87,6 +89,7 @@ class SettingsFragment : SettingsListFragment() {
                 "font" -> FontSettingsFragment()
                 "settings_script" -> ScriptSettingsFragment()
                 "update_interval" -> ScriptSettingsFragment()
+                "settings_extensions" -> ExtensionSettingsFragment()
                 "settings_about" -> AboutSettingsFragment()
                 "experimental" -> ExperimentalSettingsFragment()
                 else -> SettingsChildFragment.newInstance(action)

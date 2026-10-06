@@ -55,6 +55,11 @@ internal class GeckoPage(
     private var destroyed = false
     /** Logical URL of a generated top-level response loaded through Gecko's data loader. */
     @Volatile private var generatedLogicalUrl: String? = null
+    /** Tab-specific extension actions by extension id; [GeckoExtensions] merges them with the defaults. */
+    internal val browserActions = HashMap<String, WebExtension.Action>()
+    internal val pageActions = HashMap<String, WebExtension.Action>()
+    /** The session currently shown, for extension delegate registration. */
+    internal val currentSession: GeckoSession? get() = if (destroyed) null else session
 
     override var url: String? = null; private set
     override var title: String? = null; private set
@@ -80,6 +85,7 @@ internal class GeckoPage(
         created.scrollDelegate = scroll
         created.promptDelegate = GeckoPrompts(this, events)
         created.permissionDelegate = GeckoPermissions(context, events)
+        GeckoExtensions.registerSession(this, created)
         settings?.let { applyTo(created, it) }
         selectionActions?.let { created.selectionActionDelegate = it }
         GeckoBackend.withExtension { extension ->
@@ -231,7 +237,7 @@ internal class GeckoPage(
     }
 
     /** Swaps this unused page onto a fresh, unopened session, which Gecko opens for the new window. */
-    private fun adoptPopupSession(): GeckoSession {
+    internal fun adoptPopupSession(): GeckoSession {
         val previous = session
         val created = newSession()
         session = created
@@ -535,8 +541,15 @@ internal class GeckoPage(
 
     override fun setContextMenuHandler(handler: ContextMenuHandler?) { contextMenu = handler }
 
-    override fun pause() = session.setActive(false)
-    override fun resume() = session.setActive(true)
+    // Extensions see the selected tab as active (tabs.query, per-tab actions).
+    override fun pause() {
+        session.setActive(false)
+        runtime.webExtensionController.setTabActive(session, false)
+    }
+    override fun resume() {
+        session.setActive(true)
+        runtime.webExtensionController.setTabActive(session, true)
+    }
 
     override fun createPrintAdapter(title: String): PrintDocumentAdapter = GeckoPrintAdapter(title, session.saveAsPdf())
 
@@ -562,6 +575,8 @@ internal class GeckoPage(
         destroyed = true
         scriptChannel?.observeValues(null)
         GeckoBackend.unregister(this)
+        browserActions.clear()
+        pageActions.clear()
         (view.parent as? android.view.ViewGroup)?.removeView(view)
         port?.setDelegate(null)
         framePorts.forEach { it.setDelegate(null) }

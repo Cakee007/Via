@@ -32,10 +32,6 @@ internal class DocumentInjection(
         page.evaluate(documentScripts.bootstrap(secret, viewId))
     }
 
-    /** Removes the night CSS fallback from an already loaded page. */
-    fun removeNightCss(page: EnginePage) = page.evaluate(documentScripts.night(false))
-    fun applyNightCss(page: EnginePage, enabled: Boolean) = page.evaluate(documentScripts.night(enabled))
-
     /** runAt = 1 (head), 2 (DOMContentLoaded), 4 (load). */
     fun inject(page: EnginePage, runAt: Int): Boolean {
         if (!page.javaScriptEnabled) return false
@@ -93,7 +89,6 @@ internal class DocumentInjection(
                     }
                 } else source.append(documentScripts.font(font))
             }
-            if (inlineResources && preferences.isNightMode && preferences.nightCss) source.append(documentScripts.night(true))
             if (source.isNotEmpty()) add(source.toString())
             if (enabled && includeStartScripts) addAll(scripts?.phaseSources(url, ScriptRunAt.START).orEmpty())
             return@buildList

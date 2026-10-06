@@ -95,7 +95,8 @@ class BrowserPreferences(context: Context) {
     var version: Int get() = int("version", 0); set(value) = putInt("version", value)
     var login: Boolean get() = getBoolean("login", false); set(value) = putBoolean("login", value)
     // w9.k.K2 -> w9.r.h: the default is the platform force-dark capability (API 29+).
-    var nightCss: Boolean get() = getBoolean("nightcss", true); set(value) = putBoolean("nightcss", value)
+    /** WebView's "Force dark mode for web contents". The key keeps its legacy name for saved settings and backups. */
+    var forceDarkPages: Boolean get() = getBoolean("nightcss", true); set(value) = putBoolean("nightcss", value)
     var searchToolBarDisabled: String? get() = string("searchtoolbardisabled", null); set(value) = putString("searchtoolbardisabled", value)
     var searchToolBarOrder: String get() = string("searchtoolbarorder", "") ?: ""; set(value) = putString("searchtoolbarorder", value)
     var searchShortcuts: String get() = string("searchshortcuts", "") ?: ""; set(value) = putString("searchshortcuts", value)
@@ -161,6 +162,10 @@ class BrowserPreferences(context: Context) {
     var disableCustomTabs: Boolean get() = appFlags and 262144 != 0; set(value) { appFlags = flag(appFlags, 262144, value) }
     var scriptsEnabled: Boolean get() = webFlags and 268435456 == 0; set(value) { webFlags = flag(webFlags, 268435456, !value) }
     var scriptUpdateInterval: Long get() = getLong("updater_scripts", 0L); set(value) = putLong("updater_scripts", value)
+    var extensionsEnabled: Boolean get() = getBoolean("extensions_enabled", true); set(value) = putBoolean("extensions_enabled", value)
+    /** Extensions check for updates every day unless the user chooses otherwise. */
+    var extensionUpdateInterval: Long get() = getLong("updater_extensions", 86_400_000L); set(value) = putLong("updater_extensions", value)
+    var allowUnsignedExtensions: Boolean get() = labFlags and 8 != 0; set(value) { labFlags = flag(labFlags, 8, value) }
     var readerConfirmation: Boolean get() = appFlags and 8192 != 0; set(value) { appFlags = flag(appFlags, 8192, value) }
     var experimentalAvailable: Boolean get() = labFlags and 1 != 0; set(value) { labFlags = flag(labFlags, 1, value) }
     var blurEffect: Boolean get() = labFlags and 2 != 0; set(value) { labFlags = flag(labFlags, 2, value) }

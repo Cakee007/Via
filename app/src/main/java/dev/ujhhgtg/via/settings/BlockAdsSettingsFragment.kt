@@ -38,6 +38,7 @@ class BlockAdsSettingsFragment : SettingsListFragment() {
         super.onViewCreated(view, savedInstanceState)
         preferences = BrowserPreferences(requireContext())
         rows = SettingsRowsAdapter { row ->
+            if (row.disabled) return@SettingsRowsAdapter
             when (row.id) {
                 1 -> { preferences.adBlocking = !preferences.adBlocking; reloadBrowser(); bindRows() }
                 2 -> {
@@ -57,17 +58,18 @@ class BlockAdsSettingsFragment : SettingsListFragment() {
         bindRows()
     }
 
+    /** With ad blocking off, every row below its switch is shown disabled, like the Extensions page. */
     private fun bindRows() = rows.submit(buildList {
-        addAll(listOf(
-        SettingsToggleRow(1, getString(R.string.block_ads), if (preferences.adBlocking)
-            getString(R.string.adblock_info, preferences.adBlockedTimes, savedDataLabel()) else getString(R.string.disable), preferences.adBlocking),
-        SettingsToggleRow(2, getString(R.string.enable_built_in_filters), getString(R.string.enable_built_in_filters_description), preferences.appFlags and 64 != 0),
-        SettingsRow(3, getString(R.string.custom_filters), getString(R.string.custom_filters_description)),
-        SettingsRow(4, getString(R.string.filter_subscriptions), getString(R.string.filter_subscriptions_description)),
-        ))
+        val off = !preferences.adBlocking
+        add(SettingsToggleRow(1, getString(R.string.block_ads), if (preferences.adBlocking)
+            getString(R.string.adblock_info, preferences.adBlockedTimes, savedDataLabel()) else getString(R.string.disable), preferences.adBlocking))
+        add(SettingsToggleRow(2, getString(R.string.enable_built_in_filters), getString(R.string.enable_built_in_filters_description),
+            preferences.appFlags and 64 != 0, disabled = off))
+        add(SettingsRow(3, getString(R.string.custom_filters), getString(R.string.custom_filters_description), disabled = off))
+        add(SettingsRow(4, getString(R.string.filter_subscriptions), getString(R.string.filter_subscriptions_description), disabled = off))
         add(SettingsToggleRow(5, getString(R.string.expand_web_content_automatically),
             getString(R.string.expand_web_content_automatically_description), BuiltinExpandScript.enabled(requireContext()),
-            disabled = preferences.webFlags and 0x10000000 != 0))
+            disabled = off || preferences.webFlags and 0x10000000 != 0))
     })
 
     /** z8.b0.x/w: the preference stores KiB, and units change at 0.8 of the next unit. */

@@ -90,6 +90,7 @@ import dev.ujhhgtg.via.sync.WebDavSyncRuntime
 import dev.ujhhgtg.via.ui.AnchorTextMenu
 import dev.ujhhgtg.via.ui.BrowserBackgrounds
 import dev.ujhhgtg.via.ui.BrowserLayout
+import dev.ujhhgtg.via.ui.BrowserMenu
 import dev.ujhhgtg.via.ui.BrowserMenuChoices
 import dev.ujhhgtg.via.ui.BrowserMenuDialog
 import dev.ujhhgtg.via.ui.CompactBookmarksFragment
@@ -157,6 +158,8 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         readAloudControls?.update(task, readAloudTaskId)
     }
     private lateinit var tabs: TabController
+    /** Prompts, popups and tabs for WebExtensions; null on engines without them. */
+    private var extensionHost: dev.ujhhgtg.via.extensions.ExtensionHost? = null
 
     /** Child overlays (f8.l0) register their r4.f listeners through this. */
     internal val tabController: TabController?
@@ -257,7 +260,8 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     private fun toast(value: String) = ViaToast.makeText(host, value, ViaToast.LENGTH_SHORT).show()
     private fun current() = if (::tabs.isInitialized) tabs.selected else null
     private fun currentWebView() = current()?.page
-    private fun isLocal(url: String) = url.startsWith("file://${host.filesDir.path}/") || url.startsWith("about:") || UrlResolver.isInternal(url)
+    private fun isLocal(url: String) = url.startsWith("file://${host.filesDir.path}/") || url.startsWith("about:") ||
+        url.startsWith("moz-extension:") || UrlResolver.isInternal(url)
     private fun visibleUrl(tab: BrowserTab?) = tab?.url?.takeUnless { isLocal(it) }.orEmpty()
 
     override fun onCreate(state: Bundle?) {
@@ -569,6 +573,13 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 try { manager.updateDue(preferences) } finally { manager.close() }
                 if (filtersUpdated > 0) host.runOnUiThread { if (this@BrowserFragment.view != null) reloadTabPreferences() }
             }
+            dev.ujhhgtg.via.extensions.ExtensionFiles.cleanup(appContext)
+        }
+        dev.ujhhgtg.via.engine.Engines.backend.extensions?.let { manager ->
+            // Gecko's add-on manager runs on the main thread; updates that need new permissions prompt there.
+            applicationIoScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                runCatching { dev.ujhhgtg.via.extensions.ExtensionUpdater.updateDue(manager, preferences) }
+            }
         }
     }
 
@@ -835,8 +846,12 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             if (visible) floatingToolbarButton?.hide(true) else showFloatingToolbarButton()
         }
         val settingsData = SettingsDataRepository(database)
+        dev.ujhhgtg.via.engine.Engines.backend.extensions?.configure(preferences.extensionsEnabled, preferences.allowUnsignedExtensions)
         tabs = TabController(host, preferences, BrowserHost(), siteConfigurations::get) { id ->
             settingsData.find(id)?.takeIf { it.type == SettingsData.USER_AGENT }?.content
+        }
+        extensionHost = dev.ujhhgtg.via.engine.Engines.backend.extensions?.let { manager ->
+            dev.ujhhgtg.via.extensions.ExtensionHost(this, manager, ExtensionTabs()).also { it.attach() }
         }
         // r4.f chrome-side flow (c8.s6): a tab insert closes any open browser
         // overlay (Z's R8) and bounces the tab counter once more than one tab
@@ -980,7 +995,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         if (passwordAssist != null) currentWebView()?.let { showPasswordAssist(it, true) }
         // c8.f8.setNightModeEnabled recreates the fixed two-colour progress drawable.
         progress.progressDrawable.constantState?.newDrawable(resources)?.let { progress.progressDrawable = it }
-        if (!preferences.nightCss) {
+        if (!preferences.forceDarkPages) {
             browserHost.dispatchConfigurationChanged(browserHost.resources.configuration)
         }
         applyAppearance()
@@ -1455,6 +1470,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     /** Original c8.s6.D9 has separate handlers for menu long presses. */
     private fun performMenuLongPress(id: Int, flags: Int) {
         when (id) {
+            BrowserMenu.EXTENSIONS -> openSettings("settings_extensions")
             1 -> host.navigate(dev.ujhhgtg.via.settings.NightModeSettingsFragment())
             2 -> {
                 parentFragmentManager.setFragmentResultListener(CompactBookmarksFragment.RESULT, viewLifecycleOwner) { key, result ->
@@ -1498,6 +1514,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
 
     private fun performMenuAction(id: Int, flags: Int = 0) {
         when (id) {
+            BrowserMenu.EXTENSIONS -> extensionHost?.showActions(current()?.page)
             -1, 21 -> exitBrowser()
             1 -> {
                 val systemNight = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES
@@ -2906,7 +2923,15 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 updateReloadButton(adjusted < 100)
             }
         }
-        override fun onDownload(tab: BrowserTab, url: String, userAgent: String?, disposition: String?, mimeType: String?, size: Long, body: java.io.InputStream?) = requestDownload(tab, url, userAgent, disposition, mimeType, size, body)
+        override fun onDownload(tab: BrowserTab, url: String, userAgent: String?, disposition: String?, mimeType: String?, size: Long, body: java.io.InputStream?) {
+            val extensions = extensionHost
+            if (body != null && extensions != null && dev.ujhhgtg.via.extensions.ExtensionFiles.isPackage(url, mimeType, disposition)) {
+                val streamId = dev.ujhhgtg.via.downloads.DownloadStreamRegistry.register(host.applicationContext, body, ".xpi")
+                extensions.installLink(dev.ujhhgtg.via.extensions.ExtensionHost.LinkInstall(url, userAgent, disposition, mimeType, size, streamId))
+                return
+            }
+            requestDownload(tab, url, userAgent, disposition, mimeType, size, body)
+        }
         override fun onBridgeCommand(tab: BrowserTab, command: Int): Int {
             // cmd(515) is queried synchronously by homepage gesture code; the other commands
             // schedule their shell action on the activity thread.
@@ -3106,14 +3131,18 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         return true
     }
 
-    private fun requestDownload(tab: BrowserTab, url: String, userAgent: String?, disposition: String?, mime: String?, size: Long, body: java.io.InputStream? = null) {
-        val referrer = tab.url
+    private fun requestDownload(tab: BrowserTab, url: String, userAgent: String?, disposition: String?, mime: String?, size: Long, body: java.io.InputStream? = null) =
+        requestDownload(tab.url, url, userAgent, disposition, mime, size,
+            body?.let { dev.ujhhgtg.via.downloads.DownloadStreamRegistry.register(host.applicationContext, it) })
+
+    /** [streamId] is a body already staged in DownloadStreamRegistry, which the download then owns. */
+    private fun requestDownload(referrer: String?, url: String, userAgent: String?, disposition: String?, mime: String?, size: Long,
+        streamId: String?, fileName: String? = null) {
         val headers = url.toUri().host?.let { httpAuthorization[it] }?.let { mapOf("Authorization" to it) } ?: emptyMap()
-        val streamId = body?.let { dev.ujhhgtg.via.downloads.DownloadStreamRegistry.register(host.applicationContext, it) }
         lifecycleScope.launch {
             val request = DownloadRequest(url, userAgent = userAgent, contentDisposition = disposition, referrer = referrer,
                 cookies = dev.ujhhgtg.via.engine.Engines.backend.cookies.get(url), mimeType = mime, headers = headers,
-                contentLength = size.coerceAtLeast(0), streamId = streamId)
+                contentLength = size.coerceAtLeast(0), streamId = streamId, fileName = fileName)
             downloadDestinations.show(request, size)
         }.invokeOnCompletion { error ->
             // Includes a scope that was already cancelled, where the block never runs.
@@ -3335,8 +3364,43 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         }, 150L)
     }
 
+    /** tabs.create/update/remove from extensions, and the hand-off of a staged `.xpi` to the download dialog. */
+    private inner class ExtensionTabs : dev.ujhhgtg.via.extensions.ExtensionHost.Tabs {
+        private fun tabOf(page: dev.ujhhgtg.via.engine.EnginePage) = tabs.all.firstOrNull { it.page === page }
+        override fun openTab(active: Boolean): dev.ujhhgtg.via.engine.EnginePage {
+            val tab = tabs.createTab("", select = active, loadInitialUrl = false, insertIndex = tabs.indexOf(current()) + 1)
+            if (active) attachSelected() else updateChrome()
+            return tab.page
+        }
+        override fun openUrl(url: String) {
+            parentFragmentManager.popBackStackImmediate(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
+            newTab(url)
+        }
+        override fun select(page: dev.ujhhgtg.via.engine.EnginePage) {
+            tabOf(page)?.let { tabs.select(it.id); attachSelected() }
+        }
+        override fun close(page: dev.ujhhgtg.via.engine.EnginePage) { tabOf(page)?.let(::closeTab) }
+        override fun download(link: dev.ujhhgtg.via.extensions.ExtensionHost.LinkInstall) =
+            requestDownload(current()?.url, link.url, link.userAgent, link.disposition, link.mime, link.size, link.streamId)
+        override fun download(download: dev.ujhhgtg.via.engine.ExtensionDownload) {
+            // Gecko already fetched the body with the extension's request; stage it like a page download.
+            val streamId = dev.ujhhgtg.via.downloads.DownloadStreamRegistry.register(host.applicationContext, download.body) { saved, bytes ->
+                download.finish(when (saved) {
+                    true -> dev.ujhhgtg.via.engine.ExtensionDownload.Outcome.COMPLETE
+                    false -> dev.ujhhgtg.via.engine.ExtensionDownload.Outcome.FAILED
+                    null -> dev.ujhhgtg.via.engine.ExtensionDownload.Outcome.CANCELED
+                }, bytes)
+            }
+            requestDownload(null, download.url, null, download.disposition, download.mimeType, download.size, streamId, download.fileName)
+        }
+        override fun openSettings() = openSettings("settings_extensions")
+    }
+
     private fun installScript(url: String) {
-        ScriptInstaller(this).fromBrowserUrl(url) { reloadTabPreferences() }
+        val tab = current()
+        ScriptInstaller(this).fromBrowserUrl(url, onDownload = tab?.let { { requestDownload(it, url, it.page.userAgent, null, null, 0) } }) {
+            reloadTabPreferences()
+        }
     }
 
     /** c8.s6.J9: a page's external-app request follows its effective site policy. */
@@ -3501,6 +3565,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     }
 
     override fun onDestroy() {
+        extensionHost?.detach(); extensionHost = null
         runCatching { host.unregisterReceiver(videoReceiver) }
         networkMonitor?.unregisterNetworkCallback(networkCallback)
         networkMonitor = null
@@ -3540,28 +3605,18 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     }
 
     /** c8.s6.kb / c8.f8.l: while a popup is open the content subtree is
-     * invisible to accessibility, the pane takes focus, and the address row
-     * gets the z8.l.c render-effect blur. */
+     * invisible to accessibility and the pane takes focus. These sheets are not
+     * modal, so the page behind them stays unblurred; only the menu and dialogs blur. */
     private fun onBrowserPopupOpened() {
         browserLayout.content.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         browserLayout.content.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
         browserLayout.content.clearFocus()
-        setBrowserPopupBlur(true)
     }
 
     /** c8.s6.V8 / c8.f8.i: restore after the popup closes. */
     private fun onBrowserPopupClosed() {
         browserLayout.content.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
         browserLayout.content.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
-        setBrowserPopupBlur(false)
-    }
-
-    private fun setBrowserPopupBlur(enabled: Boolean) {
-        if (Build.VERSION.SDK_INT < 31) return
-        val effect = if (enabled && preferences.blurEffect) android.graphics.RenderEffect.createBlurEffect(30f, 30f, android.graphics.Shader.TileMode.MIRROR) else null
-        addressRow.setRenderEffect(effect)
-        browserLayout.content.setRenderEffect(effect)
-        browserBackgroundImage?.setRenderEffect(effect)
     }
 
     private fun dismissBrowserOverlay(): Boolean {

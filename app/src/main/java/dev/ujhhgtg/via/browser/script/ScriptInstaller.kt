@@ -12,16 +12,18 @@ import dev.ujhhgtg.via.ui.dialog.ViaDialog
 /** z8.t2 and sa.d1: shared confirmation/install flow, with their distinct existing-script lookups. */
 class ScriptInstaller(private val fragment: Fragment) {
     /** c8.s6.q -> z8.t2.p/i: a website installation matches script ID OR download URL. */
-    fun fromBrowserUrl(url: String, onSaved: (UserScript) -> Unit = {}) {
+    /** [onDownload] saves the script file instead, from the dialog's Download button. */
+    fun fromBrowserUrl(url: String, onDownload: (() -> Unit)? = null, onSaved: (UserScript) -> Unit = {}) {
         if (url.isEmpty()) return
-        fromUrl(url, 0, true, onSaved)
+        fromUrl(url, 0, true, onSaved, onDownload)
     }
 
     /** sa.d1.j4/E3: settings matches an explicit row ID, otherwise the script ID alone. */
     fun fromSettingsUrl(url: String, existingId: Int = 0, onSaved: (UserScript) -> Unit = {}) =
         fromUrl(url, existingId, false, onSaved)
 
-    private fun fromUrl(url: String, existingId: Int, matchDownloadUrl: Boolean, onSaved: (UserScript) -> Unit) {
+    private fun fromUrl(url: String, existingId: Int, matchDownloadUrl: Boolean, onSaved: (UserScript) -> Unit,
+        onDownload: (() -> Unit)? = null) {
         ViaToast.show(fragment.requireContext(), R.string.toast_parsing_script)
         val context = fragment.requireContext().applicationContext
         execute({
@@ -35,11 +37,12 @@ class ScriptInstaller(private val fragment: Fragment) {
                 }
                 Candidate(parsed, existing)
             }
-        }, { confirm(it.script, it.existing, onSaved, fromBrowser = matchDownloadUrl) })
+        }, { confirm(it.script, it.existing, onSaved, fromBrowser = matchDownloadUrl, onDownload = onDownload) })
     }
 
     /** z8.t2.n/q and sa.d1.q4: only the version changes which confirmation is shown. */
-    fun confirm(parsed: UserScript?, existing: UserScript?, onSaved: (UserScript) -> Unit = {}, fromBrowser: Boolean = false) {
+    fun confirm(parsed: UserScript?, existing: UserScript?, onSaved: (UserScript) -> Unit = {}, fromBrowser: Boolean = false,
+        onDownload: (() -> Unit)? = null) {
         val context = fragment.requireContext()
         // sa.d1.q4 reports a parse failure itself; the browser's z8.t2.q reaches t2.n, which says "Script invalid".
         if (parsed == null) { ViaToast.show(context, if (fromBrowser) R.string.script_invalid else R.string.toast_install_script_failed_parse_error); return }
@@ -55,9 +58,12 @@ class ScriptInstaller(private val fragment: Fragment) {
             sameVersion -> context.getString(R.string.message_reinstall_script, parsed.name, version)
             else -> context.getString(R.string.message_update_script, parsed.name, existing.version ?: "0.1", version)
         }
-        ViaDialog(fragment.requireActivity()).title(title).message(message)
+        val dialog = ViaDialog(fragment.requireActivity()).title(title).message(message)
             .positive(android.R.string.ok) { _, _ -> save(parsed, existing, onSaved) }
-            .negative(android.R.string.cancel).show()
+            .negative(android.R.string.cancel)
+        // A script link opened in a tab can also be saved as an ordinary file.
+        if (fromBrowser && onDownload != null) dialog.neutral(R.string.action_download_file) { onDownload() }
+        dialog.show()
     }
 
     private fun save(parsed: UserScript, existing: UserScript?, onSaved: (UserScript) -> Unit) {

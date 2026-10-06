@@ -25,8 +25,6 @@ internal class DocumentScripts(private val context: Context) {
         .replace("\"__VIA_MARKER_SECRET__\"", JSONObject.quote(secret))
     fun font(name: String) = source("font").replace("__PATH__", "/$name")
     fun fontUri(uri: String) = source("font").replace("__PATH__", uri)
-    fun night(enabled: Boolean): String = if (enabled) source("night") else
-        "(function(){if(document.getElementById(\"via_inject_css_night\")){var night_e=document.getElementById(\"via_inject_css_night\");night_e.parentNode.removeChild(night_e)};})();"
     fun blockerLink(host: String) = "(function(){if(!document.getElementById('via_inject_css_blocker')){var css=document.createElement('link');css.id='via_inject_css_blocker';css.type='text/css';css.rel=\"stylesheet\";css.href='https://$host/via_inject_blocker.css';var o=document.getElementsByTagName('head');if(o.length>0&&o[0].appendChild(css)){}}})();"
     fun blockerStyle(css: String?): String {
         if (css.isNullOrEmpty()) return ""

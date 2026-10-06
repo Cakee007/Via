@@ -123,7 +123,7 @@ object UrlResolver {
 
     fun isExternalScheme(value: String?): Boolean {
         val scheme = runCatching { value.orEmpty().toUri().scheme?.lowercase() }.getOrNull()
-        return !scheme.isNullOrEmpty() && scheme !in setOf("http", "https", "ftp", "file", "content", "about", "v", "view-source", "javascript")
+        return !scheme.isNullOrEmpty() && scheme !in setOf("http", "https", "ftp", "file", "content", "about", "v", "view-source", "javascript", "moz-extension")
     }
 
     fun host(value: String?): String? = runCatching { value.orEmpty().toUri().host?.lowercase() }.getOrNull()

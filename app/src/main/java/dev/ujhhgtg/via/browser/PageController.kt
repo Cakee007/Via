@@ -138,7 +138,7 @@ class PageController(
             acceptCookies = flags and 8_192 != 0,
             thirdPartyCookies = flags and 16_384 != 0,
             remoteDebugging = flags and 4_096 != 0,
-            darkening = preferences.isNightMode && preferences.nightCss,
+            darkening = pageDarkening(preferences.isNightMode),
         ))
         if (defaultUserAgent == null) defaultUserAgent = UserAgentPolicy.browserDefault(page.userAgent)
         applyPageSettings(url)
@@ -177,18 +177,18 @@ class PageController(
         configure(url, installBindings = false)
     }
 
-    /** c8.ua.n1(false,true): rebind darkening and the external page's injected CSS in place. */
+    /** c8.ua.n1(false,true): rebind darkening in place, retaining the document and JS state. */
     fun applyNightTheme(dark: Boolean) {
         applyPageSettings(page.url)
-        page.setDarkening(dark && preferences.nightCss)
-        val url = page.url
-        if (!url.isNullOrEmpty() && !url.startsWith("file://", true) && page.progress >= 100) {
-            // w9.k.x1 uses the CSS fallback only below API 29. The other
-            // path removes stale injected CSS, retaining the document and JS state.
-            if (Engines.backend.capabilities.algorithmicDarkening) injection.removeNightCss(page)
-            else injection.applyNightCss(page, dark && preferences.nightCss)
-        }
+        page.setDarkening(pageDarkening(dark))
     }
+
+    /**
+     * WebView darkens pages only when "Force dark mode for web contents" is on. Engines without
+     * algorithmic darkening (Gecko) only switch the pages' preferred color scheme, which follows night mode.
+     */
+    private fun pageDarkening(night: Boolean) =
+        night && (preferences.forceDarkPages || !Engines.backend.capabilities.algorithmicDarkening)
 
     /** c8.s6.f5 and t4.b.setReferer: mark the transport's first navigation and next explicit load. */
     fun preparePopupWindow(referer: String) {

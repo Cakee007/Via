@@ -10,6 +10,7 @@ import dev.ujhhgtg.via.ui.ViaToast
 class ExperimentalSettingsFragment : SettingsListFragment() {
     private lateinit var preferences: BrowserPreferences
     private lateinit var rows: SettingsRowsAdapter
+
     override fun configureToolbar(toolbar: SettingsToolbar) = toolbar.setTitle(R.string.experimental)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

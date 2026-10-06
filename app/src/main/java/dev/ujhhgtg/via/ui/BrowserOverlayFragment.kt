@@ -6,7 +6,6 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.drawable.GradientDrawable
-import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -48,12 +47,11 @@ abstract class BrowserOverlayFragment : Fragment() {
         content = createContent(inflater, container, savedInstanceState)
         // c8.f8.l is outside the animated f8.c root in Via. Keep its properties
         // independent here; AndroidX retargets the returned fragment animator.
-        val blurred = Build.VERSION.SDK_INT >= 31 && dev.ujhhgtg.via.data.BrowserPreferences(requireContext()).blurEffect
-        scrimOpacity = if (blurred) .5f else 1f
+        scrimOpacity = 1f
         scrim = View(requireContext()).apply {
-            // c8.s6.R1 -> a9 -> c8.f8.m replaces the constructor's #40808080:
-            // transparent when the content/backdrop are blurred, #70808080 otherwise.
-            background = (if (blurred) 0 else 0x70808080).toDrawable()
+            // c8.s6.R1 -> a9 -> c8.f8.m replaces the constructor's #40808080. These sheets are
+            // non-modal and never blur the page behind them, so the unblurred #70808080 always applies.
+            background = 0x70808080.toDrawable()
             alpha = scrimOpacity
             visibility = if (scrimEnabled) View.VISIBLE else View.GONE
             isClickable = true

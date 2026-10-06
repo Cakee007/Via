@@ -54,7 +54,7 @@ class SettingsScreen(
         val scriptsEnabled: Boolean = true,
         val blurEffect: Boolean = false,
         val showSettingsBackground: Boolean = false,
-        val nightCss: Boolean = false,
+        val forceDarkPages: Boolean = false,
         val readerConfirmation: Boolean = false,
         val typeface: Typeface = Typeface.DEFAULT,
     )
@@ -178,7 +178,7 @@ class SettingsScreen(
                 "help_us_translate" to R.string.help_us_translate, "terms_of_use" to R.string.terms_of_use, "privacy_policy" to R.string.privacy_policy, "open_source_licenses" to R.string.open_source_licenses).forEach { (action, label) -> actionRow(action, label) }
             Page.NIGHT -> {
                 actionRow("night_filter_for_web_contents", R.string.night_filter_for_web_contents)
-                if (dev.ujhhgtg.via.engine.Engines.backend.capabilities.algorithmicDarkening) toggleRow("force_dark_mode_for_web_contents", R.string.force_dark_mode_for_web_contents, state.nightCss, R.string.force_dark_mode_for_web_contents_description)
+                if (dev.ujhhgtg.via.engine.Engines.backend.capabilities.algorithmicDarkening) toggleRow("force_dark_mode_for_web_contents", R.string.force_dark_mode_for_web_contents, state.forceDarkPages, R.string.force_dark_mode_for_web_contents_description)
             }
             Page.READER -> {
                 toggleRow("require_confirmation_to_enable_reader_mode", R.string.require_confirmation_to_enable_reader_mode, state.readerConfirmation)

@@ -184,6 +184,8 @@ class DownloadCoordinator(private val context: Context, private val repository: 
                 else DownloadFailure(if (error is DownloadFailure) error.code else 12, error).message,
             )
         }
+        if (result.state == DownloadState.COMPLETE) source.finish(true, result.downloadedSize)
+        else if (result.state == DownloadState.FAILED) source.finish(false, 0)
         source.close()
         if (!control.deleted) publishTransfer(result, 0)
         return result

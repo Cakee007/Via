@@ -6,6 +6,8 @@ import dev.ujhhgtg.via.skins.SkinResources
 
 /** Browser menu actions and their application resources. */
 object BrowserMenu {
+    const val EXTENSIONS = 42
+    private val extensionsSupported get() = dev.ujhhgtg.via.engine.Engines.backend.extensions != null
     data class Entry(val id: Int, val titleRes: Int, val icon: Int) {
         fun title(context: Context) = context.getString(titleRes)
         /** i8.l.b resolves the menu's ic_menu_* key before applying its active-state tint. */
@@ -49,9 +51,13 @@ object BrowserMenu {
         Entry(38, R.string.game_mode, R.drawable.gamepad),
         Entry(40, R.string.action_add_favorite, R.drawable.heart_plus),
         Entry(3, R.string.action_history, R.drawable.clock_outline)
-    ).associateBy { it.id }
+    ).let { base ->
+        // Extension actions exist only on engines that run WebExtensions.
+        if (extensionsSupported) base + Entry(EXTENSIONS, R.string.settings_extensions, R.drawable.puzzle) else base
+    }.associateBy { it.id }
     // w9.k.s0(): the non-CN default; the CN build's item 41 (report abuse) was removed.
-    val defaults = listOf(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,25,34,33,30,28,23,29,31,35)
+    val defaults = listOf(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,25,34,33,30,28,23,29,31,35) +
+        if (extensionsSupported) listOf(EXTENSIONS) else emptyList()
     /** Retired ids still present in saved menu layouts; dropped instead of rendering as blank slots. */
     val removed = setOf(41)
 }

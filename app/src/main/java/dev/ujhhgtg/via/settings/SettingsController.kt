@@ -126,7 +126,7 @@ class SettingsController(
         scriptsEnabled = preferences.scriptsEnabled,
         blurEffect = preferences.blurEffect,
         showSettingsBackground = preferences.showSettingsBackground,
-        nightCss = preferences.nightCss,
+        forceDarkPages = preferences.forceDarkPages,
         readerConfirmation = preferences.readerConfirmation,
         typeface = preferences.selectedTypeface(),
     )
@@ -214,7 +214,7 @@ class SettingsController(
             "disable_custom_tabs" -> preferences.disableCustomTabs = value
             "blur_effect" -> preferences.blurEffect = value
             "show_background_in_settings" -> preferences.showSettingsBackground = value
-            "force_dark_mode_for_web_contents" -> preferences.nightCss = value
+            "force_dark_mode_for_web_contents" -> preferences.forceDarkPages = value
             "require_confirmation_to_enable_reader_mode" -> preferences.readerConfirmation = value
             else -> unavailable(key)
         }

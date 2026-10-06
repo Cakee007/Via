@@ -36,7 +36,7 @@ class NightModeSettingsFragment : SettingsListFragment() {
         rows = SettingsRowsAdapter { item -> when (item.id) {
             1 -> ViaDialog(requireActivity()).customView(preview()).show()
             2 -> {
-                preferences.nightCss = !preferences.nightCss
+                preferences.forceDarkPages = !preferences.forceDarkPages
                 GeneratedDocumentState.mark(GeneratedDocumentState.PAGE_SETTINGS)
                 rows.submit(items())
             }
@@ -47,7 +47,7 @@ class NightModeSettingsFragment : SettingsListFragment() {
     }
     private fun items() = listOfNotNull(
         SettingsRow(1, getString(R.string.night_filter_for_web_contents)),
-        SettingsToggleRow(2, getString(R.string.force_dark_mode_for_web_contents), getString(R.string.force_dark_mode_for_web_contents_description), preferences.nightCss)
+        SettingsToggleRow(2, getString(R.string.force_dark_mode_for_web_contents), getString(R.string.force_dark_mode_for_web_contents_description), preferences.forceDarkPages)
             .takeIf { dev.ujhhgtg.via.engine.Engines.backend.capabilities.algorithmicDarkening },
     )
     private fun preview(): View {
