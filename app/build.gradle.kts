@@ -54,6 +54,13 @@ android {
         }
     }
 
+    // compress gecko variant's native libs to make size not so horrifying, no performance impact anyways
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName(if (foundKeystore) "release" else "debug")
