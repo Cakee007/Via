@@ -151,7 +151,8 @@ class ScriptSettingsFragment : SettingsListFragment() {
                 if (scrollToInitial) {
                     val id = arguments?.getInt("id", 0) ?: 0
                     val position = scripts.indexOfFirst { it.id == id }
-                    if (position >= 0) list.scrollToPosition(position + if (scripts.any { it.downloadUrl != null }) 3 else 2)
+                    // Toggle, interval and heading rows come before the first script.
+                    if (position >= 0) list.scrollToPosition(position + 3)
                     scrollToInitial = false
                 }
             }
@@ -161,12 +162,12 @@ class ScriptSettingsFragment : SettingsListFragment() {
     private fun bindRows() {
         if (!::rows.isInitialized) return
         val downloadable = scripts.any { it.downloadUrl != null }
-        showEmptyState(scripts.isEmpty())
-        if (scripts.isEmpty()) { rows.submit(emptyList()); return }
         updateAction.visibility = if (downloadable) View.VISIBLE else View.GONE
+        // Like the Extensions page, the settings rows stay when nothing is installed.
         rows.submit(buildList {
             add(SettingsToggleRow(TOGGLE_ID, getString(R.string.enable_scripts), checked = preferences.scriptsEnabled))
-            if (downloadable) add(SettingsRow(INTERVAL_ID, getString(R.string.update_interval), intervalLabels()[intervalIndex()]))
+            add(SettingsRow(INTERVAL_ID, getString(R.string.update_interval), intervalLabels()[intervalIndex()]))
+            if (scripts.isEmpty()) return@buildList
             add(SettingsHeadingRow(getString(R.string.settings_script)))
             scripts.forEach { add(ScriptListRow(it, preferences.scriptsEnabled)) }
         })
