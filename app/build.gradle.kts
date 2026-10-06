@@ -5,7 +5,6 @@ plugins {
 
 android {
     namespace = "dev.ujhhgtg.via"
-    // GeckoView needs the 37.1+ platform; every module shares one platform.
     compileSdk {
         version = release(37) { minorApiLevel = 2 }
     }
@@ -14,8 +13,8 @@ android {
         applicationId = "dev.ujhhgtg.via"
         minSdk = 29
         targetSdk = 37
-        versionCode = 20261005
-        versionName = "7.3.3-r2"
+        versionCode = 20261006
+        versionName = "7.3.3-r3"
     }
 
     compileOptions {
@@ -70,10 +69,10 @@ android {
             dimension = "engine"
             isDefault = true
         }
-        // Same versionCode as webview, so either APK installs over the other.
         create("gecko") {
             dimension = "engine"
             versionNameSuffix = "-gecko"
+            // noinspection ChromeOsAbiSupport
             ndk { abiFilters += "arm64-v8a" }
         }
     }
@@ -82,7 +81,6 @@ android {
         buildConfig = true
     }
 
-    // JVM unit tests run against stubbed android.jar; unmocked calls return defaults instead of throwing.
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
