@@ -29,18 +29,17 @@ import android.widget.ListView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.view.isNotEmpty
 import androidx.fragment.app.FragmentActivity
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.common.WindowInsetsHelper
 import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.settings.settingsColor
-import dev.ujhhgtg.via.settings.settingsRipple
 import dev.ujhhgtg.via.ui.SwipeBackLayout
 import dev.ujhhgtg.via.ui.dp
 import java.lang.ref.WeakReference
 import kotlin.math.hypot
 import kotlin.math.min
-import androidx.core.view.isNotEmpty
 
 /** w5.k: Via's own Dialog, original layout, adapters, result collection and sizing. */
 class ViaDialog(private val activity: Activity) {
@@ -116,7 +115,10 @@ class ViaDialog(private val activity: Activity) {
         adapter = DialogChoiceAdapter(labels.toList(), intArrayOf(selected), false); itemClick = onClick
     }
     fun highlightedChoice(labels: Array<String>, selected: Int, onClick: ((Int) -> Unit)? = null) = apply {
-        adapter = DialogChoiceAdapter(labels.toList(), intArrayOf(selected), false, true); itemClick = onClick
+        adapter = DialogChoiceAdapter(labels.toList(), intArrayOf(selected),
+            multiple = false,
+            highlightOnly = true
+        ); itemClick = onClick
     }
 
     fun input(text: String?, hint: String?, lines: Int, id: Int = -1) = apply {

@@ -2,16 +2,15 @@ package dev.ujhhgtg.via.settings
 
 import android.app.Activity
 import android.content.Context
-import android.content.DialogInterface
 import android.graphics.Color
 import android.util.TypedValue
 import android.view.Gravity
-import dev.ujhhgtg.via.engine.EnginePage
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import dev.ujhhgtg.via.R
+import dev.ujhhgtg.via.engine.EnginePage
 import dev.ujhhgtg.via.ui.dialog.ViaDialog
 import dev.ujhhgtg.via.ui.dp
 import java.lang.ref.WeakReference
@@ -101,7 +100,7 @@ object TextZoomDialogs {
             setTextColor(settingsColor(activity, R.attr.viaSecondaryTextColor, Color.GRAY))
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = (2 * activity.resources.displayMetrics.density).toInt(); bottomMargin = activity.dp(8f) })
         ViaDialog(activity).customView(body).blurMode(2)
-            .onCancel(DialogInterface.OnCancelListener { if (siteOnly) onCancelled?.invoke() }).show()
+            .onCancel { if (siteOnly) onCancelled?.invoke() }.show()
     }
 
     private fun label(context: Context, value: String) = TextView(context).apply {
