@@ -31,7 +31,7 @@ import java.net.SocketTimeoutException
 import java.util.Locale
 
 /** o5.b/c GM request transport; callbacks use the original i6.j0 conversion code. */
-class ScriptHttpRequest(private val view: EnginePage, details: String) {
+class ScriptHttpRequest(private val view: EnginePage, details: String, private val reply: ((String) -> Unit)? = null) {
     private val request = runCatching { JSONObject(details) }.getOrNull()
     private val defaultAgent = dev.ujhhgtg.via.engine.Engines.backend.defaultUserAgent(view.view.context)
 
@@ -172,7 +172,7 @@ class ScriptHttpRequest(private val view: EnginePage, details: String) {
     private fun deliver(callbacks: Array<String>, response: JSONObject?) {
         if (callbacks.isEmpty()) return
         val script = GmApiSource.deliverCallbacks(callbacks, response?.let { JSONObject.quote(it.toString()) }) ?: return
-        view.view.post { view.evaluate(script) }
+        reply?.invoke(script) ?: view.view.post { view.evaluate(script) }
     }
 
     private class ResponseTooLarge : Exception()

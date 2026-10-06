@@ -232,4 +232,8 @@ object GeckoBackend : BrowserBackend {
     }
 
     internal fun <T> result(value: T): GeckoResult<T> = GeckoResult.fromValue(value)
+
+    /** Delegate work that reads Via's databases, such as visited-link queries. */
+    internal val historyExecutor: java.util.concurrent.Executor =
+        java.util.concurrent.Executors.newSingleThreadExecutor { Thread(it, "ViaGeckoHistory") }
 }

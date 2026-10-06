@@ -27,12 +27,14 @@ data class DownloadRequest(
     val priority: Int = 0,
     val directory: String? = null,
     val contentLength: Long = 0,
+    val streamId: String? = null,
 )
 
 /** c5.b/m5.i: process-owned three-task queue; each HTTP task retains its original range chunks. */
 class DownloadCoordinator(private val context: Context, private val repository: DownloadRepository = DownloadRepository(context)) {
     private val running = linkedMapOf<Long, DownloadControl>()
     private val volatileData = HashMap<Long, String>() // m5.c: data URI bodies are never written to tasks.url.
+    private val volatileStreams = HashMap<Long, DownloadStreamRegistry.Source>()
     private val main = Handler(Looper.getMainLooper())
     private val listeners = linkedSetOf<(DownloadRecord) -> Unit>()
     private val stateListeners = linkedSetOf<(DownloadRecord, Int, Int) -> Unit>()
@@ -51,23 +53,31 @@ class DownloadCoordinator(private val context: Context, private val repository: 
 
     fun enqueue(request: DownloadRequest): Long {
         val data = request.url.startsWith("data:")
-        val mime = request.mimeType ?: if (data) DownloadDataUrl.mime(request.url) else null
-        val name = request.fileName?.takeIf(String::isNotEmpty) ?: DownloadFiles.name(request.url, request.contentDisposition, mime)
-        val destination = if (request.path == null && request.fileUri == null)
-            DownloadFiles.create(context, request.directory ?: BrowserPreferences(context).downloadDirectory, name, mime)
-        else DownloadFiles.Destination(name, request.path, request.fileUri)
-        val headers = request.headers + listOfNotNull(request.userAgent?.let { "User-Agent" to it },
-            request.referrer?.let { "Referer" to it }, request.cookies?.let { "Cookie" to it }).toMap()
-        val uri = destination.uri ?: destination.path?.let { Uri.fromFile(File(it)) }
-        val id = repository.insert(DownloadRecord(name = destination.name, url = if (data) null else request.url,
-            headers = headers, mimeType = mime, path = request.directory ?: BrowserPreferences(context).downloadDirectory,
-            fileUri = uri, totalSize = request.contentLength, chunks = if (data) 1 else 8, flags = if (data && request.contentLength <= 0) 0 else 1, priority = request.priority,
-            state = DownloadState.WAITING, createdAt = now(), updatedAt = now()))
-        if (id <= 0) throw IOException("Cannot save download")
-        if (data) volatileData[id] = request.url
-        notifyChanged(requireNotNull(repository.get(id)))
-        DownloadService.start(context, DownloadService.ACTION_RESUME, id)
-        return id
+        val stream = request.streamId?.let(DownloadStreamRegistry::take)
+        if (request.streamId != null && stream == null) throw IOException("Download stream is no longer available")
+        try {
+            val mime = request.mimeType ?: if (data) DownloadDataUrl.mime(request.url) else null
+            val name = request.fileName?.takeIf(String::isNotEmpty) ?: DownloadFiles.name(request.url, request.contentDisposition, mime)
+            val destination = if (request.path == null && request.fileUri == null)
+                DownloadFiles.create(context, request.directory ?: BrowserPreferences(context).downloadDirectory, name, mime)
+            else DownloadFiles.Destination(name, request.path, request.fileUri)
+            val headers = request.headers + listOfNotNull(request.userAgent?.let { "User-Agent" to it },
+                request.referrer?.let { "Referer" to it }, request.cookies?.let { "Cookie" to it }).toMap()
+            val uri = destination.uri ?: destination.path?.let { Uri.fromFile(File(it)) }
+            val id = repository.insert(DownloadRecord(name = destination.name, url = if (data || stream != null) null else request.url,
+                headers = headers, mimeType = mime, path = request.directory ?: BrowserPreferences(context).downloadDirectory,
+                fileUri = uri, totalSize = request.contentLength, chunks = if (data || stream != null) 1 else 8, flags = if (data || stream != null) 0 else 1, priority = request.priority,
+                state = DownloadState.WAITING, createdAt = now(), updatedAt = now()))
+            if (id <= 0) throw IOException("Cannot save download")
+            if (data) volatileData[id] = request.url
+            if (stream != null) volatileStreams[id] = stream
+            notifyChanged(requireNotNull(repository.get(id)))
+            DownloadService.start(context, DownloadService.ACTION_RESUME, id)
+            return id
+        } catch (error: Throwable) {
+            stream?.close()
+            throw error
+        }
     }
 
     fun start(id: Long): Boolean {
@@ -117,17 +127,22 @@ class DownloadCoordinator(private val context: Context, private val repository: 
             if (running.size >= 3) break
             if (record.id in running) continue
             val source = record.url ?: volatileData[record.id]
+            val stream = volatileStreams[record.id]
             val network = DownloadNetwork.isHttp(source)
             val data = source?.takeIf { it.startsWith("data:") }
             // m5.f/k submits an empty task for an unrecognized source; it completes immediately
             // and never occupies the three active queue slots.
-            if (!network && data == null) continue
+            if (!network && data == null && stream == null) continue
+            // A Gecko response body is already spooled before the dialog is shown; keep this
+            // one-shot transfer non-pausable so a pause cannot discard its only source.
             val control = DownloadControl(pausable = network)
             running[record.id] = control
             val transfer = if (data == null) DownloadTransfer(context, record, repository, control, ::publishTransfer) else null
             // e5.d serviced task orchestrators and chunk workers; the IO dispatcher now does.
             applicationIoScope.launch {
-                if (data != null) transferData(record, data, control) else transfer?.run()
+                if (data != null) transferData(record, data, control)
+                else if (stream != null) transferStream(record, stream, control)
+                else transfer?.run()
                 if (control.deleted) main.post { running.remove(record.id); dispatch() }
             }
         }
@@ -144,6 +159,36 @@ class DownloadCoordinator(private val context: Context, private val repository: 
         return result
     }
 
+    private suspend fun transferStream(initial: DownloadRecord, source: DownloadStreamRegistry.Source, control: DownloadControl): DownloadRecord {
+        val result = runCatching {
+            val file = source.await()
+            val output = DownloadOutput.open(context, initial)
+            try {
+                file.inputStream().use { input ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        if (control.paused || control.deleted) throw DownloadFailure(1)
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        output.write(buffer, 0, count)
+                    }
+                }
+                output.sync()
+            } finally { runCatching { output.close() } }
+            val length = file.length()
+            initial.copy(state = DownloadState.COMPLETE, downloadedSize = length, totalSize = length)
+        }.getOrElse { error ->
+            initial.copy(
+                state = if (error is DownloadFailure && error.code == 1) DownloadState.PAUSED else DownloadState.FAILED,
+                errorMessage = if (error is DownloadFailure && error.code == 1) initial.errorMessage
+                else DownloadFailure(if (error is DownloadFailure) error.code else 12, error).message,
+            )
+        }
+        source.close()
+        if (!control.deleted) publishTransfer(result, 0)
+        return result
+    }
+
     /** m5.i's state observer releases the queue slot before UI/service observers receive the event. */
     private fun publishTransfer(record: DownloadRecord, speed: Long) {
         speeds[record.id] = speed
@@ -151,7 +196,7 @@ class DownloadCoordinator(private val context: Context, private val repository: 
         repository.update(record.copy(updatedAt = now()))
         main.post {
             if (record.isComplete || record.isFailed || record.state == DownloadState.PAUSED) {
-                running.remove(record.id); volatileData.remove(record.id); speeds.remove(record.id)
+                running.remove(record.id); volatileData.remove(record.id); volatileStreams.remove(record.id)?.close(); speeds.remove(record.id)
                 dispatch()
             } else if (record.state == DownloadState.WAITING_NETWORK) running.remove(record.id)
             listeners.toList().forEach { it(record) }
@@ -179,7 +224,7 @@ class DownloadCoordinator(private val context: Context, private val repository: 
         val record = repository.get(id) ?: return false
         running[id]?.let { it.deleted = true; it.paused = true }
         val removed = repository.delete(id)
-        repository.clearChunks(id); volatileData.remove(id)
+        repository.clearChunks(id); volatileData.remove(id); volatileStreams.remove(id)?.close()
         if (deleteFile) removeOutput(record)
         notifyChanged(record)
         return removed
@@ -194,6 +239,9 @@ class DownloadCoordinator(private val context: Context, private val repository: 
         // Only ever holds the application context.
         @SuppressLint("StaticFieldLeak")
         private var instance: DownloadCoordinator? = null
-        @Synchronized fun get(context: Context): DownloadCoordinator = instance ?: DownloadCoordinator(context.applicationContext).also { instance = it }
+        @Synchronized fun get(context: Context): DownloadCoordinator = instance ?: DownloadCoordinator(context.applicationContext).also {
+            instance = it
+            applicationIoScope.launch { DownloadStreamRegistry.cleanup(context.applicationContext) }
+        }
     }
 }

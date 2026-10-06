@@ -25,7 +25,13 @@ internal object WebViewBridges {
         webView.removeJavascriptInterface("searchBoxJavaBridge_")
         webView.removeJavascriptInterface("accessibility")
         webView.removeJavascriptInterface("accessibilityTraversal")
-        scripts?.let { webView.addJavascriptInterface(Gm(it), "via_gm") }
+        scripts?.let {
+            webView.addJavascriptInterface(Gm(it), "via_gm")
+            it.observeValues { script, name, value, oldValue, origin ->
+                val code = it.valueChangeScript(script, name, value, oldValue, origin !== it) ?: return@observeValues
+                webView.post { webView.evaluateJavascript(code, null) }
+            }
+        }
         val page = Via(via)
         webView.addJavascriptInterface(page, "via")
         webView.addJavascriptInterface(page, "via_page")

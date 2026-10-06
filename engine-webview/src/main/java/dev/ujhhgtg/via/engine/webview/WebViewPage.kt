@@ -23,6 +23,7 @@ import dev.ujhhgtg.via.engine.SelectionAction
 
 /** [EnginePage] over a system WebView. One instance per WebView, see [of]. */
 class WebViewPage private constructor(val webView: WebView) : EnginePage {
+    private var scriptChannel: ScriptChannel? = null
     override val view get() = webView
     override val url: String? get() = webView.url
     override val title: String? get() = webView.title
@@ -60,7 +61,11 @@ class WebViewPage private constructor(val webView: WebView) : EnginePage {
 
     override fun setDarkening(enabled: Boolean) = WebViewCapabilities.applyNightTheme(webView, enabled)
 
-    override fun installBridges(via: PageBridge, scripts: ScriptChannel?) = WebViewBridges.install(webView, via, scripts)
+    override fun installBridges(via: PageBridge, scripts: ScriptChannel?) {
+        scriptChannel?.observeValues(null)
+        scriptChannel = scripts
+        WebViewBridges.install(webView, via, scripts)
+    }
 
     override fun load(url: String, headers: Map<String, String>) =
         if (headers.isEmpty()) webView.loadUrl(url) else webView.loadUrl(url, headers)
@@ -82,6 +87,8 @@ class WebViewPage private constructor(val webView: WebView) : EnginePage {
     @SuppressLint("MissingOnRenderProcessGone")
     override fun destroy() {
         runCatching {
+            scriptChannel?.observeValues(null)
+            scriptChannel = null
             // Destroying an attached WebView leaves a dead surface on screen until the host swaps it out.
             (webView.parent as? android.view.ViewGroup)?.removeView(webView)
             webView.stopLoading()

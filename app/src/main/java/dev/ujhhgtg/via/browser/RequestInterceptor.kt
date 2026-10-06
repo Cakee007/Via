@@ -89,8 +89,8 @@ internal class RequestInterceptor(
     private fun blockedPage(url: String): InterceptDecision {
         val rule = filterEngine?.matchingRule(ResourceDocumentActions.filterRequest(url))?.description().orEmpty()
         val html = BlockedPageDocument.html(context, url, rule).toByteArray(Charsets.UTF_8)
-        // E0 uses the same headers as its blocker stylesheet response.
-        return InterceptDecision.Serve("text/html", mapOf("Cache-Control" to "no-cache", "Access-Control-Allow-Origin" to "*", "Content-Type" to "text/css")) {
+        // E0 reuses its blocker stylesheet headers; the document's own Content-Type is HTML.
+        return InterceptDecision.Serve("text/html", mapOf("Cache-Control" to "no-cache", "Access-Control-Allow-Origin" to "*", "Content-Type" to "text/html; charset=utf-8")) {
             ByteArrayInputStream(html)
         }
     }

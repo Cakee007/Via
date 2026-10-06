@@ -31,6 +31,7 @@ class DownloadConfirmationFragment : ViaDialogFragment() {
     private lateinit var request: DownloadRequest
     private var length = 0L
     private var overwritableName = true
+    private var submitted = false
     private lateinit var filename: EditText
     private lateinit var size: TextView
     private lateinit var copy: TextView
@@ -42,7 +43,7 @@ class DownloadConfirmationFragment : ViaDialogFragment() {
         request = DownloadRequest(source.getString("url").orEmpty(), source.getString("userAgent"), source.getString("contentDisposition"),
             headers?.let { json -> json.keys().asSequence().associateWith { json.optString(it) } }.orEmpty(), source.getString("cookies"), source.getString("referer"),
             source.getString("fileName"), source.getString("mimeType"), source.getString("path"), source.getString("fileUri")?.let(android.net.Uri::parse),
-            source.getInt("priority"), source.getString("directory"))
+            source.getInt("priority"), source.getString("directory"), streamId = source.getString("streamId"))
         length = source.getLong("contentLength")
         overwritableName = source.getBoolean("fileNameOverwrittable", request.fileName == null)
     }
@@ -91,6 +92,7 @@ class DownloadConfirmationFragment : ViaDialogFragment() {
                 if (!isAdded || this.view == null) return@check
                 if (!allowed) { ViaToast.show(requireContext(), R.string.title_permission_denied); return@check }
                 val submit = onRequest
+                submitted = true
                 if (submit != null) submit(confirmed)
                 else runCatching { DownloadCoordinator.get(requireContext()).enqueue(confirmed).also { onStarted?.invoke(it) } }
                     .onFailure { ViaToast.show(requireContext(), R.string.download_failed) }
@@ -98,7 +100,7 @@ class DownloadConfirmationFragment : ViaDialogFragment() {
             }
         }
         refreshSize()
-        if (URLUtil.isNetworkUrl(request.url) && length <= 0) probe()
+        if (URLUtil.isNetworkUrl(request.url) && length <= 0 && request.streamId == null) probe()
         else if (data && length <= 0) { length = DownloadDataUrl.estimatedSize(request.url); copy.visibility = if (length > 1_019_904) View.GONE else View.VISIBLE; refreshSize() }
     }
 
@@ -142,6 +144,11 @@ class DownloadConfirmationFragment : ViaDialogFragment() {
     }
 
     override fun onSaveInstanceState(out: Bundle) { super.onSaveInstanceState(out); write(out, request, length, overwritableName) }
+    override fun onDismiss(dialog: android.content.DialogInterface) {
+        if (!submitted && !runCatching { requireActivity().isChangingConfigurations }.getOrDefault(false))
+            request.streamId?.let(DownloadStreamRegistry::close)
+        super.onDismiss(dialog)
+    }
     companion object {
         fun newInstance(request: DownloadRequest, length: Long) = DownloadConfirmationFragment().apply {
             arguments = Bundle().also { write(it, request, length, request.fileName == null) }
@@ -151,6 +158,7 @@ class DownloadConfirmationFragment : ViaDialogFragment() {
             out.putString("headers", JSONObject(r.headers).toString()); out.putString("cookies", r.cookies); out.putString("referer", r.referrer)
             out.putString("fileName", r.fileName); out.putString("mimeType", r.mimeType); out.putString("path", r.path); out.putString("fileUri", r.fileUri?.toString())
             out.putString("directory", r.directory); out.putInt("priority", r.priority); out.putLong("contentLength", length); out.putBoolean("fileNameOverwrittable", overwritable)
+            out.putString("streamId", r.streamId)
         }
     }
 }

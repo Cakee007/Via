@@ -1,6 +1,7 @@
 package dev.ujhhgtg.via.browser.script
 
 import java.util.UUID
+import org.json.JSONObject
 
 
 
@@ -201,11 +202,16 @@ object GmApiSource {
                 string += j0Var.modernAlias(str27, "xmlHttpRequest", "details", false)
             }
         }
-        if ((grantMask and 8192) == 8192) {
-            string += "var GM_addValueChangeListener = function(name, callback) {};\n"
+        if ((grantMask and (8192 or 16384)) != 0) {
+            val notify = notifyName(scriptId, secret)
+            string += "var ${apiPrefix}valueListeners = Object.create(null), ${apiPrefix}nextValueListener = 0;\n"
+            string += "Object.defineProperty(window, ${JSONObject.quote(notify)}, {configurable: true, value: function(name, newRaw, oldRaw, remote) { var decode = function(v) { if (v === null || v === 'undefined') return undefined; try { return " + str8 + "(v); } catch(e) { return v; } }; var n = decode(newRaw), o = decode(oldRaw); for (var id in ${apiPrefix}valueListeners) { var item = ${apiPrefix}valueListeners[id]; if (item && item.name === name) { try { item.callback(name, o, n, !!remote); } catch(e) {} } } }});\n"
+            if ((grantMask and 8192) == 8192) {
+                string += "var GM_addValueChangeListener = function(name, callback) { if (typeof callback !== 'function') return 0; var id = ++${apiPrefix}nextValueListener; ${apiPrefix}valueListeners[id] = {name: name, callback: callback}; return id; };\n"
+            }
         }
         if ((grantMask and 16384) == 16384) {
-            string += "var GM_removeValueChangeListener = function(listenerId) {};\n"
+            string += "var GM_removeValueChangeListener = function(listenerId) { delete ${apiPrefix}valueListeners[listenerId]; return true; };\n"
         }
         if ((268468224 and grantMask) != 0) {
             val str29: String = apiPrefix + "openInTab"
@@ -338,5 +344,11 @@ object GmApiSource {
         }
         val string: String = sb2.toString()
         return string
+    }
+
+    /** A page-visible global, so it is derived from the bridge secret without revealing it. */
+    fun notifyName(scriptId: String, secret: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256").digest("$secret:$scriptId".toByteArray(Charsets.UTF_8))
+        return "VIA_GM_NOTIFY_" + digest.take(16).joinToString("") { "%02x".format(it) }
     }
 }

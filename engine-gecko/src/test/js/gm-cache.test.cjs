@@ -54,3 +54,19 @@ test('property-shaped storage keys remain ordinary values', () => {
   assert.equal(call('getValue', { name: '__proto__' }), '"ok"');
   assert.equal(call('getValue', { name: 'constructor', value: '7' }), '7');
 });
+
+test('local writes notify local listeners once; the native echo and remote changes follow', () => {
+  const events = [];
+  const cache = new Cache(() => {}, null, (...event) => events.push(event));
+  cache.reset({ secret: 'token', scripts: { script: { grants: 8388609 | 8192, notify: 'notify', info: '{}',
+    values: { count: '1' }, resourceText: {}, resourceUrl: {} } } });
+  cache.call(JSON.stringify({ secret: 'token', identifier: 'script', name: 'setValue', arguments: { name: 'count', value: '2' } }), 'token');
+  cache.update('script', 'count', '2', false); // native echo of the same write
+  cache.update('script', 'count', '3', true);
+  cache.update('script', 'count', null, true);
+  assert.deepEqual(events, [
+    ['script', 'count', '2', '1', false, 'notify'],
+    ['script', 'count', '3', '2', true, 'notify'],
+    ['script', 'count', null, '3', true, 'notify'],
+  ]);
+});

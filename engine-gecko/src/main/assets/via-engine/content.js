@@ -1,8 +1,9 @@
 "use strict";
-// Runs at document_start in each top-level document. Connects to the page's native GeckoPage, which
-// sends "eval" requests and receives bridge calls made by page JavaScript.
+// Runs at document_start in every document. Connects to the page's native GeckoPage, which sends
+// "eval" requests and receives bridge calls made by page JavaScript. Subframes get the same
+// document injection and GM cache, while page-wide UI events stay top-level only.
 (() => {
-  if (window.top !== window) return;
+  const topLevel = window.top === window;
   const page = window.wrappedJSObject;
   const port = browser.runtime.connectNative("via");
   // Answers for calls that page JavaScript expects to return synchronously; pushed by native code.
@@ -10,7 +11,13 @@
   let addons = "[]";
   let xhrToken;
   const cache = new ViaGmCache((message, secret) => port.postMessage({ type: "gm", message, secret }),
-    details => viaSyncRequest(details, page, xhrToken));
+    details => viaSyncRequest(details, page, xhrToken),
+    (identifier, name, value, oldValue, remote, notifyName) => {
+      if (!notifyName) return;
+      const raw = value === null ? null : String(value);
+      const oldRaw = oldValue === null ? null : String(oldValue);
+      run(notifyName + "(" + page.JSON.stringify(name) + "," + page.JSON.stringify(raw) + "," + page.JSON.stringify(oldRaw) + "," + (remote ? "true" : "false") + ")");
+    });
   let initialized = false;
 
   function initialize(message) {
@@ -20,8 +27,8 @@
     addons = message.addons || "[]";
     cache.reset(message.gm);
     xhrToken = message.xhrToken;
-    if (message.registration) browser.runtime.sendMessage({ type: "injected", registration: message.registration });
-    if (message.page) browser.runtime.sendMessage({ type: "page", page: message.page });
+    if (topLevel && message.registration) browser.runtime.sendMessage({ type: "injected", registration: message.registration });
+    if (topLevel && message.page) browser.runtime.sendMessage({ type: "page", page: message.page });
     function phase(number) {
       for (const code of message.phases?.[number] || []) {
         try { run(code); } catch (error) { console.warn("via: injection failed", error); }
@@ -86,11 +93,11 @@
         break;
       }
       case "state":
-        if (message.page) browser.runtime.sendMessage({ type: "page", page: message.page });
+        if (topLevel && message.page) browser.runtime.sendMessage({ type: "page", page: message.page });
         initialize(message);
         break;
       case "value":
-        cache.update(message.script, message.name, message.value);
+        cache.update(message.script, message.name, message.value === undefined || message.value === null ? null : String(message.value), !!message.remote);
         break;
     }
   });
@@ -137,8 +144,10 @@
       reader.readAsDataURL(blob);
     } catch (_) { /* An icon failure must not affect the document. */ }
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", reportIcons, { once: true });
-  else reportIcons();
+  if (topLevel) {
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", reportIcons, { once: true });
+    else reportIcons();
+  }
   globalThis.viaInitialize = initialize;
   if (globalThis.viaEarlyPayload) initialize(globalThis.viaEarlyPayload);
 })();

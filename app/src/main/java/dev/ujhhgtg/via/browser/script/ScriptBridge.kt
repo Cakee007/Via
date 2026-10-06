@@ -19,13 +19,16 @@ class ScriptBridge(
     private val callbacks: Callbacks,
 ) : ScriptChannel {
     private val webView = WeakReference(view)
-    private var valueObserver: ((String, String, String?) -> Unit)? = null
+    private var valueObserver: ((String, String, String?, String?, Any?) -> Unit)? = null
 
-    override fun observeValues(observer: ((String, String, String?) -> Unit)?) {
+    override fun observeValues(observer: ((String, String, String?, String?, Any?) -> Unit)?) {
         valueObserver?.let(manager::removeValueObserver)
         valueObserver = observer
         observer?.let(manager::addValueObserver)
     }
+
+    override fun valueChangeScript(scriptId: String, name: String, value: String?, oldValue: String?, remote: Boolean): String =
+        "window[${JSONObject.quote(GmApiSource.notifyName(scriptId, manager.secret))}](${JSONObject.quote(name)},${value?.let(JSONObject::quote) ?: "null"},${oldValue?.let(JSONObject::quote) ?: "null"},$remote);"
 
     override fun snapshot(url: String): String = JSONObject().apply {
         put("secret", manager.secret)
@@ -35,6 +38,7 @@ class ScriptBridge(
                 put(script.scriptId, JSONObject().apply {
                     put("grants", mask)
                     put("info", info(script))
+                    put("notify", GmApiSource.notifyName(script.scriptId, manager.secret))
                     put("values", JSONObject().apply {
                         if (mask and 6291462 != 0) manager.listValues(script.scriptId).forEach { name ->
                             put(name, manager.getValue(script.scriptId, name))
@@ -57,7 +61,9 @@ class ScriptBridge(
         fun onCopy(text: String, mimeType: String) = Unit
     }
 
-    override fun call(message: String?, secret: String?): String? {
+    override fun call(message: String?, secret: String?): String? = call(message, secret, null)
+
+    override fun call(message: String?, secret: String?, reply: ((String) -> Unit)?): String? {
         if (secret.isNullOrEmpty() || secret != manager.secret || message.isNullOrEmpty()) return null
         return runCatching {
             val request = JSONObject(message)
@@ -71,8 +77,8 @@ class ScriptBridge(
             when (name) {
                 "info" -> info(script)
                 "getValue" -> if (allowed(2097154)) manager.getValue(id, args.optString("name")) ?: args.optString("value", "undefined") else "undefined"
-                "setValue" -> { if (allowed(8388609)) manager.setValue(id, args.optString("name"), args.optString("value", "undefined")); null }
-                "deleteValue" -> { if (allowed(1048584)) manager.deleteValue(id, args.optString("name")); null }
+                "setValue" -> { if (allowed(8388609)) manager.setValue(id, args.optString("name"), args.optString("value", "undefined"), this); null }
+                "deleteValue" -> { if (allowed(1048584)) manager.deleteValue(id, args.optString("name"), this); null }
                 "listValues" -> if (allowed(4194308)) manager.listValues(id).joinToString(",") else null
                 "getResourceText" -> if (allowed(32)) manager.resourceText(script!!, args.optString("resource")) ?: "undefined" else null
                 "getResourceURL" -> if (allowed(67108880)) manager.resourceUrl(script!!, args.optString("resource")) ?: "undefined" else null
@@ -99,7 +105,7 @@ class ScriptBridge(
                 }
                 "xmlhttpRequest" -> {
                     if (!allowed(-2147483392)) "" else {
-                        webView.get()?.let { ScriptHttpRequest(it, args.optString("details")).start() }
+                        webView.get()?.let { ScriptHttpRequest(it, args.optString("details"), reply).start() }
                         null
                     }
                 }

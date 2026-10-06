@@ -28,14 +28,21 @@ class ScriptManager(
     fun all(): List<UserScript> = store.list()
     fun findByScriptId(id: String): UserScript? = store.findByScriptId(id)
     fun getValue(id: String, name: String): String? = store.getValue(id, name)
-    private val valueObservers = java.util.concurrent.CopyOnWriteArraySet<(String, String, String?) -> Unit>()
-    internal fun addValueObserver(observer: (String, String, String?) -> Unit) { valueObservers.add(observer) }
-    internal fun removeValueObserver(observer: (String, String, String?) -> Unit) { valueObservers.remove(observer) }
-    fun setValue(id: String, name: String, value: String?): Boolean = store.setValue(id, name, value).also { saved ->
-        if (saved) valueObservers.forEach { it(id, name, value) }
+    private val valueObservers = java.util.concurrent.CopyOnWriteArraySet<(String, String, String?, String?, Any?) -> Unit>()
+    internal fun addValueObserver(observer: (String, String, String?, String?, Any?) -> Unit) { valueObservers.add(observer) }
+    internal fun removeValueObserver(observer: (String, String, String?, String?, Any?) -> Unit) { valueObservers.remove(observer) }
+    fun setValue(id: String, name: String, value: String?, origin: Any? = null): Boolean {
+        val old = store.getValue(id, name)
+        val next = value?.takeUnless(String::isEmpty)
+        return store.setValue(id, name, value).also { saved ->
+            if (saved && old != next) valueObservers.forEach { it(id, name, next, old, origin) }
+        }
     }
-    fun deleteValue(id: String, name: String): Boolean = store.deleteValue(id, name).also { deleted ->
-        if (deleted) valueObservers.forEach { it(id, name, null) }
+    fun deleteValue(id: String, name: String, origin: Any? = null): Boolean {
+        val old = store.getValue(id, name)
+        return store.deleteValue(id, name).also { deleted ->
+            if (deleted) valueObservers.forEach { it(id, name, null, old, origin) }
+        }
     }
     fun listValues(id: String): List<String> = store.listValues(id)
     fun resourceText(script: UserScript, name: String): String? = resources.resourceText(script, name)
@@ -69,9 +76,9 @@ class ScriptManager(
     }.sortedBy { it.content.length } // p5.b.s orders loaded patterns by LENGTH(content) ASC.
 
     /** n5.a.b: installation API and every matched userscript are separate page evaluations. */
-    fun phaseSources(url: String, runAt: ScriptRunAt): List<String> = buildList {
+    fun phaseSources(url: String, runAt: ScriptRunAt, frame: Boolean = false): List<String> = buildList {
         if (url.isEmpty() || url.startsWith("file://")) return@buildList
-        if (runAt == ScriptRunAt.START || runAt == ScriptRunAt.END) {
+        if (!frame && (runAt == ScriptRunAt.START || runAt == ScriptRunAt.END)) {
             // n5.a.e deliberately takes the network URL authority verbatim, including its port.
             val scheme = url.indexOf("://")
             val authority = if (android.webkit.URLUtil.isNetworkUrl(url) && scheme >= 0) {
@@ -84,7 +91,7 @@ class ScriptManager(
             }
         }
         scriptsFor(url, runAt).forEach { script ->
-            if (script.content.isNotEmpty()) {
+            if (script.content.isNotEmpty() && !(frame && script.noFrames)) {
                 val wrap = script.flags and 1 == 0
                 val source = buildString {
                     if (wrap) append("(function(){\n")

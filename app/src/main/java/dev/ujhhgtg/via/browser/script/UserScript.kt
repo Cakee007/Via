@@ -55,6 +55,13 @@ data class UserScript(
 
     fun source(): String = content
 
+    /** `@noframes`: the script runs only in top-level documents. Read from the stored source. */
+    val noFrames: Boolean by lazy {
+        content.lineSequence().map(String::trim).dropWhile { !it.startsWith("// ==UserScript==") }
+            .takeWhile { !it.startsWith("// ==/UserScript==") }
+            .any { Regex("//[\\s\\p{Zs}\\u200B]*@noframes(?:\\s.*)?").matches(it) }
+    }
+
     fun grantMask(): Int = grants.fold(0) { bits, grant -> bits or (GRANT_BITS[grant] ?: 0) }
     private fun overrideObject(): JSONObject? = userOverrides?.let { runCatching { JSONObject(it) }.getOrNull() }
 

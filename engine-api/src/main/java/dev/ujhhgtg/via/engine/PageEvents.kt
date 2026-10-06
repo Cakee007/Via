@@ -1,6 +1,7 @@
 package dev.ujhhgtg.via.engine
 
 import android.graphics.Bitmap
+import java.io.InputStream
 
 /**
  * What an [EnginePage] reports to the app. Each backend translates its own client/delegate
@@ -8,8 +9,18 @@ import android.graphics.Bitmap
  * Calls arrive on the main thread unless noted.
  */
 interface PageEvents {
-    /** A URL-scoped injection plan: 0 (document_start), 1 (head), 2 (DOMContentLoaded), 4 (load). Main thread. */
-    fun documentScripts(url: String): Map<Int, List<String>> = emptyMap()
+    /**
+     * A recordable top-level visit (not a redirect source or error page). Returns whether Via's history
+     * keeps [url]; the page itself is recorded at [onPageFinished]. Main thread.
+     */
+    fun onVisited(url: String): Boolean = false
+    /** Visited-link state for each of [urls], from Via's history. Called on a background thread. */
+    fun getVisited(urls: Array<String>): BooleanArray = BooleanArray(urls.size)
+    /**
+     * A URL-scoped injection plan: 0 (document_start), 1 (head), 2 (DOMContentLoaded), 4 (load). Main thread.
+     * Subframe documents ([mainFrame] false) receive only the userscripts that may run in frames.
+     */
+    fun documentScripts(url: String, mainFrame: Boolean = true): Map<Int, List<String>> = emptyMap()
     fun onDocumentPhase(phase: Int) = Unit
     fun onPageStarted(url: String)
     fun onPageFinished(url: String)
@@ -26,7 +37,8 @@ interface PageEvents {
     /** Requests that only expose a URL (WebView's legacy interception path); only virtual resources are served. */
     fun onUrlRequest(url: String): InterceptDecision?
 
-    fun onDownload(url: String, userAgent: String?, contentDisposition: String?, mimeType: String?, size: Long)
+    fun onDownload(url: String, userAgent: String?, contentDisposition: String?, mimeType: String?, size: Long,
+        body: InputStream? = null)
     fun onError(error: LoadError)
     fun onHttpAuth(request: HttpAuthRequest)
     fun onSslError(request: SslErrorRequest)

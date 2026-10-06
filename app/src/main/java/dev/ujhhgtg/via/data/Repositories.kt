@@ -164,6 +164,19 @@ class HistoryRepository(private val db: BrowserDatabase) {
     fun record(url: String, title: String?): Boolean {
         return url.isNotBlank() && importEntries(listOf(HistoryEntry(0, url, title, System.currentTimeMillis() / 1000))) > 0
     }
+    fun visited(urls: Array<String>): BooleanArray {
+        if (urls.isEmpty()) return BooleanArray(0)
+        val distinct = urls.filter(String::isNotBlank).distinct()
+        if (distinct.isEmpty()) return BooleanArray(urls.size)
+        val found = HashSet<String>()
+        distinct.chunked(900).forEach { batch ->
+            val marks = batch.joinToString(",", "(", ")") { "?" }
+            db.readableDatabase.query("history", arrayOf("url"), "url IN $marks", batch.toTypedArray(), null, null, null).use { cursor ->
+                while (cursor.moveToNext()) found += cursor.getString(0)
+            }
+        }
+        return BooleanArray(urls.size) { urls[it] in found }
+    }
     fun importEntries(entries: List<HistoryEntry>, replace: Boolean = false): Int = db.writableDatabase.transaction {
         if (replace && entries.isNotEmpty()) clear()
         var count = 0

@@ -39,21 +39,29 @@ class DownloadDestinationController(private val fragment: Fragment, private val 
             pending = null
             // Original M8 re-enters Xa, so permission selection returns to the confirmation dialog.
             if (previous != null) show(previous.request, previous.length)
-        }
+        } else pending?.let { pending = null; it.request.streamId?.let(DownloadStreamRegistry::close) }
     }
 
     fun show(request: DownloadRequest, length: Long = request.contentLength) {
-        if (!fragment.isAdded) return
+        if (!fragment.isAdded) {
+            request.streamId?.let { DownloadStreamRegistry.close(it) }
+            return
+        }
         val context = fragment.requireContext()
         val manager = selectedManager(context)
         // Xa delegates only actual third-party editor activities before showing Via's dialog.
-        if (manager != null && manager.packageName != "system" && manager.packageName != "rpc" &&
+        if (request.streamId == null && manager != null && manager.packageName != "system" && manager.packageName != "rpc" &&
             ExternalDownloadManagers.sendLink(context, manager, request.url)) return
         // The confirmation dialog may issue HEAD immediately, before the Download button.
-        LocalNetworkAccess.check(context, request.url) { allowed ->
-            if (!fragment.isAdded || !fragment.isVisible || fragment.parentFragmentManager.isStateSaved) return@check
-            if (allowed) showPrepared(request, length) else ViaToast.show(context, R.string.title_permission_denied)
+        val check = { allowed: Boolean ->
+            if (fragment.isAdded && fragment.isVisible && !fragment.parentFragmentManager.isStateSaved) {
+                if (allowed) showPrepared(request, length) else ViaToast.show(context, R.string.title_permission_denied)
+            } else {
+                request.streamId?.let { DownloadStreamRegistry.close(it) }
+                Unit
+            }
         }
+        if (request.streamId != null) check(true) else LocalNetworkAccess.check(context, request.url, completed = check)
     }
 
     private fun showPrepared(request: DownloadRequest, length: Long) {
@@ -61,7 +69,7 @@ class DownloadDestinationController(private val fragment: Fragment, private val 
         if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
             runCatching { notifications.launch(Manifest.permission.POST_NOTIFICATIONS) }
         // Xa asks for notifications first, then hands blob/wormhole downloads to the page.
-        if (interceptPageDownload?.invoke(request, selectedManager(context)) == true) return
+        if (request.streamId == null && interceptPageDownload?.invoke(request, selectedManager(context)) == true) return
         val directory = BrowserPreferences(context).downloadDirectory
         if (directory.startsWith("content://") && !context.contentResolver.persistedUriPermissions.any {
                 it.uri == directory.toUri() && it.isWritePermission
@@ -75,16 +83,21 @@ class DownloadDestinationController(private val fragment: Fragment, private val 
 
     private fun submit(request: DownloadRequest) {
         val context = fragment.requireContext()
-        LocalNetworkAccess.check(context, request.url) { allowed ->
-            if (!fragment.isAdded) return@check
-            if (allowed) submitPrepared(request) else ViaToast.show(context, R.string.title_permission_denied)
+        val submit = { allowed: Boolean ->
+            if (fragment.isAdded) {
+                if (allowed) submitPrepared(request) else ViaToast.show(context, R.string.title_permission_denied)
+            } else {
+                request.streamId?.let { DownloadStreamRegistry.close(it) }
+                Unit
+            }
         }
+        if (request.streamId != null) submit(true) else LocalNetworkAccess.check(context, request.url, completed = submit)
     }
 
     private fun submitPrepared(request: DownloadRequest) {
         val context = fragment.requireContext()
         val manager = selectedManager(context)
-        if (manager?.packageName == "system") {
+        if (request.streamId == null && manager?.packageName == "system") {
             if (!URLUtil.isNetworkUrl(request.url)) { ViaToast.show(context, R.string.cannot_download); return }
             fragment.lifecycleScope.launch {
                 val id = ExternalDownloadManagers.downloadWithSystem(context, request.url, request.fileName.orEmpty(), request.userAgent, request.mimeType)
@@ -95,7 +108,7 @@ class DownloadDestinationController(private val fragment: Fragment, private val 
             return
         }
         // j1.g/b is retained as its original empty result; z1 currently registers no rpc choice.
-        if (manager?.packageName == "rpc") {
+        if (request.streamId == null && manager?.packageName == "rpc") {
             if (!URLUtil.isNetworkUrl(request.url)) ViaToast.show(context, R.string.cannot_download)
             return
         }
@@ -104,8 +117,13 @@ class DownloadDestinationController(private val fragment: Fragment, private val 
             path = request.directory ?: request.path ?: directory, fileUri = request.fileUri, totalSize = request.contentLength)
         fragment.viewLifecycleOwner.launchIo({ DownloadFiles.prepare(context.applicationContext, original, directory) }, { prepared ->
                 when (prepared.status) {
-                    2 -> ViaToast.show(context, R.string.download_failed)
-                    3 -> ViaToast.show(context, R.string.title_permission_denied, actionText = R.string.grant) {
+                    2 -> {
+                        request.streamId?.let(DownloadStreamRegistry::close)
+                        ViaToast.show(context, R.string.download_failed)
+                    }
+                    // A staged body would leak behind an ignored toast, so it asks with a dialog instead.
+                    3 -> if (request.streamId != null) reselect(Pending(request, request.contentLength))
+                    else ViaToast.show(context, R.string.title_permission_denied, actionText = R.string.grant) {
                         reselect(Pending(request, request.contentLength))
                     }
                     else -> {
@@ -115,7 +133,10 @@ class DownloadDestinationController(private val fragment: Fragment, private val 
                         if (id > 0) onStarted(id)
                     }
                 }
-            }, { android.util.Log.w("ViaDownloads", "Download destination preparation failed", it) })
+            }, {
+                request.streamId?.let(DownloadStreamRegistry::close)
+                android.util.Log.w("ViaDownloads", "Download destination preparation failed", it)
+            })
     }
 
     private fun selectedManager(context: Context) = ExternalDownloadManagers.managers.firstOrNull {
@@ -125,13 +146,14 @@ class DownloadDestinationController(private val fragment: Fragment, private val 
     private fun reselect(request: Pending) {
         pending = null
         val directory = BrowserPreferences(fragment.requireContext()).downloadDirectory
-        if (!directory.startsWith("content://")) return
+        val discard = { pending = null; request.request.streamId?.let(DownloadStreamRegistry::close); Unit }
+        if (!directory.startsWith("content://")) { discard(); return }
         pending = request
         ViaDialog(fragment.requireActivity()).title(R.string.title_permission_denied)
             .message(R.string.message_reselect_download_location)
             .positive(android.R.string.ok) { _, _ ->
                 pending = request
-                runCatching { tree.launch(directory.toUri()) }
-            }.negative(android.R.string.cancel).show()
+                runCatching { tree.launch(directory.toUri()) }.onFailure { discard() }
+            }.negative(android.R.string.cancel) { discard() }.onCancel { discard() }.show()
     }
 }

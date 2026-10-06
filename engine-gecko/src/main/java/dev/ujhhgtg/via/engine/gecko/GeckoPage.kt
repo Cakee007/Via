@@ -53,6 +53,8 @@ internal class GeckoPage(
     private var settings: PageSettings? = null
     private var sessionState: GeckoSession.SessionState? = null
     private var destroyed = false
+    /** Logical URL of a generated top-level response loaded through Gecko's data loader. */
+    @Volatile private var generatedLogicalUrl: String? = null
 
     override var url: String? = null; private set
     override var title: String? = null; private set
@@ -74,6 +76,7 @@ internal class GeckoPage(
         created.navigationDelegate = navigation
         created.progressDelegate = progressDelegate
         created.contentDelegate = content
+        created.historyDelegate = history
         created.scrollDelegate = scroll
         created.promptDelegate = GeckoPrompts(this, events)
         created.permissionDelegate = GeckoPermissions(context, events)
@@ -114,6 +117,7 @@ internal class GeckoPage(
     // --- Navigation ---
 
     override fun load(url: String, headers: Map<String, String>) {
+        generatedLogicalUrl = null
         if (url.startsWith("javascript:", ignoreCase = true)) {
             evaluate(android.net.Uri.decode(url.substring("javascript:".length)))
             return
@@ -151,7 +155,7 @@ internal class GeckoPage(
     private val navigation = object : GeckoSession.NavigationDelegate {
         override fun onLocationChange(session: GeckoSession, url: String?,
             perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>, hasUserGesture: Boolean) {
-            this@GeckoPage.url = url
+            this@GeckoPage.url = logicalUrl(url)
         }
 
         override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) { this@GeckoPage.canGoBack = canGoBack }
@@ -189,6 +193,24 @@ internal class GeckoPage(
                 })
             } else events.onError(LoadError(failed, "GET", loadErrorKind(error)))
             return GeckoBackend.result(GeckoErrorPages.page(context, failed, error))
+        }
+    }
+
+    private val history = object : GeckoSession.HistoryDelegate {
+        override fun onVisited(session: GeckoSession, url: String, lastVisitedURL: String?, flags: Int): GeckoResult<Boolean> {
+            val skipped = GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE or
+                GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE_PERMANENT or GeckoSession.HistoryDelegate.VISIT_UNRECOVERABLE_ERROR
+            val recordable = flags and GeckoSession.HistoryDelegate.VISIT_TOP_LEVEL != 0 && flags and skipped == 0
+            return GeckoBackend.result(recordable && events.onVisited(url))
+        }
+
+        // Pages with many links query Via's database in batches; keep that off the UI thread.
+        override fun getVisited(session: GeckoSession, urls: Array<String>): GeckoResult<BooleanArray> {
+            val result = GeckoResult<BooleanArray>()
+            GeckoBackend.historyExecutor.execute {
+                result.complete(runCatching { events.getVisited(urls) }.getOrElse { BooleanArray(urls.size) })
+            }
+            return result
         }
     }
 
@@ -237,9 +259,10 @@ internal class GeckoPage(
             favicon = null
             certificate = null
             progress = 0
-            this@GeckoPage.url = url
+            val logical = logicalUrl(url) ?: url
+            this@GeckoPage.url = logical
             documentPending = true
-            events.onPageStarted(url)
+            events.onPageStarted(logical)
         }
 
         override fun onPageStop(session: GeckoSession, success: Boolean) {
@@ -287,12 +310,11 @@ internal class GeckoPage(
         }
 
         override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
-            // Via's downloader fetches the URL itself, as with WebView's DownloadListener.
-            runCatching { response.body?.close() }
             val headers = response.headers
             fun header(name: String) = headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
             events.onDownload(response.uri, userAgent, header("Content-Disposition"),
-                header("Content-Type")?.substringBefore(';')?.trim(), header("Content-Length")?.toLongOrNull() ?: -1)
+                header("Content-Type")?.substringBefore(';')?.trim(), header("Content-Length")?.toLongOrNull() ?: -1,
+                response.body)
         }
 
         override fun onCrash(session: GeckoSession) = recover()
@@ -345,6 +367,8 @@ internal class GeckoPage(
     private var port: WebExtension.Port? = null
     private var bridge: PageBridge? = null
     private var scriptChannel: ScriptChannel? = null
+    /** Ports for subframes share the page's bridge, but never receive page-wide evaluations. */
+    private val framePorts = LinkedHashSet<WebExtension.Port>()
     /** Set from page start until the new document's port connects; evaluations wait for that document. */
     private var documentPending = false
     private val queue = mutableListOf<JSONObject>()
@@ -353,11 +377,16 @@ internal class GeckoPage(
 
     override fun installBridges(via: PageBridge, scripts: ScriptChannel?) {
         bridge = via
+        scriptChannel?.observeValues(null)
         scriptChannel = scripts
-        scripts?.observeValues { script, name, value ->
+        scripts?.observeValues { script, name, value, oldValue, origin ->
             view.post {
-                port?.postMessage(JSONObject().put("type", "value").put("script", script)
-                    .put("name", name).put("value", value ?: JSONObject.NULL))
+                val message = JSONObject().put("type", "value").put("script", script)
+                    .put("name", name).put("value", value ?: JSONObject.NULL)
+                    .put("oldValue", oldValue ?: JSONObject.NULL)
+                    .put("remote", origin !== scriptChannel)
+                port?.postMessage(message)
+                framePorts.toList().forEach { it.postMessage(message) }
             }
         }
     }
@@ -385,24 +414,33 @@ internal class GeckoPage(
 
     private val scripts = object : WebExtension.MessageDelegate {
         override fun onConnect(port: WebExtension.Port) {
-            if (!port.sender.isTopLevel) { port.disconnect(); return }
-            this@GeckoPage.port?.let { old -> if (old !== port) old.setDelegate(null) }
-            this@GeckoPage.port = port
+            val topLevel = port.sender.isTopLevel
+            if (topLevel) {
+                this@GeckoPage.port?.let { old -> if (old !== port) old.setDelegate(null) }
+                this@GeckoPage.port = port
+            } else framePorts += port
             port.setDelegate(portDelegate)
-            port.postMessage(injectionPayload(port.sender.url).put("type", "state"))
-            documentPending = false
-            flushQueue(port)
+            port.postMessage(injectionPayload(port.sender.url, topLevel).put("type", "state"))
+            if (topLevel) {
+                documentPending = false
+                flushQueue(port)
+            }
         }
     }
 
     private val portDelegate = object : WebExtension.PortDelegate {
         override fun onPortMessage(message: Any, port: WebExtension.Port) {
             val json = message as? JSONObject ?: return
+            val topLevel = port === this@GeckoPage.port
+            if (!topLevel && port !in framePorts) return
             when (json.optString("type")) {
                 "result" -> callbacks.remove(json.optInt("id"))?.invoke(json.optString("value", "null"))
-                "phase" -> events.onDocumentPhase(json.optInt("phase"))
-                "touchIcon" -> events.onReceivedTouchIconUrl(json.optString("url"))
+                // Gecko content scripts execute the complete payload themselves. The native phase
+                // callback is only for the top document's reader-mode bookkeeping.
+                "phase" -> if (topLevel) events.onDocumentPhase(json.optInt("phase"))
+                "touchIcon" -> if (topLevel) events.onReceivedTouchIconUrl(json.optString("url"))
                 "icon" -> {
+                    if (!topLevel) return
                     val data = json.optString("data")
                     if (data.length <= 700_000) runCatching {
                         val bytes = android.util.Base64.decode(data, android.util.Base64.DEFAULT)
@@ -428,23 +466,26 @@ internal class GeckoPage(
                         "toast" -> via.toast(arg(0))
                     }
                 }
+                // Asynchronous GM replies (XHR callbacks) go back to the frame that made the call.
                 "gm" -> scriptChannel?.call(json.optString("message").takeIf { !json.isNull("message") },
-                    json.optString("secret").takeIf { !json.isNull("secret") })
+                    json.optString("secret").takeIf { !json.isNull("secret") },
+                    if (topLevel) null else { code -> view.post { if (port in framePorts) port.postMessage(JSONObject().put("type", "eval").put("code", code)) } })
             }
         }
 
         override fun onDisconnect(port: WebExtension.Port) {
             if (this@GeckoPage.port === port) this@GeckoPage.port = null
+            framePorts.remove(port)
         }
     }
 
     /** Built before response headers are released, for synchronous document_start injection. */
-    fun injectionPayload(url: String): JSONObject = JSONObject().put("page", id)
+    fun injectionPayload(url: String, mainFrame: Boolean = true): JSONObject = JSONObject().put("page", id)
         .put("commands", JSONObject().put("515", bridge?.cmd(515) ?: 0))
         .put("addons", bridge?.getInstalledAddonID() ?: "[]")
         .put("gm", scriptChannel?.snapshot(url)?.let(::JSONObject))
         .put("phases", JSONObject().apply {
-            events.documentScripts(url).forEach { (phase, sources) -> put(phase.toString(), org.json.JSONArray(sources)) }
+            events.documentScripts(url, mainFrame).forEach { (phase, sources) -> put(phase.toString(), org.json.JSONArray(sources)) }
         })
 
     // --- Find ---
@@ -523,6 +564,8 @@ internal class GeckoPage(
         GeckoBackend.unregister(this)
         (view.parent as? android.view.ViewGroup)?.removeView(view)
         port?.setDelegate(null)
+        framePorts.forEach { it.setDelegate(null) }
+        framePorts.clear()
         port = null
         queue.clear()
         callbacks.clear()
@@ -556,14 +599,40 @@ internal class GeckoPage(
             // Firefox content blockers cancel; the page sees a failed load instead of WebView's empty response.
             InterceptDecision.BlockEmpty, InterceptDecision.BlockImage -> Interception.Cancel
             is InterceptDecision.Serve -> {
-                val body = runCatching { decision.open().use { it.readBytes() } }.getOrNull() ?: return Interception.Cancel
+                var body = runCatching { decision.open().use { it.readBytes() } }.getOrNull() ?: return Interception.Cancel
                 if (mainFrame) {
-                    // Top-level data: navigations are blocked, so the generated document is loaded directly.
-                    view.post { if (!destroyed) session.load(GeckoSession.Loader().data(body, decision.mime)) }
+                    // Gecko has no public response-body delegate. Load the generated response through
+                    // the data loader; Via's page policy and history keep seeing the requested URL.
+                    if (decision.mime.startsWith("text/html", true)) body = withBaseUrl(body, url)
+                    view.post {
+                        if (destroyed) return@post
+                        generatedLogicalUrl = url
+                        session.load(GeckoSession.Loader().data(body, decision.mime)
+                            .flags(GeckoSession.LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE))
+                    }
                     Interception.Cancel
                 } else Interception.Redirect("data:${decision.mime};base64," + android.util.Base64.encodeToString(body, android.util.Base64.NO_WRAP))
             }
         }
+    }
+
+    /** Maps the data: document of a generated response to its logical URL; any other document ends that mapping. */
+    private fun logicalUrl(actual: String?): String? {
+        val logical = generatedLogicalUrl
+        if (logical != null && actual?.startsWith("data:", ignoreCase = true) == true) return logical
+        generatedLogicalUrl = null
+        return actual
+    }
+
+    private fun withBaseUrl(body: ByteArray, url: String): ByteArray {
+        val source = body.toString(Charsets.UTF_8)
+        if (source.contains("<base", ignoreCase = true)) return body
+        val escaped = url.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+        val base = "<base href=\"$escaped\">"
+        val head = Regex("<head\\b[^>]*>", RegexOption.IGNORE_CASE).find(source)
+        val result = if (head != null) source.substring(0, head.range.last + 1) + base + source.substring(head.range.last + 1)
+        else base + source
+        return result.toByteArray(Charsets.UTF_8)
     }
 
     // Last, so every delegate above is initialized before the first session uses it.

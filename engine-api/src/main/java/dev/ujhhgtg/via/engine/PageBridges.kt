@@ -18,9 +18,13 @@ interface PageBridge {
 fun interface ScriptChannel {
     fun call(message: String?, secret: String?): String?
 
+    /** As [call]; asynchronous replies are evaluated with [reply] (a subframe), or in the page when null. */
+    fun call(message: String?, secret: String?, reply: ((String) -> Unit)?): String? = call(message, secret)
+
     /** Initial synchronous GM replies for an asynchronous engine bridge. JSON, scoped to this URL. */
     fun snapshot(url: String): String? = null
 
     /** Persisted value changes, including changes made by another open page. Null removes the observer. */
-    fun observeValues(observer: ((scriptId: String, name: String, value: String?) -> Unit)?) = Unit
+    fun observeValues(observer: ((scriptId: String, name: String, value: String?, oldValue: String?, origin: Any?) -> Unit)?) = Unit
+    fun valueChangeScript(scriptId: String, name: String, value: String?, oldValue: String?, remote: Boolean): String? = null
 }

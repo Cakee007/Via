@@ -2868,6 +2868,9 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             }
             if (current()?.id == tab.id) updateChrome()
         }
+        // onPageFinished records the visit with its title, for both backends.
+        override fun onVisited(tab: BrowserTab, url: String): Boolean = privacyPolicy.mayRecord(url) && !isLocal(url)
+        override fun getVisited(tab: BrowserTab, urls: Array<String>): BooleanArray = history.visited(urls)
         override fun onTitleChanged(tab: BrowserTab, title: String) {
             // r4.f.f: open surfaces (tab sheet, strip) refresh the row live.
             tabs.notifyTabChanged(tab)
@@ -2903,7 +2906,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                 updateReloadButton(adjusted < 100)
             }
         }
-        override fun onDownload(tab: BrowserTab, url: String, userAgent: String?, disposition: String?, mimeType: String?, size: Long) = requestDownload(tab, url, userAgent, disposition, mimeType, size)
+        override fun onDownload(tab: BrowserTab, url: String, userAgent: String?, disposition: String?, mimeType: String?, size: Long, body: java.io.InputStream?) = requestDownload(tab, url, userAgent, disposition, mimeType, size, body)
         override fun onBridgeCommand(tab: BrowserTab, command: Int): Int {
             // cmd(515) is queried synchronously by homepage gesture code; the other commands
             // schedule their shell action on the activity thread.
@@ -3103,13 +3106,18 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         return true
     }
 
-    private fun requestDownload(tab: BrowserTab, url: String, userAgent: String?, disposition: String?, mime: String?, size: Long) {
+    private fun requestDownload(tab: BrowserTab, url: String, userAgent: String?, disposition: String?, mime: String?, size: Long, body: java.io.InputStream? = null) {
         val referrer = tab.url
         val headers = url.toUri().host?.let { httpAuthorization[it] }?.let { mapOf("Authorization" to it) } ?: emptyMap()
+        val streamId = body?.let { dev.ujhhgtg.via.downloads.DownloadStreamRegistry.register(host.applicationContext, it) }
         lifecycleScope.launch {
             val request = DownloadRequest(url, userAgent = userAgent, contentDisposition = disposition, referrer = referrer,
-                cookies = dev.ujhhgtg.via.engine.Engines.backend.cookies.get(url), mimeType = mime, headers = headers)
+                cookies = dev.ujhhgtg.via.engine.Engines.backend.cookies.get(url), mimeType = mime, headers = headers,
+                contentLength = size.coerceAtLeast(0), streamId = streamId)
             downloadDestinations.show(request, size)
+        }.invokeOnCompletion { error ->
+            // Includes a scope that was already cancelled, where the block never runs.
+            if (error != null) streamId?.let(dev.ujhhgtg.via.downloads.DownloadStreamRegistry::close)
         }
     }
 

@@ -2,9 +2,10 @@
 
 // Keep the existing Via value encoding. SQLite remains authoritative; only synchronous reads are local.
 class ViaGmCache {
-  constructor(send, syncRequest) {
+  constructor(send, syncRequest, notify) {
     this.send = send;
     this.syncRequest = syncRequest;
+    this.notify = notify;
     this.reset(null);
   }
 
@@ -13,11 +14,14 @@ class ViaGmCache {
     this.scripts = snapshot?.scripts || {};
   }
 
-  update(identifier, name, value) {
+  update(identifier, name, value, remote = false) {
     const script = Object.hasOwn(this.scripts, identifier) && this.scripts[identifier];
     if (!script) return;
+    const old = Object.hasOwn(script.values, name) ? script.values[name] : null;
+    if (old === value) return;
     if (value === null) delete script.values[name];
     else Object.defineProperty(script.values, name, { value, writable: true, configurable: true, enumerable: true });
+    this.notify?.(identifier, name, value, old, remote, script.notify);
   }
 
   call(message, secret) {

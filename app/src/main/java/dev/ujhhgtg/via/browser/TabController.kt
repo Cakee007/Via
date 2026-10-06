@@ -18,6 +18,7 @@ import dev.ujhhgtg.via.engine.LocationRequest
 import dev.ujhhgtg.via.engine.MediaPermissionRequest
 import dev.ujhhgtg.via.engine.PopupRequest
 import dev.ujhhgtg.via.engine.SslErrorRequest
+import java.io.InputStream
 
 /** Owns engine pages and their saved state while leaving activity UI decisions to [Host]. */
 class TabController(
@@ -34,13 +35,15 @@ class TabController(
         fun onCurrentPageChanged(tab: BrowserTab) = Unit
         fun onResourceAvailabilityChanged(tab: BrowserTab, hasMedia: Boolean) = Unit
         fun onPageStarted(tab: BrowserTab, url: String) = Unit
+        fun onVisited(tab: BrowserTab, url: String): Boolean = false
+        fun getVisited(tab: BrowserTab, urls: Array<String>): BooleanArray = BooleanArray(urls.size)
         fun onPageFinished(tab: BrowserTab, url: String, title: String?) = Unit
         fun onUserScript(tab: BrowserTab, url: String) = Unit
         fun onTitleChanged(tab: BrowserTab, title: String) = Unit
         fun onIconChanged(tab: BrowserTab, icon: android.graphics.Bitmap?) = Unit
         fun onTouchIconChanged(tab: BrowserTab, iconUrl: String) = Unit
         fun onProgressChanged(tab: BrowserTab, progress: Int) = Unit
-        fun onDownload(tab: BrowserTab, url: String, userAgent: String?, disposition: String?, mimeType: String?, size: Long) = Unit
+        fun onDownload(tab: BrowserTab, url: String, userAgent: String?, disposition: String?, mimeType: String?, size: Long, body: InputStream? = null) = Unit
         fun onBridgeCommand(tab: BrowserTab, command: Int): Int = 0
         fun onBridgeDownload(tab: BrowserTab, url: String, name: String?, mime: String?) = Unit
         fun onBridgeMessage(tab: BrowserTab, token: String, json: String) = Unit
@@ -627,6 +630,9 @@ class TabController(
             }
             host.onPageStarted(tab(), tab().displayUrl(url))
         }
+        override fun onVisited(page: EnginePage, url: String): Boolean = host.onVisited(tab(), url)
+        override fun getVisited(page: EnginePage, urls: Array<String>): BooleanArray =
+            host.getVisited(tab(), urls)
         override fun onPageFinished(page: EnginePage, url: String, title: String?) {
             if (tab().page !== page) return
             tab().update(url = url, title = title)
@@ -652,8 +658,8 @@ class TabController(
         override fun onProgressChanged(page: EnginePage, progress: Int) {
             if (tab().page === page) host.onProgressChanged(tab(), progress)
         }
-        override fun onDownload(url: String, userAgent: String?, contentDisposition: String?, mimeType: String?, size: Long) =
-            host.onDownload(tab(), url, userAgent, contentDisposition, mimeType, size)
+        override fun onDownload(url: String, userAgent: String?, contentDisposition: String?, mimeType: String?, size: Long, body: InputStream?) =
+            host.onDownload(tab(), url, userAgent, contentDisposition, mimeType, size, body)
         override fun onBridgeCommand(page: EnginePage, command: Int): Int = host.onBridgeCommand(tab(), command)
         override fun onBridgeDownload(page: EnginePage, url: String, name: String?, mime: String?) = host.onBridgeDownload(tab(), url, name, mime)
         override fun onBridgeMessage(page: EnginePage, token: String, json: String) = host.onBridgeMessage(tab(), token, json)

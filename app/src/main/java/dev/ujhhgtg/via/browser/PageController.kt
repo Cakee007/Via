@@ -29,6 +29,7 @@ import dev.ujhhgtg.via.engine.PopupRequest
 import dev.ujhhgtg.via.engine.ResourceRequest
 import dev.ujhhgtg.via.engine.SslErrorRequest
 import java.util.Locale
+import java.io.InputStream
 
 /**
  * Applies Via's recovered shell policy to one [EnginePage], which it creates and owns.
@@ -85,6 +86,8 @@ class PageController(
 
     interface Callbacks {
         fun onPageStarted(page: EnginePage, url: String) = Unit
+        fun onVisited(page: EnginePage, url: String): Boolean = false
+        fun getVisited(page: EnginePage, urls: Array<String>): BooleanArray = BooleanArray(urls.size)
         fun onReaderCheckRequested() = Unit
         fun onResourceAvailabilityChanged(page: EnginePage, hasMedia: Boolean) = Unit
         fun onRequestBlocked(url: String) = Unit
@@ -93,7 +96,7 @@ class PageController(
         fun onReceivedIcon(page: EnginePage, icon: Bitmap?) = Unit
         fun onReceivedTouchIconUrl(page: EnginePage, url: String) = Unit
         fun onProgressChanged(page: EnginePage, progress: Int) = Unit
-        fun onDownload(url: String, userAgent: String?, contentDisposition: String?, mimeType: String?, size: Long) = Unit
+        fun onDownload(url: String, userAgent: String?, contentDisposition: String?, mimeType: String?, size: Long, body: InputStream? = null) = Unit
         fun onNavigationRequest(page: EnginePage, url: String, isRedirect: Boolean, isPopup: Boolean): Boolean = false
         fun onExternalUrl(page: EnginePage, url: String) = Unit
         fun onInternalUrl(page: EnginePage, url: String) = onExternalUrl(page, url)
@@ -232,8 +235,19 @@ class PageController(
     }
 
     private inner class Events : PageEvents {
-        override fun documentScripts(url: String): Map<Int, List<String>> {
+        override fun onVisited(url: String): Boolean = callbacks.onVisited(page, url)
+
+        override fun getVisited(urls: Array<String>): BooleanArray = callbacks.getVisited(page, urls)
+
+        override fun documentScripts(url: String, mainFrame: Boolean): Map<Int, List<String>> {
             if (!page.javaScriptEnabled) return emptyMap()
+            if (!mainFrame) {
+                // Frames get no Via page setup or bridge secret, only userscripts without @noframes.
+                val manager = scripts?.takeIf { preferences.scriptsEnabled } ?: return emptyMap()
+                fun frame(runAt: dev.ujhhgtg.via.browser.script.ScriptRunAt) = manager.phaseSources(url, runAt, frame = true)
+                return mapOf(0 to frame(dev.ujhhgtg.via.browser.script.ScriptRunAt.START),
+                    2 to frame(dev.ujhhgtg.via.browser.script.ScriptRunAt.END), 4 to frame(dev.ujhhgtg.via.browser.script.ScriptRunAt.IDLE))
+            }
             val setup = listOf("window.__VIA_SECRET__=${org.json.JSONObject.quote(pageBridgeSecret)};") +
                 if (url.startsWith("http") && preferences.disableWebRtc) listOf("delete window.RTCPeerConnection;delete window.webkitRTCPeerConnection;delete window.mozRTCPeerConnection;") else emptyList()
             val start = if (preferences.scriptsEnabled) scripts?.phaseSources(url, dev.ujhhgtg.via.browser.script.ScriptRunAt.START).orEmpty() else emptyList()
@@ -282,8 +296,8 @@ class PageController(
         override fun onNavigation(url: String, mainFrame: Boolean, isRedirect: Boolean): Boolean =
             handleNavigation(url, mainFrame, isRedirect)
 
-        override fun onDownload(url: String, userAgent: String?, contentDisposition: String?, mimeType: String?, size: Long) =
-            callbacks.onDownload(url, userAgent, contentDisposition, mimeType, size)
+        override fun onDownload(url: String, userAgent: String?, contentDisposition: String?, mimeType: String?, size: Long, body: InputStream?) =
+            callbacks.onDownload(url, userAgent, contentDisposition, mimeType, size, body)
         override fun onError(error: LoadError) = callbacks.onError(page, error)
         override fun onHttpAuth(request: HttpAuthRequest) = callbacks.onHttpAuth(page, request)
         override fun onSslError(request: SslErrorRequest) = callbacks.onSslError(page, request)
