@@ -164,6 +164,8 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
     /** Child overlays (f8.l0) register their r4.f listeners through this. */
     internal val tabController: TabController?
         get() = if (::tabs.isInitialized) tabs else null
+    /** c8.f8: the fragment view; holds the blur image layer, unpadded so it reaches under the system bars. */
+    private lateinit var frame: FrameLayout
     private lateinit var root: FrameLayout
     private lateinit var shell: LinearLayout
     private lateinit var browserHost: FrameLayout
@@ -493,7 +495,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
         showBrowser(state)
-        return root
+        return frame
     }
 
     override fun onViewCreated(view: View, state: Bundle?) {
@@ -679,6 +681,8 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
                     .build()
             }
         }
+        frame = FrameLayout(host)
+        frame.addView(root, FrameLayout.LayoutParams(-1, -1))
         root.requestApplyInsets()
         shell = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
         root.addView(shell, FrameLayout.LayoutParams(-1, -1))
@@ -3477,7 +3481,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
         if (Build.VERSION.SDK_INT >= 31 && preferences.blurEffect) {
             val image = browserBackgroundImage ?: SettingsBackgroundView(host).also {
                 browserBackgroundImage = it
-                root.addView(it, 0, FrameLayout.LayoutParams(-1, -1))
+                frame.addView(it, 0, FrameLayout.LayoutParams(-1, -1))
             }
             if (image.drawable !== nativeBackground) {
                 image.setImageDrawable(nativeBackground)
@@ -3485,7 +3489,7 @@ class BrowserFragment : Fragment(), BrowserMenuDialog.Host, dev.ujhhgtg.via.ui.F
             }
             host.window.setBackgroundDrawable(windowFallbackColor(currentBackgroundColor).toDrawable())
         } else {
-            browserBackgroundImage?.let { image -> image.setImageDrawable(null); root.removeView(image) }
+            browserBackgroundImage?.let { image -> image.setImageDrawable(null); frame.removeView(image) }
             browserBackgroundImage = null
             host.window.setBackgroundDrawable(nativeBackground)
         }

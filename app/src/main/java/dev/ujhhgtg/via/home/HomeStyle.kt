@@ -17,7 +17,7 @@ object HomeStyle {
             val night = if (dark) if (HomeDesign.isLight(c.accentColor)) 128 else 64 else 0
             val alpha = maxOf(night, ((c.backgroundBits and 127) / 100f * 255f).toInt()).coerceIn(0, 255)
             val scrim = "rgba(0,0,0,${alpha / 255f})"
-            return "linear-gradient($scrim,$scrim),url('$url') center/cover no-repeat fixed"
+            return "linear-gradient($scrim,$scrim),url('$url') center/cover no-repeat"
         }
         // w9.k.c0's -1 default resolves to the theme color before the night blend, like
         // ToolbarColorController.configuredBackgroundColor; legacy non-negative values too.
@@ -80,7 +80,9 @@ object HomeStyle {
                 .url { color:${active.text}; margin:2px 0 0; width:${c.favoriteWidth}px; height:20px; line-height:20px; white-space:normal; word-wrap:break-word; overflow:hidden; text-overflow:clip; ms-text-overflow:clip; font-size:10px; }
             """.trimIndent())
             // Backends without translucent pages reproduce the window layers (image, filter, cover) in CSS.
-            if (pageBackground != null) append("body{background:${pageBackground(c, pageBackground, c.dark)}}")
+            // An image sits on HomeDocument's #via-bg layer, which spans the whole screen like the native window image.
+            if (pageBackground != null) append(if (pageBackground.imageUrl != null) "#via-bg{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:-1;pointer-events:none;background:${pageBackground(c, pageBackground, c.dark)}}"
+                else "body{background:${pageBackground(c, pageBackground, c.dark)}}")
             if (c.dark) append("img.smaller,.overlay,.title{-webkit-filter:brightness(75%);filter:brightness(75%);}")
             val itemWidth = c.favoriteWidth + 18
             for (columns in 1..540 / itemWidth) append("@media only screen and (min-width:${(columns + if (c.searchEnabled) 1 else 0) * itemWidth}px){#box_container{width:${columns * itemWidth}px}}")

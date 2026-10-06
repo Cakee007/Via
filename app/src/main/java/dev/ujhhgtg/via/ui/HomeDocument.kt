@@ -38,7 +38,15 @@ class HomeDocument(private val context: Context, private val preferences: Browse
         val searchTitle = escape(context.getString(R.string.search_hint))
         val html = buildString {
             append("<!DOCTYPE html><html><head><meta content=\"text/html; charset=utf-8\" http-equiv=\"Content-Type\"/><meta name=\"color-scheme\" content=\"light dark\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no, minimal-ui\"><title>$title</title><link rel=\"stylesheet\" href=\"${css.absolutePath}\"></head>")
-            append("<body><div class='frosted-glass' id='gesture-indicator'></div><div id=\"content\"><div class=\"search_part\"><a class=\"logo\" href=\"\" onclick=\"javascript:window.via.cmd(257);\" title=\"$bookmarkTitle\">$logo</a>")
+            append("<body>")
+            // The native image is center-cropped to the whole window, status bar included. Gecko exposes the
+            // view's screen offset, so the layer is placed over the full screen and cover crops it the same way;
+            // elsewhere (the WebView customization preview) it stays on the viewport.
+            if (pageBackground?.imageUrl != null) append("<div id=\"via-bg\"></div><script>(function(){var e=document.getElementById('via-bg');" +
+                "if(window.mozInnerScreenY===undefined)return;function p(){var s=e.style;s.left=-mozInnerScreenX+'px';s.top=-mozInnerScreenY+'px';" +
+                "s.width=screen.width+'px';s.height=screen.height+'px'}p();addEventListener('resize',p);" +
+                "if(window.visualViewport)visualViewport.addEventListener('resize',p)})()</script>")
+            append("<div class='frosted-glass' id='gesture-indicator'></div><div id=\"content\"><div class=\"search_part\"><a class=\"logo\" href=\"\" onclick=\"javascript:window.via.cmd(257);\" title=\"$bookmarkTitle\">$logo</a>")
             append("<form onsubmit=\"return search()\" class=\"search_bar\" title=\"$searchTitle\"><button onclick=\"search()\" id=\"search_submit\" value=\"\" aria-label=\"$searchTitle\"><div class=\"search icon\"></div></button><span><input class=\"search\" onfocus=\"showButton()\" onblur=\"hideButton()\" type=\"text\" value=\"\" autocomplete=\"off\" id=\"search_input\" title=\"$searchTitle\"></span></form></div>")
             if (favorites.isNotEmpty()) {
                 append("<div id=\"bookmark_part\"><div id=\"box_container\">")

@@ -76,7 +76,11 @@ internal class PageColorSampler(
         val reference = WeakReference(view)
         view.view.postDelayed({
             reference.get()?.let { page ->
+                // The page may have navigated during the delay (Gecko's initial about:blank is replaced
+                // by the homepage within it); a late sample would recolor, and be cached for, the wrong document.
+                if (page.url != url) { PageColorCache.remove(url); return@let }
                 page.sampleTopLeftPixel { sampled ->
+                    if (page.url != url) { PageColorCache.remove(url); return@sampleTopLeftPixel }
                     val color = if (sampled == 0) backgroundColor(page.view) else sampled
                     PageColorCache.put(url, color)
                     setAccentColor(page, color)
