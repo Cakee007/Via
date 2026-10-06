@@ -2,6 +2,7 @@ package dev.ujhhgtg.via.downloads
 
 import android.content.Context
 import android.os.SystemClock
+import dev.ujhhgtg.via.engine.Engines
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.prepareGet
@@ -20,6 +21,7 @@ import java.net.MalformedURLException
 import java.net.URL
 import java.net.UnknownHostException
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 
 /** m5.e/d and i5.b: probe first, persisted range chunks, bounded retries and one-connection fallback. */
 internal class DownloadTransfer(
@@ -64,7 +66,8 @@ internal class DownloadTransfer(
             status(DownloadState.COMPLETE)
         } catch (error: CancellationException) { throw error }
         catch (error: Exception) {
-            val failure = if (error is DownloadFailure) error else DownloadFailure(if (control.paused) 1 else 20, error)
+            val failure =
+                error as? DownloadFailure ?: DownloadFailure(if (control.paused) 1 else 20, error)
             val state = when (failure.code) { 1 -> DownloadState.PAUSED; 32 -> DownloadState.WAITING_NETWORK; else -> DownloadState.FAILED }
             val previousState = record.state
             record = record.copy(state = state, errorMessage = if (state == DownloadState.FAILED) failure.message else record.errorMessage)
@@ -165,7 +168,7 @@ internal class DownloadTransfer(
             }
         } catch (failure: Exception) { return DownloadFailure(12, failure) }
         control.hasChunkWorkers = true
-        var remaining = chunks.toMutableList()
+        val remaining = chunks.toMutableList()
         var attempts = remaining.size * 2
         var connections = remaining.size
         var failure: DownloadFailure? = null
@@ -196,7 +199,7 @@ internal class DownloadTransfer(
             if (terminal) return failure
             remaining += waiting
             if (remaining.isNotEmpty() && attempts > 0) {
-                delay(300)
+                delay(300.milliseconds)
                 if (failure == null) failure = DownloadFailure(30)
             }
         }
@@ -284,7 +287,7 @@ internal class DownloadTransfer(
         progressTime = now
         val downloaded = chunks.sumOf { it.downloaded }
         val instant = (if (downloaded < progressBytes) downloaded else downloaded - progressBytes) * 1000 / maxOf(100, elapsed)
-        speed = if (record.totalSize > 0 && downloaded >= record.totalSize) -1 else if (speed == 0L) instant else (speed * 3 + instant) / 4
+        speed = if (record.totalSize in 1..downloaded) -1 else if (speed == 0L) instant else (speed * 3 + instant) / 4
         record = record.copy(downloadedSize = downloaded)
         progressBytes = downloaded
         repository.saveChunk(chunk)
@@ -300,7 +303,7 @@ internal class DownloadTransfer(
             // Assigned only when the hop is a redirect; otherwise the block's result is returned below.
             var next: String? = null
             try {
-                val cookie = dev.ujhhgtg.via.engine.Engines.backend.cookies.get(url)
+                val cookie = Engines.backend.cookies.get(url)
                 val result = DownloadNetwork.client.prepareGet(url) {
                     this.headers["Accept-Encoding"] = "identity"
                     cookie?.let { this.headers["Cookie"] = it }
