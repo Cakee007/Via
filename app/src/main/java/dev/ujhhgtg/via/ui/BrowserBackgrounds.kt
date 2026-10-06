@@ -6,28 +6,40 @@ import android.graphics.Color
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.FrameLayout
 import dev.ujhhgtg.via.R
 import dev.ujhhgtg.via.data.BrowserPreferences
 import dev.ujhhgtg.via.home.HomeBackground
 import dev.ujhhgtg.via.home.HomeDesign
+import java.util.concurrent.Executors
 
 /** x7.f and c8.f8: publish the browser's current native layers for newly-created settings pages. */
 object BrowserBackgrounds {
     private val published = WindowBackgroundDrawable()
     private var imageKey: ImageKey? = null
+    private val io = Executors.newSingleThreadExecutor()
+    private val main = Handler(Looper.getMainLooper())
     private data class ImageKey(val path: String, val modified: Long, val length: Long, val size: Int, val density: Int)
 
     /** c8.s6.Ab/a9/Q7/sb, called before opening settings and when browser appearance updates. */
     fun update(context: Context, dark: Boolean, coverColor: Int = Color.TRANSPARENT): WindowBackgroundDrawable {
-        val preferences = BrowserPreferences(context)
-        val file = HomeBackground.imageFile(context, preferences.backgroundHome)
-        val metrics = context.resources.displayMetrics
+        val appContext = context.applicationContext
+        val preferences = BrowserPreferences(appContext)
+        val backgroundPath = preferences.backgroundHome
+        val file = HomeBackground.imageFile(appContext, backgroundPath)
+        val metrics = appContext.resources.displayMetrics
         val key = file?.let { ImageKey(it.path, it.lastModified(), it.length(), maxOf(metrics.widthPixels, metrics.heightPixels), metrics.densityDpi) }
         if (imageKey != key) {
-            published.setImage(HomeBackground.createWindowImage(context, preferences.backgroundHome))
             imageKey = key
+            // c8.s6.Ab: decode off the main thread and apply on it; a stale decode is dropped.
+            io.execute {
+                HomeBackground.regenerateCache(appContext, backgroundPath)
+                val image = HomeBackground.createWindowImage(appContext, backgroundPath)
+                main.post { if (imageKey == key) published.setImage(image) }
+            }
         }
         val night = if (dark) if (HomeDesign.isLight(preferences.urlBarColor)) 128 else 64 else 0
         val opacity = ((preferences.backgroundInfo and 127) / 100f * 255).toInt()

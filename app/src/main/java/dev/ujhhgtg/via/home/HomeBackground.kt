@@ -71,4 +71,11 @@ object HomeBackground {
     /** The raw image layer has no homepage color/filter baked into it. */
     internal fun createWindowImage(context: Context, backgroundPath: String?): Drawable? =
         displayBitmap(context, backgroundPath)?.let { WindowBackgroundImage(context.resources, it) }
+
+    /** c8.s6.A3 / d9.q.e3: rebuild the screen-sized cache when the source survives but background.jpg was wiped. */
+    internal fun regenerateCache(context: Context, backgroundPath: String?) {
+        val source = backgroundPath?.takeIf { it.isNotBlank() }?.let(::File)?.takeIf(File::isFile) ?: return
+        if (File(contentDirectory(context), "background.jpg").isFile) return
+        process(context, source)
+    }
 }
