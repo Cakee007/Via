@@ -19,8 +19,9 @@ object HomeStyle {
             val scrim = "rgba(0,0,0,${alpha / 255f})"
             return "linear-gradient($scrim,$scrim),url('$url') center/cover no-repeat fixed"
         }
-        // w9.k.c0 canonicalizes non-negative colors to the default, like ToolbarColorController.
-        val configured = c.accentColor.takeIf { it < 0 } ?: background.defaultColor
+        // w9.k.c0's -1 default resolves to the theme color before the night blend, like
+        // ToolbarColorController.configuredBackgroundColor; legacy non-negative values too.
+        val configured = c.accentColor.takeIf { it < 0 && it != -1 } ?: background.defaultColor
         // Night pages sit on the cover color blended halfway to black (c8.s6 Q7).
         val color = if (dark) Color.rgb((Color.red(configured) * .5f).toInt(), (Color.green(configured) * .5f).toInt(),
             (Color.blue(configured) * .5f).toInt()) else configured
